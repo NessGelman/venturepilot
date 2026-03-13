@@ -1,16 +1,25 @@
-import React from "react";
-import { BarChart3, Globe, Users, TrendingUp } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { BarChart3, Globe, Users, TrendingUp, Filter } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
 export default function MarketBench() {
-  const { growth, revenue } = useApp();
+  const { growth, revenue, pipelineCoverage, ltv, cac } = useApp();
+  const [sector, setSector] = useState("SaaS");
+  const [region, setRegion] = useState("US");
 
-  const benchmarks = [
+  const benchmarks = useMemo(() => ([
     { metric: "MoM Growth", user: `${growth}%`, benchmark: "8-12%", status: growth >= 8 ? "Outperforming" : "Underperforming", color: growth >= 8 ? "#10b981" : "#ef4444" },
-    { metric: "LTV/CAC", user: "3.2x", benchmark: ">3x", status: "Healthy", color: "#10b981" },
-    { metric: "Churn Rate", user: "2.1%", benchmark: "<3%", status: "Strong", color: "#10b981" },
-    { metric: "Revenue/Employee", user: `$${Math.round(revenue / 5)}k`, benchmark: "$15k", status: "Average", color: "#f59e0b" },
+    { metric: "LTV/CAC", user: `${(ltv / cac).toFixed(1)}x`, benchmark: ">3x", status: ltv / cac >= 3 ? "Healthy" : "Weak", color: ltv / cac >= 3 ? "#10b981" : "#ef4444" },
+    { metric: "Pipeline Cover", user: `${pipelineCoverage}%`, benchmark: "90-120%", status: pipelineCoverage >= 90 ? "Ready" : "Light", color: pipelineCoverage >= 90 ? "#10b981" : "#f59e0b" },
+    { metric: "Revenue/Employee", user: `$${Math.round(revenue / 5)}k`, benchmark: "$15k", status: Math.round(revenue / 5) >= 15 ? "Efficient" : "Average", color: Math.round(revenue / 5) >= 15 ? "#10b981" : "#f59e0b" },
+  ]), [growth, revenue, pipelineCoverage, ltv, cac]);
+
+  const competitorData = [
+    { name: "You", growth, ltv: (ltv / cac).toFixed(1), pipeline: pipelineCoverage },
+    { name: "Top Quartile", growth: 12, ltv: 3.8, pipeline: 110 },
+    { name: "Median", growth: 8, ltv: 2.9, pipeline: 80 },
   ];
 
   return (
@@ -21,6 +30,20 @@ export default function MarketBench() {
         </h1>
         <p style={{ color: "#8798b0", marginTop: 6, fontSize: 15 }}>Benchmark your metrics against the top 1% of startups.</p>
       </header>
+
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#8798b0", fontSize: 13 }}>
+          <Filter size={14} />
+          <span>Filters</span>
+        </div>
+        <select value={sector} onChange={(e) => setSector(e.target.value)} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", padding: "8px 12px", borderRadius: 10, fontWeight: 700 }}>
+          {["SaaS", "Fintech", "AI"].map(opt => <option key={opt} value={opt} style={{ color: "#0f172a" }}>{opt}</option>)}
+        </select>
+        <select value={region} onChange={(e) => setRegion(e.target.value)} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", padding: "8px 12px", borderRadius: 10, fontWeight: 700 }}>
+          {["US", "EU", "APAC"].map(opt => <option key={opt} value={opt} style={{ color: "#0f172a" }}>{opt}</option>)}
+        </select>
+        <p style={{ color: "#475569", fontSize: 12 }}>Showing {sector} peers in {region}</p>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
         <Card>
@@ -55,6 +78,21 @@ export default function MarketBench() {
         </Card>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <Card>
+            <SectionHeader icon={BarChart3} title="Competitive Position" subtitle="You vs market percentiles" />
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={competitorData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" stroke="#4a6080" />
+                <YAxis stroke="#4a6080" />
+                <Tooltip contentStyle={{ background: "#0d1420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+                <Bar dataKey="growth" name="MoM Growth" fill="#6366f1" radius={[6,6,0,0]} />
+                <Bar dataKey="ltv" name="LTV/CAC" fill="#10b981" radius={[6,6,0,0]} />
+                <Bar dataKey="pipeline" name="Pipeline %" fill="#f59e0b" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+
           <Card>
             <SectionHeader icon={Users} title="Market Sentiment" subtitle="What VCs are saying" color="#10b981" />
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

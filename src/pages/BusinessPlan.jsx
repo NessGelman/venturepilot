@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { FileText, Sparkles, Send, Download, BookOpen, Target, BarChart, Users, Shield } from "lucide-react";
+import { FileText, Sparkles, Send, Download, BookOpen, Target, BarChart, Users, Shield, CheckCircle2, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
@@ -7,6 +7,12 @@ export default function BusinessPlan() {
   const { capital, burn, revenue, growth, idea } = useApp();
   const [generating, setGenerating] = useState(false);
   const [status, setStatus] = useState("");
+  const [milestones, setMilestones] = useState([
+    { label: "Hit $50k MRR", done: false },
+    { label: "Close 3 design partners", done: true },
+    { label: "Ship investor dashboard", done: false },
+  ]);
+  const [newMilestone, setNewMilestone] = useState("");
 
   const planSections = useMemo(() => [
     {
@@ -43,6 +49,16 @@ export default function BusinessPlan() {
     link.click();
     URL.revokeObjectURL(url);
     setStatus("Business plan exported as Markdown");
+  };
+
+  const addMilestone = () => {
+    if (!newMilestone.trim()) return;
+    setMilestones([{ label: newMilestone, done: false }, ...milestones]);
+    setNewMilestone("");
+  };
+
+  const toggleMilestone = (idx) => {
+    setMilestones(milestones.map((m, i) => i === idx ? { ...m, done: !m.done } : m));
   };
 
   return (
@@ -97,6 +113,60 @@ export default function BusinessPlan() {
           ))}
         </div>
       </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24 }}>
+        <Card>
+          <SectionHeader icon={FileText} title="Milestone Board" subtitle="Track execution toward the plan" />
+          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+            <input
+              value={newMilestone}
+              onChange={(e) => setNewMilestone(e.target.value)}
+              placeholder="Add a milestone..."
+              style={{ flex: 1, background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#f0f4ff", fontWeight: 600 }}
+            />
+            <button
+              onClick={addMilestone}
+              style={{ padding: "10px 14px", borderRadius: 10, background: "#6366f1", border: "none", color: "#fff", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {milestones.map((m, idx) => (
+              <button
+                key={idx}
+                onClick={() => toggleMilestone(idx)}
+                style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "12px 14px", borderRadius: 12,
+                  background: m.done ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
+                  border: m.done ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(255,255,255,0.05)",
+                  color: m.done ? "#10b981" : "#8798b0", fontWeight: 700, textAlign: "left", cursor: "pointer"
+                }}
+              >
+                {m.label}
+                {m.done && <CheckCircle2 size={16} color="#10b981" />}
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionHeader icon={Shield} title="Risk Register" subtitle="Mitigations you own" color="#10b981" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+            {[
+              { t: "Capital Preservation", d: "Strict treasury management to extend runway beyond 18 months." },
+              { t: "Market Resilience", d: "Diversified revenue streams to mitigate sector-specific downturns." },
+              { t: "Operational Audit", d: "Quarterly reviews of unit economics and burn efficiency." }
+            ].map((item, i) => (
+              <div key={i} style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <h4 style={{ color: "#f0f4ff", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{item.t}</h4>
+                <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>{item.d}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingBottom: 20 }}>
         <button

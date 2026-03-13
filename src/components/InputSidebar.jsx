@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { X, ChevronRight, ChevronLeft, Settings2, DollarSign, TrendingUp, Zap, Info } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Settings2, DollarSign, TrendingUp, Zap, Info, Users, Activity } from "lucide-react";
 
 // Move InputField OUTSIDE the main component to prevent focus loss on re-render
 const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
@@ -42,7 +42,18 @@ const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
 );
 
 export default function InputSidebar({ isOpen, setIsOpen }) {
-  const { capital, setCapital, burn, setBurn, revenue, setRevenue, growth, setGrowth, idea, setIdea } = useApp();
+  const {
+    capital, setCapital,
+    burn, setBurn,
+    revenue, setRevenue,
+    growth, setGrowth,
+    headcount, setHeadcount,
+    cac, setCac,
+    arpu, setArpu,
+    churn, setChurn,
+    pipeline, setPipeline,
+    idea, setIdea
+  } = useApp();
 
   return (
     <>
@@ -76,8 +87,20 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
         <div style={{ flex: 1, overflowY: "auto" }}>
           <InputField label="Capital Raised" value={capital} onChange={setCapital} prefix="$" />
           <InputField label="Monthly Gross Burn" value={burn} onChange={setBurn} prefix="$" />
-          <InputField label="Monthly Revenue" value={revenue} onChange={setRevenue} prefix="$" />
+          <InputField label="Monthly Revenue (MRR)" value={revenue} onChange={setRevenue} prefix="$" />
           <InputField label="MoM Growth Rate" value={growth} onChange={setGrowth} suffix="%" />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <InputField label="Headcount" value={headcount} onChange={setHeadcount} />
+            <InputField label="CAC" value={cac} onChange={setCac} prefix="$" />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <InputField label="ARPU" value={arpu} onChange={setArpu} prefix="$" />
+            <InputField label="Monthly Churn" value={churn} onChange={setChurn} suffix="%" />
+          </div>
+
+          <InputField label="Active Pipeline (12m)" value={pipeline} onChange={setPipeline} prefix="$" />
           <InputField label="Company Vision" value={idea} onChange={setIdea} multiline />
           
           <div style={{ padding: 16, borderRadius: 12, background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.1)", marginTop: 20 }}>
@@ -86,7 +109,7 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
               <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f4ff" }}>Quick Tip</span>
             </div>
             <p style={{ fontSize: 11, color: "#8798b0", lineHeight: 1.5 }}>
-              Updating these values recalculates runway and readiness across all modules.
+              Updating these values recalculates runway, efficiency, and readiness across all modules.
             </p>
           </div>
         </div>

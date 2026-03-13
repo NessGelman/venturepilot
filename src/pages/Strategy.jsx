@@ -1,17 +1,28 @@
-import React, { useState } from "react";
-import { Zap, Play, Info, TrendingUp, TrendingDown, RefreshCcw, Activity, ShieldAlert, Rocket } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Zap, Play, Info, TrendingUp, TrendingDown, RefreshCcw, Activity, ShieldAlert, Rocket, Gauge, ClipboardList, CheckCircle2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
 export default function Strategy() {
-  const { capital, burn, revenue, growth, setBurn, setGrowth } = useApp();
+  const { capital, burn, revenue, growth, payback, runwayMonths, ltv, cac, setBurn, setGrowth } = useApp();
   const [scenario, setScenario] = useState("Status Quo");
+  const [checklist, setChecklist] = useState([
+    { label: "Cut non-core spend by 8%", done: false },
+    { label: "Spin up outbound SDR pilot", done: false },
+    { label: "Ship self-serve onboarding", done: true },
+    { label: "Book 5 investor updates", done: false },
+  ]);
+
+  const baseline = useMemo(() => ({ burn, growth }), []); // capture first-load values
 
   const scenarios = {
     "Status Quo": { b: burn, g: growth },
     "Aggressive Growth": { b: burn * 1.5, g: growth * 2 },
     "Lean Mode": { b: burn * 0.7, g: growth * 0.8 },
+    "Return to Baseline": { b: baseline.burn, g: baseline.growth },
   };
+
+  const runwayFor = (b, g) => Math.max(1, Math.round(capital / Math.max(b - revenue, 1)));
 
   const applyScenario = (name) => {
     setScenario(name);
@@ -64,6 +75,29 @@ export default function Strategy() {
               </div>
             </div>
           </Card>
+
+          <Card>
+            <SectionHeader icon={ClipboardList} title="Execution Checklist" subtitle="What needs to happen next" color="#38bdf8" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {checklist.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setChecklist(checklist.map((c, i) => i === idx ? { ...c, done: !c.done } : c))}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "12px 14px", borderRadius: 12,
+                    background: item.done ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
+                    border: item.done ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                    color: item.done ? "#10b981" : "#8798b0", fontWeight: 600,
+                    cursor: "pointer", textAlign: "left"
+                  }}
+                >
+                  {item.label}
+                  {item.done && <CheckCircle2 size={16} color="#10b981" />}
+                </button>
+              ))}
+            </div>
+          </Card>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -98,6 +132,20 @@ export default function Strategy() {
                 By switching to the <strong>{scenario}</strong> strategy, you are prioritizing {scenario === "Aggressive Growth" ? "market capture" : scenario === "Lean Mode" ? "efficiency" : "balanced progress"}.
                 Given your current metrics, this path {scenario === "Aggressive Growth" && growth < 15 ? "may be risky as growth isn't fast enough to justify the burn increase" : "aligns with standard VC expectations for your stage"}.
               </p>
+            </div>
+          </Card>
+
+          <Card style={{ background: "rgba(99,102,241,0.05)", border: "1px dashed rgba(99,102,241,0.2)" }}>
+            <SectionHeader icon={Gauge} title="Scenario Outcomes" subtitle="Real-time modeling before you commit" color="#6366f1" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {Object.entries(scenarios).map(([name, vals]) => (
+                <div key={name} style={{ padding: 14, borderRadius: 12, background: name === scenario ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ color: "#c7d2f0", fontWeight: 700, fontSize: 13 }}>{name}</p>
+                  <p style={{ color: "#8798b0", fontSize: 12, marginTop: 6 }}>Burn: ${Math.round(vals.b).toLocaleString()} • Growth: {Math.round(vals.g)}%</p>
+                  <p style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 700, marginTop: 6 }}>Runway: {runwayFor(vals.b, vals.g)} mo</p>
+                  <p style={{ color: "#475569", fontSize: 12 }}>LTV/CAC: {(ltv / cac).toFixed(1)}x</p>
+                </div>
+              ))}
             </div>
           </Card>
         </div>
