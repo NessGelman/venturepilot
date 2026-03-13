@@ -2,46 +2,47 @@ import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { X, ChevronRight, ChevronLeft, Settings2, DollarSign, TrendingUp, Zap, Info } from "lucide-react";
 
+// Move InputField OUTSIDE the main component to prevent focus loss on re-render
+const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+    <label style={{ color: "#64748b", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+    <div style={{ position: "relative" }}>
+      {prefix && <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 13 }}>{prefix}</span>}
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={4}
+          style={{
+            width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 8, padding: "10px 12px", color: "#f0f4ff",
+            fontSize: 13, fontWeight: 500, outline: "none", transition: "border-color 0.2s",
+            resize: "none", lineHeight: 1.5
+          }}
+          onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+          onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+        />
+      ) : (
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          style={{
+            width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 8, padding: `10px 12px 10px ${prefix ? "28px" : "12px"}`, color: "#f0f4ff",
+            fontSize: 14, fontWeight: 600, outline: "none", transition: "border-color 0.2s"
+          }}
+          onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+          onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+        />
+      )}
+      {suffix && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 13 }}>{suffix}</span>}
+    </div>
+  </div>
+);
+
 export default function InputSidebar({ isOpen, setIsOpen }) {
   const { capital, setCapital, burn, setBurn, revenue, setRevenue, growth, setGrowth, idea, setIdea } = useApp();
-
-  const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-      <label style={{ color: "#64748b", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
-      <div style={{ position: "relative" }}>
-        {prefix && <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 13 }}>{prefix}</span>}
-        {multiline ? (
-          <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            rows={4}
-            style={{
-              width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8, padding: "10px 12px", color: "#f0f4ff",
-              fontSize: 13, fontWeight: 500, outline: "none", transition: "border-color 0.2s",
-              resize: "none", lineHeight: 1.5
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#6366f1"}
-            onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
-          />
-        ) : (
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(Number(e.target.value))}
-            style={{
-              width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8, padding: `10px 12px 10px ${prefix ? "28px" : "12px"}`, color: "#f0f4ff",
-              fontSize: 14, fontWeight: 600, outline: "none", transition: "border-color 0.2s"
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#6366f1"}
-            onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
-          />
-        )}
-        {suffix && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 13 }}>{suffix}</span>}
-      </div>
-    </div>
-  );
 
   return (
     <>
