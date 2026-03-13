@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import InputSidebar from "./InputSidebar";
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -23,8 +25,16 @@ export default function Layout({ children }) {
       position: "relative",
       overflowX: "hidden"
     }}>
+      <InputSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <nav style={{
+      <div style={{
+        marginLeft: isSidebarOpen ? 280 : 0,
+        transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column"
+      }}>
+        <nav style={{
         zIndex: 100,
         height: 80,
         borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -44,7 +54,7 @@ export default function Layout({ children }) {
               <Rocket size={18} color="#fff" />
             </div>
             <span style={{ fontWeight: 800, fontSize: 20, color: "#f0f4ff", letterSpacing: "-0.02em" }}>
-              VenturePilot
+              VenturePilot (v1.2)
             </span>
           </Link>
 
@@ -117,6 +127,7 @@ export default function Layout({ children }) {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
