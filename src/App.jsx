@@ -7,6 +7,7 @@ import Strategy from "./pages/Strategy";
 import PitchDeck from "./pages/PitchDeck";
 import MarketBench from "./pages/MarketBench";
 import InvestorMatch from "./pages/InvestorMatch";
+import BusinessPlan from "./pages/BusinessPlan";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/strategy" element={<Strategy />} />
             <Route path="/pitch" element={<PitchDeck />} />
+            <Route path="/business-plan" element={<BusinessPlan />} />
             <Route path="/market" element={<MarketBench />} />
             <Route path="/investors" element={<InvestorMatch />} />
           </Routes>

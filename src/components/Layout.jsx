@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users } from "lucide-react";
+import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import InputSidebar from "./InputSidebar";
 
@@ -11,7 +11,8 @@ export default function Layout({ children }) {
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Strategy", path: "/strategy", icon: Target },
-    { name: "Pitch Deck", path: "/pitch", icon: Zap },
+    { name: "Slide Deck", path: "/pitch", icon: Zap },
+    { name: "Business Plan", path: "/business-plan", icon: FileText },
     { name: "Market Bench", path: "/market", icon: BarChart3 },
     { name: "Investor CRM", path: "/investors", icon: Users },
   ];
