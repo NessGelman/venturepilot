@@ -12,9 +12,11 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "framer-motion": "^12.36.0",
     "lucide-react": "^0.303.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.13.1",
     "recharts": "^2.8.0"
   },
   "devDependencies": {
