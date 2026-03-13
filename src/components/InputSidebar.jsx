@@ -71,16 +71,44 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
   } = useApp();
   const [presetName, setPresetName] = useState("");
   const [selectedPreset, setSelectedPreset] = useState("");
-  const analyzeRepo = () => {
-    if (!repoUrl.trim()) {
+  const analyzeRepo = async () => {
+    const url = repoUrl.trim();
+    if (!url) {
       addToast("Add a repo URL first.");
       return;
     }
-    const slug = repoUrl.split("/").filter(Boolean).pop() || "repo";
-    setIdea((prev) => prev || `Product inspired by ${slug}`);
-    setProblem((prev) => prev || `We streamline workflows similar to ${slug}.`);
-    setIndustry((prev) => prev || "Software");
-    addToast("Repo analyzed (simulated) and narrative fields enriched.");
+    const match = url.match(/github\\.com\\/(.+?)\\/(.+?)(?:\\.|\\s|#|$|\\/)/);
+    if (!match) {
+      addToast("Enter a valid GitHub repo URL (github.com/owner/repo).");
+      return;
+    }
+    const owner = match[1];
+    const repo = match[2].replace(/\\.git$/, "");
+    const branches = ["main", "master"];
+    let readme = "";
+    for (const branch of branches) {
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`);
+        if (res.ok) {
+          readme = await res.text();
+          break;
+        }
+      } catch (_) {}
+    }
+    if (!readme) {
+      addToast("Could not read repo (check URL or branch).");
+      return;
+    }
+    // naive extraction
+    const snippet = readme.slice(0, 400);
+    const lines = snippet.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);
+    const title = lines[0] || repo;
+    const problemGuess = lines.find(l => /problem|pain|why/i.test(l));
+    const industryGuess = lines.find(l => /saas|ai|ml|fintech|health|infra|data|devops/i.test(l));
+    setIdea((prev) => prev || title);
+    setProblem((prev) => prev || problemGuess || `We solve a core pain surfaced in ${repo}.`);
+    setIndustry((prev) => prev || (industryGuess ? industryGuess.split(/[\\.|-]/)[0] : "Software"));
+    addToast("Repo analyzed and narrative fields enriched.");
   };
 
   return (
