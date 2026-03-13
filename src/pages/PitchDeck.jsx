@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Zap, Layout, ListChecks, MessageSquare, Sparkles, Send, ChevronRight, ChevronLeft, Presentation, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { useApp } from "../context/AppContext";
@@ -8,8 +8,9 @@ export default function PitchDeck() {
   const { idea, capital, revenue, growth } = useApp();
   const [generating, setGenerating] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [status, setStatus] = useState("");
 
-  const slides = [
+  const slides = useMemo(() => [
     { 
       title: "The Problem", 
       subtitle: "Fragmented Intelligence",
@@ -30,7 +31,29 @@ export default function PitchDeck() {
       subtitle: "Efficiency at Scale",
       content: `Operating with $${capital.toLocaleString()} in capital and a highly optimized burn rate. Our readiness for the next round is currently ranked in the top 10% of our sector.` 
     },
-  ];
+  ], [idea, capital, revenue, growth]);
+
+  const downloadSlides = () => {
+    const content = slides.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.subtitle}\n${s.content}\n`).join('\n');
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'venturepilot-slide-deck.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus("Slide deck exported as .txt");
+  };
+
+  const copyPrivateLink = async () => {
+    const link = `${window.location.origin}${window.location.hash || '#/pitch'}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setStatus("Private view link copied to clipboard");
+    } catch (err) {
+      setStatus("Clipboard is blocked — copy manually: " + link);
+    }
+  };
 
   const nextSlide = () => setActiveSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length);
@@ -92,21 +115,32 @@ export default function PitchDeck() {
           </Card>
 
           <div style={{ display: "flex", gap: 16 }}>
-            <button style={{
-              flex: 1, padding: "16px", borderRadius: 14, background: "#6366f1",
-              border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 4px 12px rgba(99,102,241,0.3)"
-            }}>
-              <Download size={18} /> Download Slide Deck (PPTX)
+            <button
+              onClick={downloadSlides}
+              style={{
+                flex: 1, padding: "16px", borderRadius: 14, background: "#6366f1",
+                border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: "0 4px 12px rgba(99,102,241,0.3)"
+              }}
+            >
+              <Download size={18} /> Export Slide Deck (TXT)
             </button>
-            <button style={{
-              flex: 1, padding: "16px", borderRadius: 14, background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", fontWeight: 700, fontSize: 14, cursor: "pointer"
-            }}>
+            <button
+              onClick={copyPrivateLink}
+              style={{
+                flex: 1, padding: "16px", borderRadius: 14, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", fontWeight: 700, fontSize: 14, cursor: "pointer"
+              }}
+            >
               Copy Private View Link
             </button>
           </div>
+          {status && (
+            <p style={{ color: "#10b981", fontSize: 12, fontWeight: 700 }}>
+              {status}
+            </p>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -153,4 +187,3 @@ export default function PitchDeck() {
     </div>
   );
 }
-

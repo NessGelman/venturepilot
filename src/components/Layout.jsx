@@ -55,7 +55,7 @@ export default function Layout({ children }) {
               <Rocket size={18} color="#fff" />
             </div>
             <span style={{ fontWeight: 800, fontSize: 20, color: "#f0f4ff", letterSpacing: "-0.02em" }}>
-              VenturePilot (v1.2)
+              VenturePilot (v1.3)
             </span>
           </Link>
 

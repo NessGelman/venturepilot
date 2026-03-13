@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FileText, Sparkles, Send, Download, BookOpen, Target, BarChart, Users, Shield } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
@@ -6,8 +6,9 @@ import { Card, SectionHeader } from "../components/Shared";
 export default function BusinessPlan() {
   const { capital, burn, revenue, growth, idea } = useApp();
   const [generating, setGenerating] = useState(false);
+  const [status, setStatus] = useState("");
 
-  const planSections = [
+  const planSections = useMemo(() => [
     {
       title: "Executive Summary",
       icon: BookOpen,
@@ -28,7 +29,21 @@ export default function BusinessPlan() {
       icon: Users,
       content: `Given the ${growth}% MoM growth rate, projected ARR for the next 12 months is expected to scale exponentially. We maintain a focus on capital efficiency, targeting a Readiness Score of 90+ for subsequent funding rounds.`
     }
-  ];
+  ], [capital, revenue, growth, idea, burn]);
+
+  const exportPlan = () => {
+    const body = planSections
+      .map((section, i) => `# ${section.title}\nPhase ${i + 1}: ${section.content}\n`)
+      .join("\n");
+    const blob = new Blob([body], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "venturepilot-business-plan.md";
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus("Business plan exported as Markdown");
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
@@ -83,14 +98,18 @@ export default function BusinessPlan() {
         </div>
       </Card>
 
-      <div style={{ display: "flex", justifyContent: "center", paddingBottom: 20 }}>
-        <button style={{
-          padding: "16px 40px", borderRadius: 14, background: "#6366f1",
-          border: "none", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 32px rgba(99,102,241,0.4)"
-        }}>
-          <Download size={18} /> Export Full Business Plan (PDF)
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingBottom: 20 }}>
+        <button
+          onClick={exportPlan}
+          style={{
+            padding: "16px 40px", borderRadius: 14, background: "#6366f1",
+            border: "none", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 32px rgba(99,102,241,0.4)"
+          }}
+        >
+          <Download size={18} /> Export Full Business Plan (MD)
         </button>
+        {status && <p style={{ color: "#10b981", fontSize: 12, fontWeight: 700 }}>{status}</p>}
       </div>
     </div>
   );
