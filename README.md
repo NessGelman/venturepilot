@@ -10,7 +10,7 @@ An interactive, founder-facing “venture OS” that models runway, decks, strat
 - Benchmarks: sector-aware comparisons with cycling through All/SaaS/AI/Fintech/Health/Infra.
 - Investor CRM: filters, follow-up dates, intro-template copy, positioning snapshot.
 - Presets & snapshots: save/load presets, daily auto-snapshots, local undo/redo, toasts.
-- Optional GitHub input: drop a repo URL to auto-inject narrative cues (simulated client-side).
+- Optional GitHub input: drop a repo URL to auto-inject narrative cues (client-side fetch of README; works on GitHub Pages).
 
 ## Quick start
 ```bash
@@ -27,7 +27,7 @@ npm run build # production
 ## Controls & tips
 - Sidebar autosaves; use Undo `⌘/Ctrl+Z`, Redo `⌘/Ctrl+Shift+Z` or `⌘/Ctrl+Y`.
 - Use presets to jump between scenarios; snapshots collect last 30 days automatically.
-- “Analyze Repo” is optional; it enriches narrative fields without blocking core flows.
+- “Analyze Repo” is optional; it fetches the README from raw.githubusercontent (no backend) so it remains GitHub Pages-compatible. If the repo is private, skip or paste text manually.
 
 ## Tech
 React 18 + Vite, framer-motion, lucide-react, recharts. No backend required; all state in `localStorage`.

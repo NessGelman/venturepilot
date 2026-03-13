@@ -13,7 +13,8 @@ export default function Dashboard() {
     runwayMonths, netBurn, readinessScore,
     ltv, payback, revenuePerEmployee, pipelineCoverage, arr, mrr,
     industry, problem,
-    dailySnapshots
+    dailySnapshots,
+    addToast
   } = useApp();
 
   const chartData = Array.from({ length: 24 }).map((_, i) => ({
@@ -91,24 +92,40 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ fontSize: 32, fontWeight: 800, color: "#f0f4ff", letterSpacing: "-0.03em" }}>
             Financial <span style={{ background: "linear-gradient(90deg,#6366f1,#a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Overview</span>
           </h1>
           <p style={{ color: "#8798b0", marginTop: 6, fontSize: 15 }}>Real-time intelligence based on your current metrics.</p>
         </div>
-        <button
-          onClick={exportMetrics}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "12px 18px", borderRadius: 12,
-            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-            color: "#f0f4ff", fontWeight: 700, cursor: "pointer"
-          }}
-        >
-          <Download size={16} /> Export Metrics CSV
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={exportMetrics}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "12px 18px", borderRadius: 12,
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#f0f4ff", fontWeight: 700, cursor: "pointer"
+            }}
+          >
+            <Download size={16} /> Export Metrics CSV
+          </button>
+          <button
+            onClick={() => {
+              const summary = `Runway: ${runwayMonths} mo | Growth: ${growth}% | MRR: $${mrr} | LTV/CAC: ${(ltv / cac).toFixed(1)}x | Payback: ${payback} mo | Pipeline: ${pipelineCoverage}%`;
+              navigator.clipboard.writeText(summary).then(() => addToast("Metrics summary copied"), () => addToast("Clipboard blocked"));
+            }}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "12px 18px", borderRadius: 12,
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#f0f4ff", fontWeight: 700, cursor: "pointer"
+            }}
+          >
+            Copy Summary
+          </button>
+        </div>
       </header>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
@@ -168,6 +185,24 @@ export default function Dashboard() {
       {dailySnapshots.length > 1 && (
         <Card>
           <SectionHeader icon={Activity} title="Daily Snapshots" subtitle="Auto-captured trailing 30d" color="#38bdf8" />
+          <button
+            onClick={() => {
+              const rows = [["date","runwayMonths","revenue","burn","growth"]];
+              dailySnapshots.forEach(s => rows.push([s.date, s.runwayMonths ?? "", s.revenue ?? "", s.burn ?? "", s.growth ?? ""]));
+              const csv = rows.map(r => r.join(",")).join("\\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "venturepilot-snapshots.csv";
+              a.click();
+              URL.revokeObjectURL(url);
+              addToast("Snapshots CSV exported");
+            }}
+            style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#c7d2f0", fontWeight: 700, marginBottom: 10, cursor: "pointer" }}
+          >
+            Export Snapshots CSV
+          </button>
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6 }}>
             {dailySnapshots.map((s) => (
               <div key={s.date} style={{ minWidth: 110, padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>

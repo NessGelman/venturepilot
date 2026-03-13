@@ -77,13 +77,13 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
       addToast("Add a repo URL first.");
       return;
     }
-    const match = url.match(/github\\.com\\/(.+?)\\/(.+?)(?:\\.|\\s|#|$|\\/)/);
+    const match = url.match(/github\.com\/([^\/\s]+)\/([^\/\s#]+)/i);
     if (!match) {
       addToast("Enter a valid GitHub repo URL (github.com/owner/repo).");
       return;
     }
     const owner = match[1];
-    const repo = match[2].replace(/\\.git$/, "");
+    const repo = match[2].replace(/\.git$/, "");
     const branches = ["main", "master"];
     let readme = "";
     for (const branch of branches) {
@@ -101,13 +101,13 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
     }
     // naive extraction
     const snippet = readme.slice(0, 400);
-    const lines = snippet.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);
+    const lines = snippet.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const title = lines[0] || repo;
     const problemGuess = lines.find(l => /problem|pain|why/i.test(l));
     const industryGuess = lines.find(l => /saas|ai|ml|fintech|health|infra|data|devops/i.test(l));
     setIdea((prev) => prev || title);
     setProblem((prev) => prev || problemGuess || `We solve a core pain surfaced in ${repo}.`);
-    setIndustry((prev) => prev || (industryGuess ? industryGuess.split(/[\\.|-]/)[0] : "Software"));
+    setIndustry((prev) => prev || (industryGuess ? industryGuess.split(/[.|-]/)[0] : "Software"));
     addToast("Repo analyzed and narrative fields enriched.");
   };
 
