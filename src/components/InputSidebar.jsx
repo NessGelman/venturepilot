@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { X, ChevronRight, ChevronLeft, Settings2, DollarSign, TrendingUp, Zap, Info, Users, Activity } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Settings2, DollarSign, TrendingUp, Zap, Info, Users, Activity, RefreshCcw, Save, UploadCloud, Trash, Undo2, Redo2, BookOpen } from "lucide-react";
 
 // Move InputField OUTSIDE the main component to prevent focus loss on re-render
-const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
+const InputField = ({ label, value, onChange, prefix, suffix, multiline, type = "number" }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
     <label style={{ color: "#64748b", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
     <div style={{ position: "relative" }}>
@@ -24,9 +24,9 @@ const InputField = ({ label, value, onChange, prefix, suffix, multiline }) => (
         />
       ) : (
         <input
-          type="number"
+          type={type}
           value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
+          onChange={(e) => onChange(type === "number" ? Number(e.target.value) : e.target.value)}
           style={{
             width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 8, padding: `10px 12px 10px ${prefix ? "28px" : "12px"}`, color: "#f0f4ff",
@@ -52,8 +52,36 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
     arpu, setArpu,
     churn, setChurn,
     pipeline, setPipeline,
-    idea, setIdea
+    idea, setIdea,
+    industry, setIndustry,
+    problem, setProblem,
+    stage, setStage,
+    founder, setFounder,
+    northStar, setNorthStar,
+    lastSaved,
+    resetDefaults,
+    presets,
+    savePreset,
+    loadPreset,
+    deletePreset,
+    repoUrl, setRepoUrl,
+    undo, redo,
+    dailySnapshots,
+    toasts, addToast
   } = useApp();
+  const [presetName, setPresetName] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState("");
+  const analyzeRepo = () => {
+    if (!repoUrl.trim()) {
+      addToast("Add a repo URL first.");
+      return;
+    }
+    const slug = repoUrl.split("/").filter(Boolean).pop() || "repo";
+    setIdea((prev) => prev || `Product inspired by ${slug}`);
+    setProblem((prev) => prev || `We streamline workflows similar to ${slug}.`);
+    setIndustry((prev) => prev || "Software");
+    addToast("Repo analyzed (simulated) and narrative fields enriched.");
+  };
 
   return (
     <>
@@ -84,7 +112,50 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
           <h3 style={{ fontSize: 14, fontWeight: 800, color: "#f0f4ff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Venture Metrics</h3>
         </div>
 
+        <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "center" }}>
+          <input
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
+            placeholder="Save current as preset"
+            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", borderRadius: 10, padding: "10px 12px", fontWeight: 600 }}
+          />
+          <button
+            onClick={() => { if (presetName.trim()) { savePreset(presetName.trim()); setPresetName(""); } }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 12px", borderRadius: 10, background: "#6366f1", border: "none", color: "#fff", fontWeight: 800, cursor: "pointer" }}
+          >
+            <Save size={14} /> Save
+          </button>
+          <select
+            value={selectedPreset}
+            onChange={(e) => setSelectedPreset(e.target.value)}
+            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", borderRadius: 10, padding: "10px 12px", fontWeight: 700 }}
+          >
+            <option value="">Load preset...</option>
+            {presets.map((p) => <option key={p.name} value={p.name} style={{ color: "#0f172a" }}>{p.name}</option>)}
+          </select>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => { if (selectedPreset) { loadPreset(selectedPreset); addToast(`Preset '${selectedPreset}' applied`); } }}
+              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#c7d2f0", fontWeight: 700, cursor: "pointer" }}
+            >
+              <UploadCloud size={14} /> Apply
+            </button>
+            <button
+              onClick={() => { if (selectedPreset) { deletePreset(selectedPreset); addToast(`Preset '${selectedPreset}' deleted`); setSelectedPreset(""); } }}
+              style={{ width: 44, display: "flex", alignItems: "center", justifyContent: "center", padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#ef4444", cursor: "pointer" }}
+              title="Delete preset"
+            >
+              <Trash size={14} />
+            </button>
+          </div>
+        </div>
+
         <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <InputField label="Founder / Team" value={founder} onChange={setFounder} type="text" />
+            <InputField label="Stage" value={stage} onChange={setStage} type="text" />
+          </div>
+          <InputField label="North Star Goal" value={northStar} onChange={setNorthStar} type="text" />
           <InputField label="Capital Raised" value={capital} onChange={setCapital} prefix="$" />
           <InputField label="Monthly Gross Burn" value={burn} onChange={setBurn} prefix="$" />
           <InputField label="Monthly Revenue (MRR)" value={revenue} onChange={setRevenue} prefix="$" />
@@ -101,7 +172,16 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
           </div>
 
           <InputField label="Active Pipeline (12m)" value={pipeline} onChange={setPipeline} prefix="$" />
+          <InputField label="Industry" value={industry} onChange={setIndustry} type="text" />
+          <InputField label="Problem You Solve" value={problem} onChange={setProblem} multiline />
           <InputField label="Company Vision" value={idea} onChange={setIdea} multiline />
+          <InputField label="GitHub Repo URL (optional)" value={repoUrl} onChange={setRepoUrl} type="text" />
+          <button
+            onClick={analyzeRepo}
+            style={{ width: "100%", padding: "12px", borderRadius: 10, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#c7d2f0", fontWeight: 700, cursor: "pointer", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}
+          >
+            <BookOpen size={14} /> Analyze Repo (optional)
+          </button>
           
           <div style={{ padding: 16, borderRadius: 12, background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.1)", marginTop: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -115,9 +195,21 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
         </div>
 
         <div style={{ paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#475569" }}>
-            <span style={{ fontSize: 11, fontWeight: 600 }}>AUTO-SAVE ENABLED</span>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#475569", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>AUTO-SAVE ENABLED</span>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+            </div>
+            {lastSaved && <span style={{ fontSize: 11 }}>Saved: {new Date(lastSaved).toLocaleTimeString()}</span>}
+            <button
+              onClick={resetDefaults}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#c7d2f0", fontWeight: 700, cursor: "pointer" }}
+            >
+              <RefreshCcw size={14} /> Reset
+            </button>
+            <button onClick={undo} style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#cbd5e1", fontWeight: 700, cursor: "pointer" }}><Undo2 size={14}/>Undo</button>
+            <button onClick={redo} style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#cbd5e1", fontWeight: 700, cursor: "pointer" }}><Redo2 size={14}/>Redo</button>
+            <span style={{ fontSize: 11 }}>Snapshots (30d): {dailySnapshots.length}</span>
           </div>
         </div>
       </div>

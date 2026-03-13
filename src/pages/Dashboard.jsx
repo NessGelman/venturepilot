@@ -1,6 +1,6 @@
 import React from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
-import { Clock, DollarSign, TrendingUp, BarChart2, Target, Cpu, Users, Gauge, Download } from "lucide-react";
+import { Clock, DollarSign, TrendingUp, BarChart2, Target, Cpu, Users, Gauge, Download, AlertTriangle, Activity } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { StatCard, Card, SectionHeader } from "../components/Shared";
 
@@ -11,7 +11,9 @@ export default function Dashboard() {
     capital, burn, revenue, growth,
     headcount, cac, arpu, churn, pipeline,
     runwayMonths, netBurn, readinessScore,
-    ltv, payback, revenuePerEmployee, pipelineCoverage, arr, mrr
+    ltv, payback, revenuePerEmployee, pipelineCoverage, arr, mrr,
+    industry, problem,
+    dailySnapshots
   } = useApp();
 
   const chartData = Array.from({ length: 24 }).map((_, i) => ({
@@ -31,7 +33,34 @@ export default function Dashboard() {
     { name: "Payback (mo)", value: payback },
     { name: "Rev/Employee", value: revenuePerEmployee },
     { name: "Pipeline Cover %", value: pipelineCoverage },
+    { name: "Problem Focus", value: problem?.slice(0, 24) || "Set in sidebar" },
   ];
+
+  const alerts = [];
+  if (runwayMonths < 6) alerts.push("Runway under 6 months — extend or raise.");
+  if (growth < 8) alerts.push("Growth below 8% MoM — revisit GTM.");
+  if (ltv / cac < 3) alerts.push("LTV/CAC below 3x — efficiency risk.");
+  if (payback > 12) alerts.push("Payback over 12 months — tighten CAC.");
+
+  const monteCarlo = () => {
+    const trials = 200;
+    let under6 = 0;
+    const buckets = [0, 3, 6, 9, 12, 18, 24];
+    const dist = buckets.map((b) => ({ bucket: b, count: 0 }));
+    for (let i = 0; i < trials; i++) {
+      const vol = 0.25; // volatility
+      const g = Math.max(-20, growth + (Math.random() - 0.5) * vol * 100);
+      const b = burn * (1 + (Math.random() - 0.5) * 0.15);
+      const r = revenue * Math.pow(1 + g / 100, 12);
+      const nb = Math.max(b - r / 12, 1);
+      const rw = capital / nb;
+      if (rw < 6) under6++;
+      const bucketIndex = buckets.findIndex((x, idx) => rw >= x && (idx === buckets.length - 1 || rw < buckets[idx + 1]));
+      if (bucketIndex >= 0) dist[bucketIndex].count += 1;
+    }
+    return { risk: Math.round((under6 / trials) * 100), dist: dist.map(d => ({ ...d, prob: Math.round((d.count / trials) * 100) })) };
+  };
+  const mc = monteCarlo();
 
   const exportMetrics = () => {
     const rows = [
@@ -95,6 +124,62 @@ export default function Dashboard() {
         <StatCard icon={BarChart2} label="Pipeline Cover" value={`${pipelineCoverage}%`} sub="12m / ARR" color="#f97316" glow="rgba(249,115,22,0.08)" />
       </div>
 
+      <Card>
+        <SectionHeader icon={Users} title="Profile Snapshot" subtitle="Personalized for your team" color="#38bdf8" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {[
+            { label: "Founder / Team", value: useApp().founder },
+            { label: "Stage", value: useApp().stage },
+            { label: "Industry", value: industry || "Set in sidebar" },
+            { label: "North Star", value: useApp().northStar },
+          ].map((item, i) => (
+            <div key={i} style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{item.label}</p>
+              <p style={{ color: "#f0f4ff", fontWeight: 800, fontSize: 15, marginTop: 6 }}>{item.value || "—"}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {alerts.length > 0 && (
+        <Card style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
+          <SectionHeader icon={AlertTriangle} title="Risk Alerts" subtitle="Priority issues detected" color="#ef4444" />
+          <ul style={{ marginLeft: 18, color: "#fca5a5", display: "grid", gap: 8, paddingLeft: 4 }}>
+            {alerts.map((a, i) => <li key={i} style={{ fontWeight: 700, fontSize: 13 }}>{a}</li>)}
+          </ul>
+        </Card>
+      )}
+
+      <Card>
+        <SectionHeader icon={Activity} title="Monte Carlo Runway" subtitle="Prob. of running out < 6 months" color="#22c55e" />
+        <p style={{ color: "#f0f4ff", fontSize: 26, fontWeight: 800 }}>{mc.risk}%</p>
+        <p style={{ color: "#8798b0", fontSize: 13 }}>Based on 200 trials with burn/growth variance.</p>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={mc.dist}>
+            <XAxis dataKey="bucket" tickFormatter={(v) => `${v}m`} stroke="#4a6080" />
+            <YAxis stroke="#4a6080" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <Tooltip contentStyle={{ background: "#0d1420", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+            <Bar dataKey="prob" fill="#22c55e" radius={[6,6,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {dailySnapshots.length > 1 && (
+        <Card>
+          <SectionHeader icon={Activity} title="Daily Snapshots" subtitle="Auto-captured trailing 30d" color="#38bdf8" />
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6 }}>
+            {dailySnapshots.map((s) => (
+              <div key={s.date} style={{ minWidth: 110, padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>{s.date}</p>
+                <p style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 800 }}>RW {s.runwayMonths || "—"}m</p>
+                <p style={{ color: "#8798b0", fontSize: 12 }}>Rev ${s.revenue || 0}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
         <Card>
           <SectionHeader icon={BarChart2} title="Cash Projection" subtitle="24-month forward-looking runway" />
@@ -154,6 +239,7 @@ export default function Dashboard() {
         <p style={{ color: "#c7d2f0", fontSize: 15, lineHeight: 1.8, maxWidth: 800 }}>
           Your current metrics show a <strong>{runwayMonths}-month runway</strong> with a revenue growth rate of <strong>{growth}%</strong>.
           {growth > 10 ? " You are in the top tier of growth for early-stage SaaS." : " Focus on increasing MoM growth to improve investor appetite."}
+          Operating in <strong>{industry || "your market"}</strong>, you’re tackling: {problem || "a core pain for your segment" }.
           Based on your {readinessScore}/100 readiness score, we recommend initiating Series A conversations in the next 3 months.
         </p>
         <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>

@@ -5,7 +5,7 @@ import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
 export default function PitchDeck() {
-  const { idea, capital, revenue, growth, ltv, cac } = useApp();
+  const { idea, capital, revenue, growth, ltv, cac, industry, problem } = useApp();
   const [generating, setGenerating] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [status, setStatus] = useState("");
@@ -13,9 +13,11 @@ export default function PitchDeck() {
 
   const initialSlides = useMemo(() => ([
     { title: "The Problem", subtitle: "Fragmented Intelligence", content: "Founders are flying blind. Existing financial tools are either overly complex spreadsheets or isolated SaaS metrics that don't provide a holistic strategic view." },
-    { title: "The Solution", subtitle: "VenturePilot OS", content: idea || "An integrated operating system that centralizes all venture data to empower founders with real-time strategic intelligence." },
+    { title: "Industry & Vision", subtitle: industry || "Category", content: idea || "An integrated operating system that centralizes all venture data to empower founders with real-time strategic intelligence." },
+    { title: "What We Solve", subtitle: "Customer Pain", content: problem || "We eliminate the manual, fragmented capital planning process founders struggle with." },
     { title: "Market Traction", subtitle: "Exponential Growth", content: `Scaling at ${growth}% MoM with $${(revenue * 12 / 1000).toFixed(0)}k ARR within 6 months of launch.` },
     { title: "Financial Engine", subtitle: "Efficiency at Scale", content: `Operating with $${capital.toLocaleString()} in capital. LTV/CAC is ${(ltv / cac).toFixed(1)}x — top decile efficiency.` },
+    { title: "Team & Stage", subtitle: "Why Us", content: `${useApp().founder || "Founding team"} at ${useApp().stage || "current stage"} executing toward ${useApp().northStar || "our north star goal"}.` },
   ]), [idea, capital, revenue, growth, ltv, cac]);
 
   const [slides, setSlides] = useState(initialSlides);
@@ -181,7 +183,7 @@ export default function PitchDeck() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ padding: 16, borderRadius: 12, background: "rgba(168,85,247,0.05)", border: "1px dashed rgba(168,85,247,0.2)" }}>
                 <p style={{ color: "#c7d2f0", fontSize: 13, lineHeight: 1.6, fontStyle: "italic" }}>
-                  "Lean into the efficiency edge: LTV/CAC above 3x lets you grow aggressively without compromising runway."
+                  {`"Lean into the ${industry || "market"} edge: you solve '${problem || "a core customer pain"}' and your efficiency (LTV/CAC ${(ltv / cac).toFixed(1)}x) lets you grow without compromising runway."`}
                 </p>
               </div>
               <button 

@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Users, Search, Filter, Plus, Mail, Linkedin, ExternalLink, CalendarClock, CheckCircle2 } from "lucide-react";
+import { Users, Search, Filter, Plus, Mail, Linkedin, ExternalLink, CalendarClock, CheckCircle2, Send } from "lucide-react";
 import { Card, SectionHeader } from "../components/Shared";
+import { useApp } from "../context/AppContext";
 
 export default function InvestorMatch() {
+  const { industry, problem, revenue, runwayMonths, ltv, cac, addToast } = useApp();
   const defaults = [
     { name: "Andreessen Horowitz", focus: "Generalist/AI", stage: "Seed - Series D", contact: "Active", link: "a16z.com", note: "Warm intro via LP", next: "2026-03-20" },
     { name: "Sequoia Capital", focus: "Enterprise/SaaS", stage: "Pre-seed - IPO", contact: "Dormant", link: "sequoiacap.com", note: "Paused until Q2", next: "2026-04-05" },
@@ -62,6 +64,13 @@ export default function InvestorMatch() {
           ))}
         </div>
       </header>
+
+      <Card>
+        <SectionHeader icon={Users} title="Positioning Snapshot" subtitle="Remind investors why you win" />
+        <p style={{ color: "#c7d2f0", fontSize: 14, lineHeight: 1.6 }}>
+          Space: <strong>{industry || "Set industry in sidebar"}</strong>. Problem solved: <strong>{problem || "Add the pain point in sidebar"}</strong>. Lead with this in every intro note.
+        </p>
+      </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
         <Card>
@@ -201,6 +210,7 @@ export default function InvestorMatch() {
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
                       <button style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8798b0" }}><Mail size={14} /></button>
                       <button style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8798b0" }}><Linkedin size={14} /></button>
+                      <button style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8798b0" }} onClick={() => copyTemplate(inv)}><Send size={14} /></button>
                       <button style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8798b0" }}><ExternalLink size={14} /></button>
                     </div>
                   </td>
@@ -214,3 +224,13 @@ export default function InvestorMatch() {
     </div>
   );
 }
+  const copyTemplate = (inv) => {
+    const intro = `Hi ${inv.name},\n\nWe’re building in ${industry || "our market"} to solve: ${problem || "a core customer pain"}. Traction: $${(revenue || 0).toLocaleString()} MRR, ${runwayMonths} months runway, ${(ltv / cac).toFixed(1)}x LTV/CAC. Would love to share a quick update.\n\n`;
+    try {
+      navigator.clipboard.writeText(intro);
+      setStatus("Intro template copied");
+      addToast("Intro copied to clipboard");
+    } catch (err) {
+      setStatus("Clipboard blocked — copy manually");
+    }
+  };

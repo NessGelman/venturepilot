@@ -1,12 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import InputSidebar from "./InputSidebar";
+import { useApp } from "../context/AppContext";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { toasts, undo, redo } = useApp();
+
+  useEffect(() => {
+    const handler = (e) => {
+      const isUndo = (e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+      const isRedo = ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "z") || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "y");
+      if (isUndo) {
+        e.preventDefault();
+        undo?.();
+      }
+      if (isRedo) {
+        e.preventDefault();
+        redo?.();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -128,6 +147,13 @@ export default function Layout({ children }) {
           </div>
         </div>
       </footer>
+      <div style={{ position: "fixed", top: 20, right: 20, display: "flex", flexDirection: "column", gap: 8, zIndex: 300 }}>
+        {toasts.map((t) => (
+          <div key={t.id} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(99,102,241,0.9)", color: "#fff", fontWeight: 700, boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
+            {t.message}
+          </div>
+        ))}
+      </div>
       </div>
     </div>
   );

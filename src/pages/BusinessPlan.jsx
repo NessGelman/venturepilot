@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
 export default function BusinessPlan() {
-  const { capital, burn, revenue, growth, idea } = useApp();
+  const { capital, burn, revenue, growth, idea, industry, problem } = useApp();
   const [generating, setGenerating] = useState(false);
   const [status, setStatus] = useState("");
   const [milestones, setMilestones] = useState([
@@ -18,7 +18,7 @@ export default function BusinessPlan() {
     {
       title: "Executive Summary",
       icon: BookOpen,
-      content: `VenturePilot is an AI-powered financial operating system designed for high-growth startups. With an initial capital base of $${capital.toLocaleString()} and a monthly revenue of $${revenue.toLocaleString()}, the company is scaling at ${growth}% MoM. Our vision is: ${idea || "To revolutionize startup financing strategy through real-time data intelligence."}`
+      content: `VenturePilot is an AI-powered financial operating system serving the ${industry || "venture-backed"} space. We solve: ${problem || "fragmented capital planning for founders"}. With an initial capital base of $${capital.toLocaleString()} and monthly revenue of $${revenue.toLocaleString()}, the company is scaling at ${growth}% MoM. Our vision is: ${idea || "To revolutionize startup financing strategy through real-time data intelligence."}`
     },
     {
       title: "Market Analysis",
@@ -28,7 +28,7 @@ export default function BusinessPlan() {
     {
       title: "Operational Strategy",
       icon: Target,
-      content: `Currently operating at a $${burn.toLocaleString()} monthly gross burn, focusing on high-efficiency user acquisition and product-led growth. Our roadmap includes automated investor matching and real-time runway simulation as core retention drivers.`
+      content: `Currently operating at a $${burn.toLocaleString()} monthly gross burn, focusing on high-efficiency user acquisition and product-led growth. Our roadmap includes automated investor matching and real-time runway simulation as core retention drivers. North star: ${northStar || "set in sidebar"}.`
     },
     {
       title: "Financial Projections",

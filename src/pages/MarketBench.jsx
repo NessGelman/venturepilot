@@ -1,25 +1,53 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BarChart3, Globe, Users, TrendingUp, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "../context/AppContext";
 import { Card, SectionHeader } from "../components/Shared";
 
 export default function MarketBench() {
-  const { growth, revenue, pipelineCoverage, ltv, cac } = useApp();
-  const [sector, setSector] = useState("SaaS");
-  const [region, setRegion] = useState("US");
+  const { growth, revenue, pipelineCoverage, ltv, cac, industry } = useApp();
 
-  const benchmarks = useMemo(() => ([
-    { metric: "MoM Growth", user: `${growth}%`, benchmark: "8-12%", status: growth >= 8 ? "Outperforming" : "Underperforming", color: growth >= 8 ? "#10b981" : "#ef4444" },
-    { metric: "LTV/CAC", user: `${(ltv / cac).toFixed(1)}x`, benchmark: ">3x", status: ltv / cac >= 3 ? "Healthy" : "Weak", color: ltv / cac >= 3 ? "#10b981" : "#ef4444" },
-    { metric: "Pipeline Cover", user: `${pipelineCoverage}%`, benchmark: "90-120%", status: pipelineCoverage >= 90 ? "Ready" : "Light", color: pipelineCoverage >= 90 ? "#10b981" : "#f59e0b" },
-    { metric: "Revenue/Employee", user: `$${Math.round(revenue / 5)}k`, benchmark: "$15k", status: Math.round(revenue / 5) >= 15 ? "Efficient" : "Average", color: Math.round(revenue / 5) >= 15 ? "#10b981" : "#f59e0b" },
-  ]), [growth, revenue, pipelineCoverage, ltv, cac]);
+  const deriveSector = (text = "") => {
+    const lower = text.toLowerCase();
+    if (lower.includes("fintech") || lower.includes("payments") || lower.includes("bank")) return "Fintech";
+    if (lower.includes("health") || lower.includes("bio")) return "Health";
+    if (lower.includes("ai") || lower.includes("machine learning") || lower.includes("ml")) return "AI";
+    if (lower.includes("infra") || lower.includes("cloud") || lower.includes("dev")) return "Infra";
+    return "SaaS";
+  };
+
+  const sectorList = ["All", "SaaS", "AI", "Fintech", "Health", "Infra"];
+  const [sector, setSector] = useState(() => deriveSector(industry));
+  const [region, setRegion] = useState("US");
+  const [sectorIndex, setSectorIndex] = useState(0);
+
+  useEffect(() => {
+    setSector(deriveSector(industry));
+  }, [industry]);
+
+  const sectorDefaults = {
+    SaaS: { growth: 10, ltv: 3.5, pipeline: 110 },
+    AI: { growth: 14, ltv: 3.2, pipeline: 120 },
+    Fintech: { growth: 9, ltv: 3.0, pipeline: 105 },
+    Health: { growth: 8, ltv: 3.4, pipeline: 100 },
+    Infra: { growth: 11, ltv: 3.6, pipeline: 115 },
+    All: { growth: 9, ltv: 3.2, pipeline: 105 },
+  };
+
+  const benchmarks = useMemo(() => {
+    const peer = sectorDefaults[sector] || sectorDefaults.All;
+    return [
+      { metric: "MoM Growth", user: `${growth}%`, benchmark: `${peer.growth - 2}-${peer.growth + 2}%`, status: growth >= peer.growth ? "Outperforming" : "Underperforming", color: growth >= peer.growth ? "#10b981" : "#ef4444" },
+      { metric: "LTV/CAC", user: `${(ltv / cac).toFixed(1)}x`, benchmark: `>${peer.ltv}x`, status: ltv / cac >= peer.ltv ? "Healthy" : "Weak", color: ltv / cac >= peer.ltv ? "#10b981" : "#ef4444" },
+      { metric: "Pipeline Cover", user: `${pipelineCoverage}%`, benchmark: `${peer.pipeline - 10}-${peer.pipeline + 10}%`, status: pipelineCoverage >= peer.pipeline ? "Ready" : "Light", color: pipelineCoverage >= peer.pipeline ? "#10b981" : "#f59e0b" },
+      { metric: "Revenue/Employee", user: `$${Math.round(revenue / 5)}k`, benchmark: "$15k", status: Math.round(revenue / 5) >= 15 ? "Efficient" : "Average", color: Math.round(revenue / 5) >= 15 ? "#10b981" : "#f59e0b" },
+    ];
+  }, [growth, revenue, pipelineCoverage, ltv, cac, sector]);
 
   const competitorData = [
     { name: "You", growth, ltv: (ltv / cac).toFixed(1), pipeline: pipelineCoverage },
-    { name: "Top Quartile", growth: 12, ltv: 3.8, pipeline: 110 },
-    { name: "Median", growth: 8, ltv: 2.9, pipeline: 80 },
+    { name: "Top Quartile", growth: (sectorDefaults[sector] || sectorDefaults.All).growth + 2, ltv: (sectorDefaults[sector] || sectorDefaults.All).ltv + 0.3, pipeline: (sectorDefaults[sector] || sectorDefaults.All).pipeline + 10 },
+    { name: "Median", growth: (sectorDefaults[sector] || sectorDefaults.All).growth, ltv: (sectorDefaults[sector] || sectorDefaults.All).ltv, pipeline: (sectorDefaults[sector] || sectorDefaults.All).pipeline },
   ];
 
   return (
@@ -28,7 +56,7 @@ export default function MarketBench() {
         <h1 style={{ fontSize: 32, fontWeight: 800, color: "#f0f4ff" }}>
           Market <span style={{ background: "linear-gradient(90deg,#6366f1,#a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Intelligence</span>
         </h1>
-        <p style={{ color: "#8798b0", marginTop: 6, fontSize: 15 }}>Benchmark your metrics against the top 1% of startups.</p>
+        <p style={{ color: "#8798b0", marginTop: 6, fontSize: 15 }}>Benchmark your metrics against the top 1% of startups, tuned to your industry profile.</p>
       </header>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -37,8 +65,18 @@ export default function MarketBench() {
           <span>Filters</span>
         </div>
         <select value={sector} onChange={(e) => setSector(e.target.value)} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", padding: "8px 12px", borderRadius: 10, fontWeight: 700 }}>
-          {["SaaS", "Fintech", "AI"].map(opt => <option key={opt} value={opt} style={{ color: "#0f172a" }}>{opt}</option>)}
+          {sectorList.map(opt => <option key={opt} value={opt} style={{ color: "#0f172a" }}>{opt}</option>)}
         </select>
+        <button
+          onClick={() => {
+            const next = (sectorIndex + 1) % sectorList.length;
+            setSectorIndex(next);
+            setSector(sectorList[next]);
+          }}
+          style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", color: "#f0f4ff", fontWeight: 700, cursor: "pointer" }}
+        >
+          Next sector
+        </button>
         <select value={region} onChange={(e) => setRegion(e.target.value)} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)", color: "#f0f4ff", padding: "8px 12px", borderRadius: 10, fontWeight: 700 }}>
           {["US", "EU", "APAC"].map(opt => <option key={opt} value={opt} style={{ color: "#0f172a" }}>{opt}</option>)}
         </select>
