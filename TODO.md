@@ -9,8 +9,8 @@
 **Goal:** Modernize to React 19/TypeScript/Tailwind/Zustand/PWA while ensuring `npm run deploy` works seamlessly for GH Pages (/venturepilot/).
 
 1. ~~✅ Plan/approval~~
-2. **Update package.json:** React 19, Tailwind, Zustand, TypeScript, ESLint/Prettier, Vite PWA. `npm i` + `npm audit fix`.
-3. **Config files:** tsconfig.json, tailwind.config.js, postcss.config.js, .eslintrc.cjs, .prettierrc, vite.config update (base: '/venturepilot/', PWA plugin).
+2. ~~✅ Update package.json: React 19, Tailwind, Zustand, TypeScript, ESLint/Prettier, Vite PWA. `npm i` + `npm audit fix`.~~
+3. **Config files:** tsconfig.json, tailwind.config.js, postcss.config.js, .eslintrc.cjs, .prettierrc, vite.config update (base: '/venturepilot/', PWA plugin). ✅ vite.config.js fixed~~
 4. **Styling migration:** Tailwind setup + migrate index.css. Extract inline styles to classes iteratively.
 5. **TypeScript conversion:** Rename .jsx→.tsx, add types/interfaces, strict mode.
 6. **State refactor:** AppContext → Zustand store (useAppStore.ts).
@@ -24,6 +24,6 @@
 
 ## Next Action
 
-**Step 2:** Update package.json with modern deps (GH Pages safe). Run `npm install`.
+**Step 3:** Run `npm install && npm audit fix && npm run lint:fix && npm run format`. Verify no errors.
 
-**Progress:** 1/13 complete. All changes preserve `base: '/venturepilot/'` for seamless GH Pages deploys.
+**Progress:** 2/13 complete. All changes preserve `base: '/venturepilot/'` for seamless GH Pages deploys.
