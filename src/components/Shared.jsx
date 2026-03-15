@@ -3,14 +3,10 @@ import React from "react";
 export function Card({ children, style = {}, padding = 24, glow }) {
   return (
     <div style={{
-      background: "#111927",
-      border: "1px solid rgba(255, 255, 255, 0.07)",
-      borderRadius: 20,
-      padding,
+      background: "#111927", border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 20, padding,
       boxShadow: glow ? `0 0 32px ${glow}` : "0 8px 32px rgba(0,0,0,0.4)",
-      position: "relative",
-      overflow: "hidden",
-      ...style
+      position: "relative", overflow: "hidden", ...style
     }}>
       {children}
     </div>
@@ -38,18 +34,10 @@ export function SectionHeader({ icon: Icon, title, subtitle, color = "#6366f1" }
 export function StatCard({ icon: Icon, label, value, sub, color = "#6366f1", glow }) {
   return (
     <div style={{
-      background: "#111927",
-      border: "1px solid rgba(255, 255, 255, 0.08)",
-      borderRadius: 20,
-      padding: 24,
-      display: "flex",
-      flexDirection: "column",
-      gap: 12,
-      position: "relative",
-      overflow: "hidden",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      background: "#111927", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 20, padding: 24, display: "flex", flexDirection: "column", gap: 12,
+      position: "relative", overflow: "hidden",
       boxShadow: glow ? `0 0 40px ${glow}` : "0 8px 32px rgba(0,0,0,0.4)",
-      cursor: "default",
     }}>
       <div style={{
         width: 42, height: 42, borderRadius: 12,
@@ -64,5 +52,16 @@ export function StatCard({ icon: Icon, label, value, sub, color = "#6366f1", glo
         {sub && <p style={{ color: "#475569", fontSize: 12, marginTop: 6, fontWeight: 500 }}>{sub}</p>}
       </div>
     </div>
+  );
+}
+
+export function Badge({ children, color = "#6366f1" }) {
+  return (
+    <span style={{
+      background: `${color}18`, color, border: `1px solid ${color}35`,
+      padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: "uppercase"
+    }}>
+      {children}
+    </span>
   );
 }

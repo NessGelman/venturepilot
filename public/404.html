@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>VenturePilot</title>
+    <script>
+      // GitHub Pages SPA redirect:
+      // When a user hits a path like /venturepilot/strategy directly,
+      // GH Pages serves 404. This page catches it and redirects to the
+      // root index.html, encoding the path as a query param so the app
+      // can restore it. HashRouter makes this mostly unnecessary but
+      // this is the belt-and-suspenders fallback.
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 2).join('/') +
+        '/?p=/' + l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>
