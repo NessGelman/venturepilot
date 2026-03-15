@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');\n\n*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg-base:#080c14;--bg-surface:#0d1420;--bg-card:#111927;--bg-card-hover:#162032;
   --border:rgba(255,255,255,0.07);--border-accent:rgba(99,102,241,0.4);

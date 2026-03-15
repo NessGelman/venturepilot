@@ -4,12 +4,21 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const defaults = {
-    capital: 250000, burn: 15000, revenue: 5000, growth: 8, headcount: 12,
-    cac: 620, arpu: 240, churn: 2.4, pipeline: 185000,
-    idea: "AI startup helping founders choose the best capital sources",
-    industry: "B2B SaaS",
-    problem: "Founders lack a unified system to plan capital strategy with real-time data.",
-    stage: "Seed", founder: "Founding Team", northStar: "Reach \$100k MRR in 12 months"
+    capital: 250000,
+    burn: 15000,
+    revenue: 5000,
+    growth: 8,
+    headcount: 12,
+    cac: 620,
+    arpu: 240,
+    churn: 2.4,
+    pipeline: 185000,
+    idea: 'AI startup helping founders choose the best capital sources',
+    industry: 'B2B SaaS',
+    problem: 'Founders lack a unified system to plan capital strategy with real-time data.',
+    stage: 'Seed',
+    founder: 'Founding Team',
+    northStar: 'Reach \$100k MRR in 12 months',
   };
 
   const getStored = (key, fallback) => {
@@ -17,7 +26,9 @@ export const AppProvider = ({ children }) => {
       const raw = localStorage.getItem('vp-state');
       if (!raw) return fallback;
       return JSON.parse(raw)?.[key] ?? fallback;
-    } catch { return fallback; }
+    } catch {
+      return fallback;
+    }
   };
 
   const [capital, setCapital] = useState(() => getStored('capital', defaults.capital));
@@ -37,7 +48,7 @@ export const AppProvider = ({ children }) => {
   const [northStar, setNorthStar] = useState(() => getStored('northStar', defaults.northStar));
   const [lastSaved, setLastSaved] = useState(() => getStored('lastSaved', null));
   const [presets, setPresets] = useState(() => getStored('presets', []));
-  const [repoUrl, setRepoUrl] = useState(() => getStored('repoUrl', ""));
+  const [repoUrl, setRepoUrl] = useState(() => getStored('repoUrl', ''));
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
   const [dailySnapshots, setDailySnapshots] = useState(() => getStored('dailySnapshots', []));
@@ -46,7 +57,10 @@ export const AppProvider = ({ children }) => {
   // Derived metrics
   const netBurn = Math.max(burn - revenue, 1);
   const runwayMonths = Math.max(1, Math.round(capital / netBurn));
-  const readinessScore = Math.min(100, Math.round((revenue * 0.6 + growth * 50 + runwayMonths * 5) / 10));
+  const readinessScore = Math.min(
+    100,
+    Math.round((revenue * 0.6 + growth * 50 + runwayMonths * 5) / 10),
+  );
   const mrr = revenue;
   const arr = mrr * 12;
   const ltv = Math.round(arpu / Math.max(churn / 100, 0.01));
@@ -56,93 +70,278 @@ export const AppProvider = ({ children }) => {
 
   // Persist
   useEffect(() => {
-    const payload = { capital, burn, revenue, growth, headcount, cac, arpu, churn,
-      pipeline, idea, industry, problem, stage, founder, northStar,
-      lastSaved: new Date().toISOString(), presets, repoUrl, dailySnapshots };
-    try { localStorage.setItem('vp-state', JSON.stringify(payload)); setLastSaved(payload.lastSaved); } catch {}
-  }, [capital, burn, revenue, growth, headcount, cac, arpu, churn,
-      pipeline, idea, industry, problem, stage, founder, northStar, presets, repoUrl, dailySnapshots]);
+    const payload = {
+      capital,
+      burn,
+      revenue,
+      growth,
+      headcount,
+      cac,
+      arpu,
+      churn,
+      pipeline,
+      idea,
+      industry,
+      problem,
+      stage,
+      founder,
+      northStar,
+      lastSaved: new Date().toISOString(),
+      presets,
+      repoUrl,
+      dailySnapshots,
+    };
+    try {
+      localStorage.setItem('vp-state', JSON.stringify(payload));
+      setLastSaved(payload.lastSaved);
+    } catch {}
+  }, [
+    capital,
+    burn,
+    revenue,
+    growth,
+    headcount,
+    cac,
+    arpu,
+    churn,
+    pipeline,
+    idea,
+    industry,
+    problem,
+    stage,
+    founder,
+    northStar,
+    presets,
+    repoUrl,
+    dailySnapshots,
+  ]);
 
   // Undo/Redo
   const prevRef = useRef(null);
   useEffect(() => {
-    const current = { capital, burn, revenue, growth, headcount, cac, arpu, churn, pipeline, idea, industry, problem, stage, founder, northStar, repoUrl };
+    const current = {
+      capital,
+      burn,
+      revenue,
+      growth,
+      headcount,
+      cac,
+      arpu,
+      churn,
+      pipeline,
+      idea,
+      industry,
+      problem,
+      stage,
+      founder,
+      northStar,
+      repoUrl,
+    };
     if (prevRef.current && JSON.stringify(prevRef.current) !== JSON.stringify(current)) {
-      setHistory(h => [...h.slice(-19), prevRef.current]);
+      setHistory((h) => [...h.slice(-19), prevRef.current]);
       setFuture([]);
     }
     prevRef.current = current;
-  }, [capital, burn, revenue, growth, headcount, cac, arpu, churn, pipeline, idea, industry, problem, stage, founder, northStar, repoUrl]);
+  }, [
+    capital,
+    burn,
+    revenue,
+    growth,
+    headcount,
+    cac,
+    arpu,
+    churn,
+    pipeline,
+    idea,
+    industry,
+    problem,
+    stage,
+    founder,
+    northStar,
+    repoUrl,
+  ]);
 
   const applySnapshot = (snap) => {
     if (!snap) return;
-    setCapital(snap.capital); setBurn(snap.burn); setRevenue(snap.revenue); setGrowth(snap.growth);
-    setHeadcount(snap.headcount); setCac(snap.cac); setArpu(snap.arpu); setChurn(snap.churn);
-    setPipeline(snap.pipeline); setIdea(snap.idea); setIndustry(snap.industry); setProblem(snap.problem);
-    setStage(snap.stage); setFounder(snap.founder); setNorthStar(snap.northStar); setRepoUrl(snap.repoUrl || "");
+    setCapital(snap.capital);
+    setBurn(snap.burn);
+    setRevenue(snap.revenue);
+    setGrowth(snap.growth);
+    setHeadcount(snap.headcount);
+    setCac(snap.cac);
+    setArpu(snap.arpu);
+    setChurn(snap.churn);
+    setPipeline(snap.pipeline);
+    setIdea(snap.idea);
+    setIndustry(snap.industry);
+    setProblem(snap.problem);
+    setStage(snap.stage);
+    setFounder(snap.founder);
+    setNorthStar(snap.northStar);
+    setRepoUrl(snap.repoUrl || '');
   };
 
-  const undo = () => setHistory(h => {
-    if (!h.length) return h;
-    const latest = h[h.length - 1];
-    setFuture(f => [{ capital, burn, revenue, growth, headcount, cac, arpu, churn, pipeline, idea, industry, problem, stage, founder, northStar, repoUrl }, ...f]);
-    applySnapshot(latest);
-    return h.slice(0, -1);
-  });
+  const undo = () =>
+    setHistory((h) => {
+      if (!h.length) return h;
+      const latest = h[h.length - 1];
+      setFuture((f) => [
+        {
+          capital,
+          burn,
+          revenue,
+          growth,
+          headcount,
+          cac,
+          arpu,
+          churn,
+          pipeline,
+          idea,
+          industry,
+          problem,
+          stage,
+          founder,
+          northStar,
+          repoUrl,
+        },
+        ...f,
+      ]);
+      applySnapshot(latest);
+      return h.slice(0, -1);
+    });
 
-  const redo = () => setFuture(f => {
-    if (!f.length) return f;
-    setHistory(h => [...h, { capital, burn, revenue, growth, headcount, cac, arpu, churn, pipeline, idea, industry, problem, stage, founder, northStar, repoUrl }]);
-    applySnapshot(f[0]);
-    return f.slice(1);
-  });
+  const redo = () =>
+    setFuture((f) => {
+      if (!f.length) return f;
+      setHistory((h) => [
+        ...h,
+        {
+          capital,
+          burn,
+          revenue,
+          growth,
+          headcount,
+          cac,
+          arpu,
+          churn,
+          pipeline,
+          idea,
+          industry,
+          problem,
+          stage,
+          founder,
+          northStar,
+          repoUrl,
+        },
+      ]);
+      applySnapshot(f[0]);
+      return f.slice(1);
+    });
 
   // Daily snapshot – run once on mount
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
-    setDailySnapshots(prev => {
-      if (prev.find(s => s.date === today)) return prev;
+    setDailySnapshots((prev) => {
+      if (prev.find((s) => s.date === today)) return prev;
       const nb = Math.max(burn - revenue, 1);
       const rw = Math.max(1, Math.round(capital / nb));
       return [...prev.slice(-29), { date: today, runwayMonths: rw, revenue, burn, growth }];
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addToast = (message) => {
     const id = Date.now();
-    setToasts(t => [...t, { id, message }]);
-    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3000);
+    setToasts((t) => [...t, { id, message }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3000);
   };
 
   const savePreset = (name) => {
     if (!name) return;
-    const snap = { name, capital, burn, revenue, growth, headcount, cac, arpu, churn, pipeline, idea, industry, problem, stage, founder, northStar };
-    setPresets(prev => [...prev.filter(p => p.name !== name), snap]);
+    const snap = {
+      name,
+      capital,
+      burn,
+      revenue,
+      growth,
+      headcount,
+      cac,
+      arpu,
+      churn,
+      pipeline,
+      idea,
+      industry,
+      problem,
+      stage,
+      founder,
+      northStar,
+    };
+    setPresets((prev) => [...prev.filter((p) => p.name !== name), snap]);
   };
 
   const loadPreset = (name) => {
-    const preset = presets.find(p => p.name === name);
+    const preset = presets.find((p) => p.name === name);
     if (!preset) return false;
     applySnapshot({ ...preset, repoUrl });
     return true;
   };
 
-  const deletePreset = (name) => setPresets(prev => prev.filter(p => p.name !== name));
-  const resetDefaults = () => applySnapshot({ ...defaults, repoUrl: "" });
+  const deletePreset = (name) => setPresets((prev) => prev.filter((p) => p.name !== name));
+  const resetDefaults = () => applySnapshot({ ...defaults, repoUrl: '' });
 
   const value = {
-    capital, setCapital, burn, setBurn, revenue, setRevenue, growth, setGrowth,
-    headcount, setHeadcount, cac, setCac, arpu, setArpu, churn, setChurn,
-    pipeline, setPipeline, idea, setIdea, industry, setIndustry, problem, setProblem,
-    stage, setStage, founder, setFounder, northStar, setNorthStar,
-    netBurn, runwayMonths, readinessScore, mrr, arr, ltv, payback,
-    revenuePerEmployee, pipelineCoverage,
-    lastSaved, resetDefaults,
-    presets, savePreset, loadPreset, deletePreset,
-    repoUrl, setRepoUrl,
-    undo, redo, dailySnapshots,
-    toasts, addToast,
+    capital,
+    setCapital,
+    burn,
+    setBurn,
+    revenue,
+    setRevenue,
+    growth,
+    setGrowth,
+    headcount,
+    setHeadcount,
+    cac,
+    setCac,
+    arpu,
+    setArpu,
+    churn,
+    setChurn,
+    pipeline,
+    setPipeline,
+    idea,
+    setIdea,
+    industry,
+    setIndustry,
+    problem,
+    setProblem,
+    stage,
+    setStage,
+    founder,
+    setFounder,
+    northStar,
+    setNorthStar,
+    netBurn,
+    runwayMonths,
+    readinessScore,
+    mrr,
+    arr,
+    ltv,
+    payback,
+    revenuePerEmployee,
+    pipelineCoverage,
+    lastSaved,
+    resetDefaults,
+    presets,
+    savePreset,
+    loadPreset,
+    deletePreset,
+    repoUrl,
+    setRepoUrl,
+    undo,
+    redo,
+    dailySnapshots,
+    toasts,
+    addToast,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

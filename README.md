@@ -3,6 +3,7 @@
 An interactive, founder-facing "venture OS" that models runway, decks, strategy, benchmarks, and investor CRM in one SPA. Metrics live in the left sidebar; every module updates in real time.
 
 ## Highlights
+
 - Live financial model: runway, burn, growth, LTV/CAC, Monte Carlo risk, alerts.
 - Scenario lab: recommended strategies, one-click apply, fine-tune sliders, undo/redo history.
 - Deck + plan generators: personalized slides, team/stage, problem/industry narrative, export TXT/MD.
@@ -12,6 +13,7 @@ An interactive, founder-facing "venture OS" that models runway, decks, strategy,
 - Optional GitHub input: drop a repo URL to auto-inject narrative cues.
 
 ## Quick start
+
 ```bash
 npm install
 npm run dev   # local dev server
@@ -45,9 +47,11 @@ npm run deploy
 This runs `npm run build` then pushes `dist/` to the `gh-pages` branch via the `gh-pages` package. Make sure **Settings → Pages → Source** is set to **Deploy from branch → gh-pages / root**.
 
 ## Controls & tips
+
 - Sidebar autosaves to localStorage; use Undo `⌘/Ctrl+Z`, Redo `⌘/Ctrl+Shift+Z` or `⌘/Ctrl+Y`.
 - Use presets to jump between scenarios; snapshots collect last 30 days automatically.
 - "Analyze Repo" fetches the README from raw.githubusercontent (no backend) — GitHub Pages compatible. Skip for private repos.
 
 ## Tech
+
 React 18 + Vite 5, framer-motion, lucide-react, recharts. No backend required; all state in `localStorage`.
