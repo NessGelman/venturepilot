@@ -10,7 +10,7 @@
 
 1. ~~✅ Plan/approval~~
 2. ~~✅ Update package.json: React 19, Tailwind, Zustand, TypeScript, ESLint/Prettier, Vite PWA. `npm i` + `npm audit fix`.~~
-3. **Config files:** tsconfig.json, tailwind.config.js, postcss.config.js, .eslintrc.cjs, .prettierrc, vite.config update (base: '/venturepilot/', PWA plugin). ✅ vite.config.js fixed~~
+3. ~~✅ Config files: tsconfig.json, tailwind.config.js, postcss.config.js, .eslintrc.cjs, .prettierrc, vite.config update (base: '/venturepilot/', PWA plugin). React 19 RC, npm install done, lint:format running, 9 vulns noted.~~
 4. **Styling migration:** Tailwind setup + migrate index.css. Extract inline styles to classes iteratively.
 5. **TypeScript conversion:** Rename .jsx→.tsx, add types/interfaces, strict mode.
 6. **State refactor:** AppContext → Zustand store (useAppStore.ts).
