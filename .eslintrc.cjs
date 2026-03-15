@@ -20,6 +20,6 @@ export default {
     'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
   },
   settings: {
-    react: { version: '18.3' },
+react: { version: 'detect' }
   },
 };

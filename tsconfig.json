@@ -9,7 +9,8 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-"jsx": "react-jsx",\n    "ignoreDeprecations": "5.0",\n    "strict": true,
+"jsx": "react-jsx",
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
@@ -18,5 +19,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+"include": ["src"]
 }
