@@ -1,0 +1,623 @@
+import {
+  c as k,
+  u as J,
+  r as l,
+  j as e,
+  m as K,
+  C as Q,
+  d as Y,
+  b as Z,
+} from './index-B2EmCfoI.js';
+import { C as d, a as g } from './Shared-DyREwVhw.js';
+import { P as _ } from './plus-Ctp3jOZ5.js';
+import { D as ee } from './download-BURqeqWS.js';
+import { S as te } from './sparkles-DREX6ATt.js';
+import { M as ie, S as ne } from './send-tZNj7Uv4.js';
+/**
+ * @license lucide-react v0.445.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ const oe = k('LayoutTemplate', [
+  ['rect', { width: '18', height: '7', x: '3', y: '3', rx: '1', key: 'f1a2em' }],
+  ['rect', { width: '9', height: '7', x: '3', y: '14', rx: '1', key: 'jqznyg' }],
+  ['rect', { width: '5', height: '7', x: '16', y: '14', rx: '1', key: 'q5h2i8' }],
+]);
+/**
+ * @license lucide-react v0.445.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ const le = k('ListChecks', [
+  ['path', { d: 'm3 17 2 2 4-4', key: '1jhpwq' }],
+  ['path', { d: 'm3 7 2 2 4-4', key: '1obspn' }],
+  ['path', { d: 'M13 6h8', key: '15sg57' }],
+  ['path', { d: 'M13 12h8', key: 'h98zly' }],
+  ['path', { d: 'M13 18h8', key: 'oe0vm4' }],
+]);
+/**
+ * @license lucide-react v0.445.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ const re = k('Presentation', [
+  ['path', { d: 'M2 3h20', key: '91anmk' }],
+  ['path', { d: 'M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3', key: '2k9sn8' }],
+  ['path', { d: 'm7 21 5-5 5 5', key: 'bip4we' }],
+]);
+function ge() {
+  var I, M, A, P, F, U;
+  const {
+      idea: v,
+      capital: w,
+      revenue: C,
+      growth: W,
+      ltv: f,
+      cac: x,
+      industry: u,
+      problem: b,
+      founder: R,
+      stage: z,
+      northStar: $,
+    } = J(),
+    [H, T] = l.useState(!1),
+    [o, c] = l.useState(0),
+    [D, s] = l.useState(''),
+    [y, L] = l.useState(''),
+    E = () => [
+      {
+        title: 'The Problem',
+        subtitle: 'Fragmented Intelligence',
+        content:
+          "Founders are flying blind. Existing financial tools are either overly complex spreadsheets or isolated SaaS metrics that don't provide a holistic strategic view.",
+      },
+      {
+        title: 'Industry & Vision',
+        subtitle: u || 'Category',
+        content:
+          v ||
+          'An integrated operating system that centralizes all venture data to empower founders with real-time strategic intelligence.',
+      },
+      {
+        title: 'What We Solve',
+        subtitle: 'Customer Pain',
+        content:
+          b ||
+          'We eliminate the manual, fragmented capital planning process founders struggle with.',
+      },
+      {
+        title: 'Market Traction',
+        subtitle: 'Exponential Growth',
+        content: `Scaling at ${W}% MoM with $${((C * 12) / 1e3).toFixed(0)}k ARR within 6 months of launch.`,
+      },
+      {
+        title: 'Financial Engine',
+        subtitle: 'Efficiency at Scale',
+        content: `Operating with $${w.toLocaleString()} in capital. LTV/CAC is ${(f / x).toFixed(1)}x — top decile efficiency.`,
+      },
+      {
+        title: 'Team & Stage',
+        subtitle: 'Why Us',
+        content: `${R || 'Founding team'} at ${z || 'current stage'} executing toward: ${$ || 'our north star goal'}.`,
+      },
+    ],
+    m = l.useMemo(E, [v, w, C, W, f, x, u, b, R, z, $]),
+    [n, p] = l.useState(m);
+  l.useEffect(() => {
+    p((t) => t.map((i, r) => m[r] || i));
+  }, [m]);
+  const O = () => c((t) => (t + 1) % n.length),
+    B = () => c((t) => (t - 1 + n.length) % n.length),
+    j = (t, i) => p((r) => r.map((S, a) => (a === o ? { ...S, [t]: i } : S))),
+    V = () => {
+      (p((t) => [
+        ...t,
+        { title: 'New Slide', subtitle: 'Add subtitle', content: 'Describe the insight here.' },
+      ]),
+        c(n.length));
+    },
+    q = () => {
+      const t = n.map(
+          (a, X) => `Slide ${X + 1}: ${a.title}
+${a.subtitle}
+${a.content}
+`,
+        ).join(`
+`),
+        i = new Blob([t], { type: 'text/plain' }),
+        r = URL.createObjectURL(i);
+      (Object.assign(document.createElement('a'), {
+        href: r,
+        download: 'venturepilot-deck.txt',
+      }).click(),
+        URL.revokeObjectURL(r),
+        s('Slide deck exported as .txt'));
+    },
+    G = async () => {
+      try {
+        (await navigator.clipboard.writeText(
+          `${window.location.origin}${window.location.pathname}#/pitch`,
+        ),
+          s('Private view link copied.'));
+      } catch {
+        s('Clipboard blocked.');
+      }
+    },
+    N = () => {
+      if (!y.includes('@')) {
+        s('Add a valid email.');
+        return;
+      }
+      (s(`Deck shared with ${y}`), L(''));
+    },
+    h = {
+      width: '100%',
+      background: 'rgba(0,0,0,0.2)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 10,
+      padding: '11px 13px',
+      color: '#f0f4ff',
+      fontWeight: 600,
+      outline: 'none',
+    };
+  return e.jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: 28 },
+    children: [
+      e.jsxs('header', {
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
+        children: [
+          e.jsxs('div', {
+            children: [
+              e.jsxs('h1', {
+                style: { fontSize: 30, fontWeight: 800, color: '#f0f4ff' },
+                children: [
+                  'Slide Deck',
+                  ' ',
+                  e.jsx('span', {
+                    style: {
+                      background: 'linear-gradient(90deg,#6366f1,#a855f7)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    },
+                    children: 'Generator',
+                  }),
+                ],
+              }),
+              e.jsx('p', {
+                style: { color: '#8798b0', marginTop: 6, fontSize: 15 },
+                children: 'Dynamically generated from your core venture metrics.',
+              }),
+            ],
+          }),
+          e.jsxs('button', {
+            onClick: V,
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '11px 16px',
+              borderRadius: 12,
+              background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.2)',
+              color: '#c7d2f0',
+              fontWeight: 700,
+              cursor: 'pointer',
+            },
+            children: [e.jsx(_, { size: 15 }), ' Add Slide'],
+          }),
+        ],
+      }),
+      e.jsxs('div', {
+        style: { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24 },
+        children: [
+          e.jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: 20 },
+            children: [
+              e.jsx(d, {
+                style: { padding: 0, height: 480, overflow: 'hidden' },
+                children: e.jsxs('div', {
+                  style: {
+                    height: '100%',
+                    background: 'linear-gradient(135deg,#0d1420 0%,#080c14 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    padding: '48px 56px',
+                    position: 'relative',
+                  },
+                  children: [
+                    e.jsxs('div', {
+                      style: {
+                        position: 'absolute',
+                        top: 32,
+                        left: 56,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                      },
+                      children: [
+                        e.jsx(re, { size: 16, color: '#6366f1' }),
+                        e.jsx('span', {
+                          style: {
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: 'rgba(99,102,241,0.5)',
+                            textTransform: 'uppercase',
+                          },
+                          children: 'VenturePilot // Pitch',
+                        }),
+                      ],
+                    }),
+                    e.jsxs(
+                      K.div,
+                      {
+                        initial: { opacity: 0, x: 20 },
+                        animate: { opacity: 1, x: 0 },
+                        style: { display: 'flex', flexDirection: 'column', gap: 14 },
+                        children: [
+                          e.jsx('h4', {
+                            style: {
+                              color: '#6366f1',
+                              fontSize: 13,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em',
+                            },
+                            children: (I = n[o]) == null ? void 0 : I.subtitle,
+                          }),
+                          e.jsx('h2', {
+                            style: {
+                              fontSize: 44,
+                              fontWeight: 800,
+                              color: '#f0f4ff',
+                              lineHeight: 1.1,
+                            },
+                            children: (M = n[o]) == null ? void 0 : M.title,
+                          }),
+                          e.jsx('p', {
+                            style: {
+                              color: '#8798b0',
+                              fontSize: 17,
+                              lineHeight: 1.65,
+                              maxWidth: 560,
+                              marginTop: 8,
+                            },
+                            children: (A = n[o]) == null ? void 0 : A.content,
+                          }),
+                        ],
+                      },
+                      o,
+                    ),
+                    e.jsxs('div', {
+                      style: {
+                        position: 'absolute',
+                        bottom: 32,
+                        right: 36,
+                        display: 'flex',
+                        gap: 10,
+                      },
+                      children: [
+                        e.jsx('button', {
+                          onClick: B,
+                          style: {
+                            width: 38,
+                            height: 38,
+                            borderRadius: 9,
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#f0f4ff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          },
+                          children: e.jsx(Q, { size: 18 }),
+                        }),
+                        e.jsx('button', {
+                          onClick: O,
+                          style: {
+                            width: 38,
+                            height: 38,
+                            borderRadius: 9,
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#f0f4ff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          },
+                          children: e.jsx(Y, { size: 18 }),
+                        }),
+                      ],
+                    }),
+                    e.jsxs('div', {
+                      style: {
+                        position: 'absolute',
+                        bottom: 36,
+                        left: 56,
+                        color: '#475569',
+                        fontSize: 12,
+                        fontWeight: 600,
+                      },
+                      children: ['SLIDE ', o + 1, ' / ', n.length],
+                    }),
+                  ],
+                }),
+              }),
+              e.jsx('div', {
+                style: { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 },
+                children: n.map((t, i) =>
+                  e.jsxs(
+                    'button',
+                    {
+                      onClick: () => c(i),
+                      style: {
+                        minWidth: 90,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        background: i === o ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.03)',
+                        border:
+                          i === o
+                            ? '1px solid rgba(99,102,241,0.5)'
+                            : '1px solid rgba(255,255,255,0.05)',
+                        color: i === o ? '#c7d2f0' : '#64748b',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        textAlign: 'left',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
+                      children: [i + 1, '. ', t.title],
+                    },
+                    i,
+                  ),
+                ),
+              }),
+              e.jsxs('div', {
+                style: { display: 'flex', gap: 12, flexWrap: 'wrap' },
+                children: [
+                  e.jsxs('button', {
+                    onClick: q,
+                    style: {
+                      flex: 1,
+                      minWidth: 150,
+                      padding: '14px',
+                      borderRadius: 12,
+                      background: '#6366f1',
+                      border: 'none',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    },
+                    children: [e.jsx(ee, { size: 16 }), ' Export TXT'],
+                  }),
+                  e.jsx('button', {
+                    onClick: G,
+                    style: {
+                      flex: 1,
+                      minWidth: 150,
+                      padding: '14px',
+                      borderRadius: 12,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#f0f4ff',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    },
+                    children: 'Copy Link',
+                  }),
+                  e.jsxs('button', {
+                    onClick: () => p(E()),
+                    style: {
+                      flex: 1,
+                      minWidth: 150,
+                      padding: '14px',
+                      borderRadius: 12,
+                      background: 'rgba(16,185,129,0.1)',
+                      border: '1px solid rgba(16,185,129,0.2)',
+                      color: '#10b981',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    },
+                    children: [e.jsx(Z, { size: 15 }), ' Sync Metrics'],
+                  }),
+                ],
+              }),
+              D &&
+                e.jsx('p', {
+                  style: { color: '#10b981', fontSize: 12, fontWeight: 700 },
+                  children: D,
+                }),
+            ],
+          }),
+          e.jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: 20 },
+            children: [
+              e.jsxs(d, {
+                children: [
+                  e.jsx(g, {
+                    icon: te,
+                    title: 'AI Narrator',
+                    subtitle: 'Core messaging refinements',
+                    color: '#a855f7',
+                  }),
+                  e.jsx('div', {
+                    style: {
+                      padding: 16,
+                      borderRadius: 12,
+                      background: 'rgba(168,85,247,0.05)',
+                      border: '1px dashed rgba(168,85,247,0.2)',
+                      marginBottom: 12,
+                    },
+                    children: e.jsx('p', {
+                      style: {
+                        color: '#c7d2f0',
+                        fontSize: 13,
+                        lineHeight: 1.65,
+                        fontStyle: 'italic',
+                      },
+                      children: `"Lean into the ${u || 'market'} edge: you solve '${(b || '').slice(0, 60) || 'a core pain'}…' and your LTV/CAC ${(f / x).toFixed(1)}x efficiency lets you grow without burning cash."`,
+                    }),
+                  }),
+                  e.jsx('button', {
+                    onClick: () => {
+                      (T(!0), setTimeout(() => T(!1), 1800));
+                    },
+                    style: {
+                      width: '100%',
+                      padding: '11px',
+                      borderRadius: 9,
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#f0f4ff',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    },
+                    children: H ? 'Recalculating…' : 'Optimize Narrative',
+                  }),
+                ],
+              }),
+              e.jsxs(d, {
+                children: [
+                  e.jsx(g, { icon: oe, title: 'Slide Editor', subtitle: 'Edit the active slide' }),
+                  e.jsxs('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: 10 },
+                    children: [
+                      e.jsx('input', {
+                        value: ((P = n[o]) == null ? void 0 : P.title) || '',
+                        onChange: (t) => j('title', t.target.value),
+                        placeholder: 'Slide title',
+                        style: h,
+                      }),
+                      e.jsx('input', {
+                        value: ((F = n[o]) == null ? void 0 : F.subtitle) || '',
+                        onChange: (t) => j('subtitle', t.target.value),
+                        placeholder: 'Subtitle',
+                        style: { ...h, color: '#c7d2f0' },
+                      }),
+                      e.jsx('textarea', {
+                        value: ((U = n[o]) == null ? void 0 : U.content) || '',
+                        onChange: (t) => j('content', t.target.value),
+                        rows: 5,
+                        style: {
+                          ...h,
+                          color: '#8798b0',
+                          resize: 'vertical',
+                          fontWeight: 500,
+                          lineHeight: 1.55,
+                        },
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs(d, {
+                children: [
+                  e.jsx(g, {
+                    icon: ie,
+                    title: 'Share Deck',
+                    subtitle: 'Send a private copy',
+                    color: '#22c55e',
+                  }),
+                  e.jsxs('div', {
+                    style: { display: 'flex', gap: 10 },
+                    children: [
+                      e.jsx('input', {
+                        value: y,
+                        onChange: (t) => L(t.target.value),
+                        placeholder: 'investor@firm.com',
+                        style: { ...h, flex: 1 },
+                      }),
+                      e.jsxs('button', {
+                        onClick: N,
+                        style: {
+                          padding: '11px 16px',
+                          borderRadius: 10,
+                          background: '#22c55e',
+                          border: 'none',
+                          color: '#0b1120',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        },
+                        children: [e.jsx(ne, { size: 15 }), ' Send'],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs(d, {
+                children: [
+                  e.jsx(g, {
+                    icon: le,
+                    title: 'Series A Checklist',
+                    subtitle: 'Required slide coverage',
+                  }),
+                  e.jsx('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: 10 },
+                    children: [
+                      'Solid Unit Economics',
+                      'Clear Growth Roadmap',
+                      'Competitive Moat',
+                      'Team Background',
+                      'Use of Funds',
+                    ].map((t, i) =>
+                      e.jsxs(
+                        'div',
+                        {
+                          style: { display: 'flex', alignItems: 'center', gap: 10 },
+                          children: [
+                            e.jsx('div', {
+                              style: {
+                                width: 16,
+                                height: 16,
+                                borderRadius: 4,
+                                border: '2px solid #6366f1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              },
+                              children: e.jsx('div', {
+                                style: {
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: 1,
+                                  background: '#6366f1',
+                                },
+                              }),
+                            }),
+                            e.jsx('span', {
+                              style: { color: '#8798b0', fontSize: 13, fontWeight: 500 },
+                              children: t,
+                            }),
+                          ],
+                        },
+                        i,
+                      ),
+                    ),
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+export { ge as default };

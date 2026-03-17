@@ -1,0 +1,337 @@
+import {
+  c as C,
+  u as P,
+  r as i,
+  B as W,
+  T as B,
+  U as A,
+  j as e,
+  F as I,
+} from './index-B2EmCfoI.js';
+import { C as l, a as d } from './Shared-DyREwVhw.js';
+import { S as T } from './sparkles-DREX6ATt.js';
+import { P as D } from './plus-Ctp3jOZ5.js';
+import { C as O } from './circle-check-g_dQwaqI.js';
+import { D as L } from './download-BURqeqWS.js';
+/**
+ * @license lucide-react v0.445.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ const E = C('ChartNoAxesColumnIncreasing', [
+  ['line', { x1: '12', x2: '12', y1: '20', y2: '10', key: '1vz5eb' }],
+  ['line', { x1: '18', x2: '18', y1: '20', y2: '4', key: 'cun8e5' }],
+  ['line', { x1: '6', x2: '6', y1: '20', y2: '16', key: 'hq0ia6' }],
+]);
+/**
+ * @license lucide-react v0.445.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ const U = C('Shield', [
+  [
+    'path',
+    {
+      d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z',
+      key: 'oel41y',
+    },
+  ],
+]);
+function K() {
+  const {
+      capital: c,
+      burn: p,
+      revenue: u,
+      growth: r,
+      idea: g,
+      industry: f,
+      problem: x,
+      northStar: b,
+    } = P(),
+    [R, h] = i.useState(!1),
+    [y, w] = i.useState(''),
+    [m, j] = i.useState([
+      { label: 'Hit $50k MRR', done: !1 },
+      { label: 'Close 3 design partners', done: !0 },
+      { label: 'Ship investor dashboard', done: !1 },
+    ]),
+    [a, k] = i.useState(''),
+    S = i.useMemo(
+      () => [
+        {
+          title: 'Executive Summary',
+          icon: W,
+          content: `VenturePilot is an AI-powered financial OS for the ${f || 'venture-backed'} space. We solve: ${x || 'fragmented capital planning'}. With $${c.toLocaleString()} in capital and $${u.toLocaleString()} MRR, scaling at ${r}% MoM. Vision: ${g || 'revolutionize startup financing.'}`,
+        },
+        {
+          title: 'Market Analysis',
+          icon: E,
+          content:
+            'The global startup financing market exceeds $400B annually. Current tools are manual or fragmented. VenturePilot consolidates this into a single Venture OS, targeting the 50k+ new VC-backed startups launched each year.',
+        },
+        {
+          title: 'Operational Strategy',
+          icon: B,
+          content: `Operating at $${p.toLocaleString()} monthly gross burn, focused on high-efficiency user acquisition and product-led growth. North star: ${b || 'set in sidebar'}. Roadmap includes automated investor matching and real-time runway simulation.`,
+        },
+        {
+          title: 'Financial Projections',
+          icon: A,
+          content: `Given the ${r}% MoM growth rate, ARR is projected to scale exponentially over 12 months. We target a Readiness Score of 90+ before subsequent fundraising rounds.`,
+        },
+      ],
+      [c, u, r, g, p, f, x, b],
+    ),
+    M = () => {
+      const t = S.map(
+          (s, z) => `# ${s.title}
+Phase ${z + 1}
+
+${s.content}
+`,
+        ).join(`
+---
+
+`),
+        n = new Blob([t], { type: 'text/markdown' }),
+        o = Object.assign(document.createElement('a'), {
+          href: URL.createObjectURL(n),
+          download: 'venturepilot-plan.md',
+        });
+      (o.click(), URL.revokeObjectURL(o.href), w('Business plan exported as Markdown.'));
+    },
+    v = () => {
+      a.trim() && (j((t) => [{ label: a, done: !1 }, ...t]), k(''));
+    },
+    $ = {
+      background: 'rgba(0,0,0,0.2)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 10,
+      padding: '10px 12px',
+      color: '#f0f4ff',
+      fontWeight: 600,
+      outline: 'none',
+    };
+  return e.jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: 28 },
+    children: [
+      e.jsxs('header', {
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' },
+        children: [
+          e.jsxs('div', {
+            children: [
+              e.jsxs('h1', {
+                style: { fontSize: 30, fontWeight: 800, color: '#f0f4ff' },
+                children: [
+                  'Business',
+                  ' ',
+                  e.jsx('span', {
+                    style: {
+                      background: 'linear-gradient(90deg,#6366f1,#a855f7)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    },
+                    children: 'Plan',
+                  }),
+                ],
+              }),
+              e.jsx('p', {
+                style: { color: '#8798b0', marginTop: 6, fontSize: 15 },
+                children: 'Comprehensive strategic roadmap for your venture.',
+              }),
+            ],
+          }),
+          e.jsxs('button', {
+            onClick: () => {
+              (h(!0), setTimeout(() => h(!1), 1800));
+            },
+            style: {
+              padding: '11px 20px',
+              borderRadius: 12,
+              background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.3)',
+              color: '#6366f1',
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            },
+            children: [e.jsx(T, { size: 15 }), R ? 'Generating…' : 'Regenerate Plan'],
+          }),
+        ],
+      }),
+      e.jsx('div', {
+        style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 },
+        children: S.map((t, n) =>
+          e.jsxs(
+            l,
+            {
+              children: [
+                e.jsx(d, { icon: t.icon, title: t.title, subtitle: `Phase ${n + 1} focus` }),
+                e.jsx('p', {
+                  style: { color: '#8798b0', fontSize: 14, lineHeight: 1.75 },
+                  children: t.content,
+                }),
+              ],
+            },
+            n,
+          ),
+        ),
+      }),
+      e.jsxs('div', {
+        style: { display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 22 },
+        children: [
+          e.jsxs(l, {
+            children: [
+              e.jsx(d, {
+                icon: I,
+                title: 'Milestone Board',
+                subtitle: 'Track execution toward the plan',
+              }),
+              e.jsxs('div', {
+                style: { display: 'flex', gap: 10, marginBottom: 12 },
+                children: [
+                  e.jsx('input', {
+                    value: a,
+                    onChange: (t) => k(t.target.value),
+                    onKeyDown: (t) => t.key === 'Enter' && v(),
+                    placeholder: 'Add a milestone…',
+                    style: { ...$, flex: 1 },
+                  }),
+                  e.jsxs('button', {
+                    onClick: v,
+                    style: {
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      background: '#6366f1',
+                      border: 'none',
+                      color: '#fff',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 13,
+                    },
+                    children: [e.jsx(D, { size: 13 }), ' Add'],
+                  }),
+                ],
+              }),
+              e.jsx('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: 9 },
+                children: m.map((t, n) =>
+                  e.jsxs(
+                    'button',
+                    {
+                      onClick: () => j(m.map((o, s) => (s === n ? { ...o, done: !o.done } : o))),
+                      style: {
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        cursor: 'pointer',
+                        background: t.done ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
+                        border: t.done
+                          ? '1px solid rgba(16,185,129,0.25)'
+                          : '1px solid rgba(255,255,255,0.05)',
+                        color: t.done ? '#10b981' : '#8798b0',
+                        fontWeight: 700,
+                        textAlign: 'left',
+                      },
+                      children: [t.label, t.done && e.jsx(O, { size: 15, color: '#10b981' })],
+                    },
+                    n,
+                  ),
+                ),
+              }),
+            ],
+          }),
+          e.jsxs(l, {
+            children: [
+              e.jsx(d, {
+                icon: U,
+                title: 'Risk Register',
+                subtitle: 'Mitigations you own',
+                color: '#10b981',
+              }),
+              e.jsx('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: 12 },
+                children: [
+                  {
+                    t: 'Capital Preservation',
+                    d: 'Strict treasury management to extend runway beyond 18 months.',
+                  },
+                  {
+                    t: 'Market Resilience',
+                    d: 'Diversified revenue streams to mitigate sector-specific downturns.',
+                  },
+                  {
+                    t: 'Operational Audit',
+                    d: 'Quarterly reviews of unit economics and burn efficiency.',
+                  },
+                ].map((t, n) =>
+                  e.jsxs(
+                    'div',
+                    {
+                      style: {
+                        padding: 14,
+                        borderRadius: 12,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                      },
+                      children: [
+                        e.jsx('h4', {
+                          style: {
+                            color: '#f0f4ff',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            marginBottom: 5,
+                          },
+                          children: t.t,
+                        }),
+                        e.jsx('p', {
+                          style: { color: '#64748b', fontSize: 12, lineHeight: 1.6 },
+                          children: t.d,
+                        }),
+                      ],
+                    },
+                    n,
+                  ),
+                ),
+              }),
+            ],
+          }),
+        ],
+      }),
+      e.jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 },
+        children: [
+          e.jsxs('button', {
+            onClick: M,
+            style: {
+              padding: '15px 40px',
+              borderRadius: 14,
+              background: '#6366f1',
+              border: 'none',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              boxShadow: '0 8px 28px rgba(99,102,241,0.4)',
+            },
+            children: [e.jsx(L, { size: 17 }), ' Export Full Business Plan (MD)'],
+          }),
+          y &&
+            e.jsx('p', { style: { color: '#10b981', fontSize: 12, fontWeight: 700 }, children: y }),
+        ],
+      }),
+    ],
+  });
+}
+export { K as default };
