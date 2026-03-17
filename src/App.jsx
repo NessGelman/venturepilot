@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
 
@@ -17,7 +17,7 @@ const Loader = () => (
 export default function App() {
   return (
     <AppProvider>
-      <Router basename="/venturepilot">
+  <Router> 
         <Layout>
           <Suspense fallback={<Loader />}>
             <Routes>
