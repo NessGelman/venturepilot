@@ -17,7 +17,7 @@ const Loader = () => (
 export default function App() {
   return (
     <AppProvider>
-      <Router>
+      <Router basename="/venturepilot">
         <Layout>
           <Suspense fallback={<Loader />}>
             <Routes>
