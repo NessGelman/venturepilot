@@ -3,6 +3,29 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return localStorage.getItem('vp-theme') !== 'light';
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('vp-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('vp-theme', 'light');
+      }
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
+
   const defaults = {
     capital: 250000,
     burn: 15000,
@@ -290,6 +313,8 @@ export const AppProvider = ({ children }) => {
   const resetDefaults = () => applySnapshot({ ...defaults, repoUrl: '' });
 
   const value = {
+    isDark,
+    toggleTheme,
     capital,
     setCapital,
     burn,

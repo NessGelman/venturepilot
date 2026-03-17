@@ -14,17 +14,18 @@
 
 :root {
   --bg-base: #080c14;
-  --bg-surface: #0d1420;
+  --bg-surface: #0a0f1a;
+  --bg-glass: rgba(13,20,32,0.92);
   --bg-card: #111927;
   --bg-card-hover: #162032;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-accent: rgba(99, 102, 241, 0.4);
+  --border: rgba(255,255,255,0.07);
+  --border-accent: rgba(99,102,241,0.4);
   --text-primary: #f0f4ff;
   --text-secondary: #8ba3c7;
   --text-muted: #4a6080;
   --accent: #6366f1;
   --accent-light: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.25);
+  --accent-glow: rgba(99,102,241,0.25);
   --green: #10b981;
   --amber: #f59e0b;
   --red: #ef4444;
@@ -38,6 +39,10 @@ html {
   scroll-behavior: smooth;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
@@ -46,8 +51,9 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   background-image:
-    radial-gradient(ellipse 60% 50% at 10% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 50% at 10% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(168,85,247,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 25% 20% at 50% 30%, rgba(16,185,129,0.04) 0%, transparent 70%);
 }
 
 #root {
@@ -56,6 +62,7 @@ body {
 
 ::-webkit-scrollbar {
   width: 6px;
+  transition: width 0.2s ease;
 }
 
 ::-webkit-scrollbar-track {
@@ -65,13 +72,35 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #1e3050;
   border-radius: 3px;
+  transition: all 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  width: 10px;
   background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 ::selection {
   background: var(--accent-glow);
   color: var(--text-primary);
+}
+
+/* Global hover effects */
+html.dark [role="button"],
+html.dark button,
+html.dark .btn-hover:hover,
+html.dark .card-hover:hover {
+  transition: all 0.15s cubic-bezier(0.4,0,0.2,1);
+  transform: translateY(-1px);
+}
+
+html.dark .glow-hover:hover {
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+html.dark input:focus,
+html.dark textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
 }
