@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users, FileText } from 'lucide-react';
+import { Rocket, LayoutDashboard, Target, Zap, BarChart3, Users, FileText, Sun, Moon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import InputSidebar from './InputSidebar';
 import { useApp } from '../context/AppContext';
@@ -8,7 +8,7 @@ import { useApp } from '../context/AppContext';
 export default function Layout({ children }) {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { toasts, undo, redo } = useApp();
+const { toasts, undo, redo, isDark, toggleTheme } = useApp();
 
   useEffect(() => {
     const handler = (e) => {
@@ -80,6 +80,14 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-[10px] flex-shrink-0">
               <button className="px-[18px] py-[9px] rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] text-[13px] font-semibold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,64,175,0.3)]">
                 Log In
+              </button>
+              <button 
+                onClick={toggleTheme}
+                className="p-[9px] rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,64,175,0.3)] transition-all"
+                title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                aria-label={`Toggle ${isDark ? 'light' : 'dark'} theme`}
+              >
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
               </button>
               <button className="px-[18px] py-[9px] rounded-xl bg-[var(--accent)] border-0 text-white text-[13px] font-black cursor-pointer shadow-[0_4px_12px_rgba(30,64,175,0.4)] hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-light)]/30">
                 Get Started

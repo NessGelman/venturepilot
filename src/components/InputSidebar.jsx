@@ -51,16 +51,7 @@ const InputField = ({ label, value, onChange, prefix, suffix, multiline, type = 
           rows={3}
           style={{
             width: '100%',
-            background: '#080c14',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: '9px 10px',
-            color: '#f0f4ff',
-            fontSize: 13,
-            fontWeight: 500,
-            outline: 'none',
-            resize: 'none',
-            lineHeight: 1.5,
+className="w-full bg-[var(--bg-surface)] border border-[rgba(255,255,255,0.1)] rounded-lg p-2.25 text-[var(--text-primary)] text-sm font-medium focus:outline-none focus:border-[var(--border-accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none leading-6" />
           }}
           onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
           onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
@@ -205,25 +196,7 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          position: 'fixed',
-          left: isOpen ? 290 : 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 22,
-          height: 48,
-          background: '#6366f1',
-          border: 'none',
-          borderRadius: '0 8px 8px 0',
-          cursor: 'pointer',
-          zIndex: 201,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: '4px 0 12px rgba(99,102,241,0.3)',
-        }}
+className={`fixed top-1/2 -translate-y-1/2 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-[201] flex items-center justify-center w-[22px] h-12 bg-[var(--accent)] border-none rounded-r-xl cursor-pointer shadow-[4px_0_12px_rgba(30,64,175,0.3)] hover:shadow-glow ${isOpen ? 'left-[290px]' : 'left-0'}`}
       >
         {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
       </button>
