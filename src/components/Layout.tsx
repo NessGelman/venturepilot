@@ -41,7 +41,8 @@ const { toasts, undo, redo, isDark, toggleTheme } = useApp();
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="dark min-h-screen bg-[var(--bg-base)] [background-image:radial-gradient(ellipse_60%_50%_at_10%_0%,rgba(30,64,175,0.08)_0%,transparent_60%),radial-gradient(ellipse_40%_30%_at_90%_80%,rgba(5,150,105,0.06)_0%,transparent_60%),radial-gradient(ellipse_25%_20%_at_50%_30%,rgba(16,185,129,0.04)_0%,transparent_70%)] text-[var(--text-primary)] relative overflow-hidden">
+    <div className={`${isDark ? 'dark' : ''} min-h-screen bg-[var(--bg-base)] [background-image:radial-gradient(ellipse_60%_50%_at_10%_0%,rgba(30,64,175,0.08)_0%,transparent_60%),radial-gradient(ellipse_40%_30%_at_90%_80%,rgba(5,150,105,0.06)_0%,transparent_60%),radial-gradient(ellipse_25%_20%_at_50%_30%,rgba(16,185,129,0.04)_0%,transparent_70%)] text-[var(--text-primary)] relative overflow-hidden`}>
+
       <InputSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] min-h-screen flex flex-col lg:ml-[290px]`}>

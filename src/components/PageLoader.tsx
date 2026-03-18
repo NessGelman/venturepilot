@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
-export default function PageLoader() {
+interface PageLoaderProps {
+  label?: string;
+}
+
+export default function PageLoader({ label = 'Loading...' }: PageLoaderProps) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center p-12 text-center">
       <motion.div
@@ -13,9 +17,9 @@ export default function PageLoader() {
       </motion.div>
       <div className="space-y-1">
         <h2 className="text-2xl font-black bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)] bg-clip-text text-transparent">
-          Loading Dashboard
+          {label}
         </h2>
-        <p className="text-[var(--text-muted)] text-sm">Analyzing your metrics...</p>
+        <p className="text-[var(--text-muted)] text-sm">Loading module...</p>
       </div>
     </div>
   );

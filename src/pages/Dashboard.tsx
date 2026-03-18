@@ -126,27 +126,7 @@ export default function Dashboard() {
   if (ltv / cac < 3) alerts.push('LTV/CAC below 3× — efficiency risk.');
   if (payback > 12) alerts.push('Payback over 12 months — tighten CAC.');
 
-  const monteCarlo = () => {
-    const trials = 200;
-    let under6 = 0;
-    const buckets = [0, 3, 6, 9, 12, 18, 24];
-    const dist = buckets.map((b) => ({ bucket: b, count: 0 }));
-    for (let i = 0; i < trials; i++) {
-      const g = Math.max(-20, growth + (Math.random() - 0.5) * 25);
-      const b = burn * (1 + (Math.random() - 0.5) * 0.15);
-      const rw = capital / Math.max(b - revenue * Math.pow(1 + g / 100, 1), 1);
-      if (rw < 6) under6++;
-      const bi = buckets.findIndex(
-        (x, idx) => rw >= x && (idx === buckets.length - 1 || rw < buckets[idx + 1]),
-      );
-      if (bi >= 0) dist[bi].count += 1;
-    }
-    return {
-      risk: Math.round((under6 / trials) * 100),
-      dist: dist.map((d) => ({ ...d, prob: Math.round((d.count / trials) * 100) })),
-    };
-  };
-  const mc = monteCarlo();
+
 
   const exportMetrics = () => {
     const rows = [

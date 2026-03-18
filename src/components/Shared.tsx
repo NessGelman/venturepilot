@@ -15,8 +15,11 @@ export function SectionHeader({ icon: Icon, title, subtitle, color = 'var(--acce
   return (
     <div className="flex items-center gap-3.5 mb-6">
       <div
-        className={`w-10 h-10 rounded-xl bg-[${color}15] border border-[${color}30] flex items-center justify-center`}
-        style={{ '--color': color }}
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{
+          backgroundColor: `${color}18`,
+          border: `1px solid ${color}35`
+        }}
       >
         <Icon size={18} color={color} />
       </div>
@@ -36,8 +39,11 @@ export function StatCard({ icon: Icon, label, value, sub, color = 'var(--accent)
       className={`bg-[var(--bg-card)] border border-[rgba(255,255,255,0.08)] rounded-3xl p-6 flex flex-col gap-3 relative overflow-hidden shadow-xl ${glow ? `shadow-[0_0_40px_${glow}]` : ''} ${className}`}
     >
       <div
-        className={`w-10.5 h-10.5 rounded-xl bg-[${color}15] border border-[${color}30] flex items-center justify-center`}
-        style={{ '--color': color }}
+        className="w-10.5 h-10.5 rounded-xl flex items-center justify-center"
+        style={{
+          backgroundColor: `${color}18`,
+          border: `1px solid ${color}35`
+        }}
       >
         <Icon size={20} color={color} />
       </div>

@@ -38,9 +38,23 @@ html {
   scroll-behavior: smooth;
 }
 
+html:not(.dark) {
+  --bg-base: #f8fafc;
+  --bg-surface: #f1f5f9;
+  --bg-glass: rgba(248,250,252,0.92);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border: rgba(0,0,0,0.08);
+  --border-accent: rgba(30,64,175,0.3);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+}
+
 html.dark {
   color-scheme: dark;
 }
+
 
 body {
   background-color: var(--bg-base);
