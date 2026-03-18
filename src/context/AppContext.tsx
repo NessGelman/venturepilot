@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback, useState } from 'react';
+import { secureStorage } from '../utils/storage';
 import type { AppState, AppAction, DerivedMetrics, UseAppReturn, Preset, DailySnapshot, Toast } from '../types/AppContext.types';
 
 const AppContext = createContext<UseAppReturn | null>(null);
@@ -32,7 +33,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     try {
-      return localStorage.getItem('vp-theme') !== 'light';
+      return secureStorage.getItem('vp-theme') !== 'light';
     } catch {
       return true;
     }
@@ -43,20 +44,20 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     if (typeof window !== 'undefined') {
       if (isDark) {
         document.documentElement.classList.add('dark');
-        localStorage.setItem('vp-theme', 'dark');
+        secureStorage.setItem('vp-theme', 'dark');
       } else {
         document.documentElement.classList.remove('dark');
-        localStorage.setItem('vp-theme', 'light');
+        secureStorage.setItem('vp-theme', 'light');
       }
     }
   }, [isDark]);
 
   const toggleTheme = useCallback(() => setIsDark((prev: boolean) => !prev), []);
 
-  // Initial state from storage
+  // Initial state from storage (session only for security)
   const getStoredState = useCallback((): Partial<AppState> => {
     try {
-      const raw = sessionStorage.getItem('vp-state') || localStorage.getItem('vp-state');
+      const raw = secureStorage.sessionGet('vp-state');
       if (!raw) return {};
       return JSON.parse(raw);
     } catch {
@@ -181,21 +182,23 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     }
   }, initialState);
 
-  // Persist state to sessionStorage (undo survives tab refresh)
+  // Persist state to sessionStorage only (secureStorage wrapper)
   useEffect(() => {
     try {
-      sessionStorage.setItem('vp-state', JSON.stringify({
+      secureStorage.sessionSet('vp-state', {
         ...state,
         history: state.history.slice(-20), // Limit storage
         future: [],
-      }));
-      localStorage.setItem('vp-state', JSON.stringify({
-        ...state,
-        history: [], // Don't persist full history to localStorage
-        future: [],
-      }));
+      });
     } catch {}
   }, [state]);
+
+  // Cleanup sensitive data on unmount
+  useEffect(() => {
+    return () => {
+      secureStorage.clearSensitiveData();
+    };
+  }, []);
 
   // Derived metrics
   const derived: DerivedMetrics = useMemo(() => {
@@ -274,6 +277,14 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     dispatch({ type: 'DELETE_PRESET', name });
   }, [dispatch]);
 
+  const clearData = useCallback(() => {
+    secureStorage.clearSensitiveData();
+    dispatch({ type: 'RESET_DEFAULTS' });
+    if (typeof window !== 'undefined') {
+      sessionStorage.clear();
+    }
+  }, [dispatch]);
+
   const value: UseAppReturn = {
     state,
     dispatch,
@@ -288,6 +299,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     loadPreset,
     deletePreset,
     resetDefaults,
+    clearData,
     // Backwards compat aliases
     capital: state.capital,
     setCapital,
@@ -337,6 +349,11 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+export interface UseAppReturn {
+  // ... existing
+  clearData: () => void;
+}
 
 export const useApp = () => {
   const context = useContext(AppContext);

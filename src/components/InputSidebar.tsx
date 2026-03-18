@@ -84,6 +84,7 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
     setNorthStar,
     lastSaved,
     resetDefaults,
+    clearData,
     presets,
     savePreset,
     loadPreset,
@@ -456,6 +457,25 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
               }}
             >
               <RefreshCcw size={12} />
+            </button>
+            <button
+              onClick={clearData}
+              title="Clear Data"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '6px 9px',
+                borderRadius: 8,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                color: '#fca5a5',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 11,
+              }}
+            >
+              🗑️ Clear
             </button>
           </div>
         </div>

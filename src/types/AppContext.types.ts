@@ -72,6 +72,7 @@ export interface UseAppReturn {
   loadPreset: (name: string) => boolean;
   deletePreset: (name: string) => void;
   resetDefaults: () => void;
+  clearData: () => void;
   // Backwards compat (remove after migration)
   capital: number;
   burn: number;
