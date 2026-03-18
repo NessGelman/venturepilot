@@ -16,31 +16,13 @@ import {
 
 // Defined OUTSIDE parent to avoid focus-loss on re-render
 const InputField = ({ label, value, onChange, prefix, suffix, multiline, type = 'number' }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-    <label
-      style={{
-        color: '#64748b',
-        fontSize: 10,
-        fontWeight: 700,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-      }}
-    >
+  <div className="flex flex-col gap-1.5 mb-4">
+    <label className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-[0.05em]">
       {label}
     </label>
-    <div style={{ position: 'relative' }}>
+    <div className="relative">
       {prefix && (
-        <span
-          style={{
-            position: 'absolute',
-            left: 10,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#475569',
-            fontSize: 13,
-            pointerEvents: 'none',
-          }}
-        >
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-sm pointer-events-none">
           {prefix}
         </span>
       )}
@@ -49,46 +31,18 @@ const InputField = ({ label, value, onChange, prefix, suffix, multiline, type = 
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
-          style={{
-            width: '100%',
-className="w-full bg-[var(--bg-surface)] border border-[rgba(255,255,255,0.1)] rounded-lg p-2.25 text-[var(--text-primary)] text-sm font-medium focus:outline-none focus:border-[var(--border-accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none leading-6" />
-          }}
-          onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
-          onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
+          className="w-full h-20 bg-[var(--bg-surface)] border border-[rgba(255,255,255,0.1)] rounded-lg p-3 text-[var(--text-primary)] text-sm font-medium focus:outline-none focus:border-[var(--border-accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none leading-6"
         />
       ) : (
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
-          style={{
-            width: '100%',
-            background: '#080c14',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: `9px 10px 9px ${prefix ? '22px' : '10px'}`,
-            paddingRight: suffix ? '32px' : '10px',
-            color: '#f0f4ff',
-            fontSize: 13,
-            fontWeight: 600,
-            outline: 'none',
-          }}
-          onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
-          onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
+          className={`w-full bg-[var(--bg-base)] border border-[rgba(255,255,255,0.1)] rounded-lg px-2.5 py-2.25 text-[var(--text-primary)] text-sm font-semibold focus:outline-none focus:border-[var(--border-accent)] ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-10' : ''}`}
         />
       )}
       {suffix && (
-        <span
-          style={{
-            position: 'absolute',
-            right: 10,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#475569',
-            fontSize: 13,
-            pointerEvents: 'none',
-          }}
-        >
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-sm pointer-events-none">
           {suffix}
         </span>
       )}
@@ -194,30 +148,15 @@ export default function InputSidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      <button
+<button
         onClick={() => setIsOpen(!isOpen)}
-className={`fixed top-1/2 -translate-y-1/2 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-[201] flex items-center justify-center w-[22px] h-12 bg-[var(--accent)] border-none rounded-r-xl cursor-pointer shadow-[4px_0_12px_rgba(30,64,175,0.3)] hover:shadow-glow ${isOpen ? 'left-[290px]' : 'left-0'}`}
+        className={`fixed top-1/2 -translate-y-1/2 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-[201] flex items-center justify-center w-5.5 h-12 bg-[var(--accent)] border-none rounded-r-xl cursor-pointer shadow-[4px_0_12px_rgba(30,64,175,0.3)] hover:shadow-glow ${isOpen ? 'left-[290px]' : 'left-0'}`}
       >
         {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
       </button>
 
       <div
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 290,
-          background: '#0d1420',
-          borderRight: '1px solid rgba(255,255,255,0.08)',
-          zIndex: 200,
-          transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
-          padding: '72px 20px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-        }}
+        className={`fixed left-0 top-0 bottom-0 w-[290px] bg-[var(--bg-surface)] border-r border-[rgba(255,255,255,0.08)] z-[200] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] p-5 pt-20 flex flex-col overflow-y-auto transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
           <Settings2 size={16} color="#6366f1" />

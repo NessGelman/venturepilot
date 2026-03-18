@@ -1,107 +1,55 @@
 import React from 'react';
 
-export function Card({ children, style = {}, padding = 24, glow }) {
+export function Card({ children, style = {}, padding = '1.5rem', glow, className = '' }) {
   return (
     <div
-      style={{
-        background: '#111927',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 20,
-        padding,
-        boxShadow: glow ? `0 0 32px ${glow}` : '0 8px 32px rgba(0,0,0,0.4)',
-        position: 'relative',
-        overflow: 'hidden',
-        ...style,
-      }}
+      className={`bg-[var(--bg-card)] border border-[rgba(255,255,255,0.07)] rounded-3xl p-6 shadow-lg relative overflow-hidden ${glow ? `shadow-[0_0_32px_${glow}]` : ''} ${className}`}
+      style={{ padding, ...style }}
     >
       {children}
     </div>
   );
 }
 
-export function SectionHeader({ icon: Icon, title, subtitle, color = '#6366f1' }) {
+export function SectionHeader({ icon: Icon, title, subtitle, color = 'var(--accent)' }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+    <div className="flex items-center gap-3.5 mb-6">
       <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: `${color}15`,
-          border: `1px solid ${color}30`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className={`w-10 h-10 rounded-xl bg-[${color}15] border border-[${color}30] flex items-center justify-center`}
+        style={{ '--color': color }}
       >
         <Icon size={18} color={color} />
       </div>
       <div>
-        <h2 style={{ color: '#f0f4ff', fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <h2 className="text-[var(--text-primary)] text-xl font-bold [-letter-spacing:-0.01em]">
           {title}
         </h2>
-        {subtitle && <p style={{ color: '#8798b0', fontSize: 13, marginTop: 1 }}>{subtitle}</p>}
+        {subtitle && <p className="text-[var(--text-muted)] text-sm mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
 }
 
-export function StatCard({ icon: Icon, label, value, sub, color = '#6366f1', glow }) {
+export function StatCard({ icon: Icon, label, value, sub, color = 'var(--accent)', glow, className = '' }) {
   return (
     <div
-      style={{
-        background: '#111927',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 20,
-        padding: 24,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: glow ? `0 0 40px ${glow}` : '0 8px 32px rgba(0,0,0,0.4)',
-      }}
+      className={`bg-[var(--bg-card)] border border-[rgba(255,255,255,0.08)] rounded-3xl p-6 flex flex-col gap-3 relative overflow-hidden shadow-xl ${glow ? `shadow-[0_0_40px_${glow}]` : ''} ${className}`}
     >
       <div
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 12,
-          background: color + '15',
-          border: `1px solid ${color}30`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className={`w-10.5 h-10.5 rounded-xl bg-[${color}15] border border-[${color}30] flex items-center justify-center`}
+        style={{ '--color': color }}
       >
         <Icon size={20} color={color} />
       </div>
       <div>
-        <p
-          style={{
-            color: '#64748b',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
+        <p className="text-[#64748b] text-xs font-bold uppercase tracking-[0.08em]">
           {label}
         </p>
-        <p
-          style={{
-            color: '#f8fafc',
-            fontSize: 28,
-            fontWeight: 800,
-            lineHeight: 1.1,
-            marginTop: 4,
-            letterSpacing: '-0.02em',
-          }}
-        >
+        <p className="text-[#f8fafc] text-2xl font-black leading-tight mt-1 [-letter-spacing:-0.02em]">
           {value}
         </p>
         {sub && (
-          <p style={{ color: '#475569', fontSize: 12, marginTop: 6, fontWeight: 500 }}>{sub}</p>
+          <p className="text-[#475569] text-xs font-medium mt-1.5">{sub}</p>
         )}
       </div>
     </div>

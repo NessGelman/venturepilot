@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -60,17 +60,58 @@ export default function Dashboard() {
     addToast,
   } = useApp();
 
+  const mc = useMemo(() => {
+    const trials = 200;
+    let under6 = 0;
+    const buckets = [0, 3, 6, 9, 12, 18, 24];
+    const dist = buckets.map((b) => ({ bucket: b, count: 0 }));
+    for (let i = 0; i < trials; i++) {
+      const g = Math.max(-20, growth + (Math.random() - 0.5) * 25);
+      const b = burn * (1 + (Math.random() - 0.5) * 0.15);
+      const rw = capital / Math.max(b - revenue * Math.pow(1 + g / 100, 1), 1);
+      if (rw < 6) under6++;
+      const bi = buckets.findIndex(
+        (x, idx) => rw >= x && (idx === buckets.length - 1 || rw < buckets[idx + 1]),
+      );
+      if (bi >= 0) dist[bi].count += 1;
+    }
+    return {
+      risk: Math.round((under6 / trials) * 100),
+      dist: dist.map((d) => ({ ...d, prob: Math.round((d.count / trials) * 100) })),
+    };
+  }, [capital, burn, revenue, growth]);
+
   const chartData = Array.from({ length: 24 }).map((_, i) => ({
     month: i + 1,
     cash: Math.max(capital - (burn - revenue) * (i + 1), 0),
   }));
 
-  const capitalStack = [
-    { name: 'Venture Capital', value: growth > 8 ? 40 : 20 },
-    { name: 'Revenue Financing', value: revenue > 5000 ? 30 : 10 },
-    { name: 'Grants', value: 20 },
-    { name: 'Angel Investors', value: 10 },
-  ];
+  const capitalStack = useMemo(() => {
+    let vc = 25, revFin = 15, grants = 15, angel = 25, bootstrap = 20;
+    
+    // Stage weighting
+    if (stage === 'Seed') angel += 25, vc -= 10;
+    if (stage === 'Series A') vc += 30, angel -= 15;
+    
+    // Runway adjustment
+    if (runwayMonths < 6) bootstrap += 20, vc -= 10;
+    if (runwayMonths > 12) vc += 15, bootstrap -= 10;
+    
+    // Efficiency
+    const ltvRatio = ltv / cac;
+    if (ltvRatio > 4) revFin += 25;
+    if (readinessScore > 75) vc += 15;
+    
+    // Normalize to 100%
+    const total = vc + revFin + grants + angel + bootstrap;
+    return [
+      { name: 'Venture Capital', value: Math.round((vc / total) * 100) },
+      { name: 'Revenue Financing', value: Math.round((revFin / total) * 100) },
+      { name: 'Grants/Gov', value: Math.round((grants / total) * 100) },
+      { name: 'Angel Investors', value: Math.round((angel / total) * 100) },
+      { name: 'Bootstrap', value: Math.round((bootstrap / total) * 100) },
+    ].filter(s => s.value > 5);
+  }, [stage, runwayMonths, ltv, cac, readinessScore]);
 
   const efficiencyItems = [
     { name: 'LTV/CAC', value: (ltv / cac).toFixed(1) },
@@ -134,48 +175,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
-          flexWrap: 'wrap',
-        }}
-      >
+    <div className="flex flex-col gap-7">
+      <header className="flex justify-between items-center gap-4 flex-wrap">
         <div>
-          <h1 style={{ fontSize: 30, fontWeight: 800, color: '#f0f4ff', letterSpacing: '-0.03em' }}>
-            Financial{' '}
-            <span
-              style={{
-                background: 'linear-gradient(90deg,#6366f1,#a855f7)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Overview
-            </span>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] [-letter-spacing:-0.03em] mb-1.5 bg-gradient-to-r from-[var(--accent)] to-[#a855f7] bg-clip-text text-transparent">
+            Financial Overview
           </h1>
-          <p style={{ color: '#8798b0', marginTop: 6, fontSize: 15 }}>
+          <p className="text-[var(--text-muted)] text-lg">
             Real-time intelligence based on your current metrics.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className="flex gap-2.5 flex-wrap">
           <button
             onClick={exportMetrics}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '11px 16px',
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: '#f0f4ff',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="flex items-center gap-2 px-4 py-2.75 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] font-bold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover"
           >
             <Download size={15} /> Export CSV
           </button>
@@ -187,25 +200,14 @@ export default function Dashboard() {
                 () => addToast('Clipboard blocked'),
               );
             }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '11px 16px',
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: '#f0f4ff',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="flex items-center gap-2 px-4 py-2.75 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] font-bold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover"
           >
             Copy Summary
           </button>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <StatCard
           icon={Clock}
           label="Runway"
@@ -232,7 +234,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={DollarSign}
           label="MRR"
@@ -270,7 +272,7 @@ export default function Dashboard() {
           subtitle="Personalized for your team"
           color="#38bdf8"
         />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {[
             ['Founder / Team', founder],
             ['Stage', stage],
@@ -279,24 +281,12 @@ export default function Dashboard() {
           ].map(([label, value], i) => (
             <div
               key={i}
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}
+              className="p-3.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
             >
-              <p
-                style={{
-                  color: '#64748b',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                }}
-              >
+              <p className="text-[#64748b] text-xs font-bold uppercase">
                 {label}
               </p>
-              <p style={{ color: '#f0f4ff', fontWeight: 800, fontSize: 14, marginTop: 5 }}>
+              <p className="text-[var(--text-primary)] font-black text-sm mt-1.5">
                 {value || '—'}
               </p>
             </div>
@@ -304,39 +294,21 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {alerts.length > 0 && (
-        <Card
-          style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}
-        >
+{alerts.length > 0 && (
+        <Card className="bg-[rgba(239,68,68,0.05)] border-[rgba(239,68,68,0.15)]">
           <SectionHeader
             icon={AlertTriangle}
             title="Risk Alerts"
             subtitle="Priority issues detected"
             color="#ef4444"
           />
-          <ul style={{ display: 'grid', gap: 8, paddingLeft: 4, listStyle: 'none' }}>
+          <ul className="grid gap-2 pl-1 list-none">
             {alerts.map((a, i) => (
               <li
                 key={i}
-                style={{
-                  fontWeight: 700,
-                  fontSize: 13,
-                  color: '#fca5a5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
+                className="font-bold text-sm text-[#fca5a5] flex items-center gap-2"
               >
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#ef4444',
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 block flex-shrink-0" />
                 {a}
               </li>
             ))}
@@ -344,33 +316,33 @@ export default function Dashboard() {
         </Card>
       )}
 
-      <Card>
-        <SectionHeader
-          icon={Activity}
-          title="Monte Carlo Runway"
-          subtitle="Prob. of running out < 6 months (200 trials)"
-          color="#22c55e"
-        />
-        <p style={{ color: '#f0f4ff', fontSize: 26, fontWeight: 800 }}>{mc.risk}%</p>
-        <p style={{ color: '#8798b0', fontSize: 13, marginBottom: 12 }}>
-          Based on 200 trials with burn/growth variance of ±25%.
-        </p>
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={mc.dist}>
-            <XAxis dataKey="bucket" tickFormatter={(v) => `${v}m`} stroke="#4a6080" />
-            <YAxis stroke="#4a6080" />
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <Tooltip
-              contentStyle={{
-                background: '#0d1420',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12,
-              }}
-            />
-            <Bar dataKey="prob" name="% Trials" fill="#22c55e" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+        <Card>
+          <SectionHeader
+            icon={Activity}
+            title="Monte Carlo Runway"
+            subtitle="Prob. of running out < 6 months (200 trials)"
+            color="#22c55e"
+          />
+          <p className="text-[var(--text-primary)] text-3xl font-black">{mc.risk}%</p>
+          <p className="text-[var(--text-muted)] text-sm mb-3">
+            Based on 200 trials with burn/growth variance of ±25%.
+          </p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={mc.dist}>
+              <XAxis dataKey="bucket" tickFormatter={(v) => `${v}m`} stroke="#4a6080" />
+              <YAxis stroke="#4a6080" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <Tooltip
+                contentStyle={{
+                  background: '#0d1420',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                }}
+              />
+              <Bar dataKey="prob" name="% Trials" fill="#22c55e" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
 
       {dailySnapshots.length > 1 && (
         <Card>
@@ -501,7 +473,7 @@ export default function Dashboard() {
             title="Capital Allocation"
             subtitle="Optimized funding mix"
           />
-          <div style={{ height: 220, position: 'relative' }}>
+          <div className="h-[220px] relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -524,52 +496,32 @@ export default function Dashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%,-50%)',
-                textAlign: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 10,
-                  color: '#8798b0',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                }}
-              >
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+              <p className="text-xs text-[var(--text-muted)] font-bold uppercase">
                 Recommended
               </p>
-              <p style={{ fontSize: 22, fontWeight: 800, color: '#f0f4ff' }}>Stack</p>
+              <p className="text-2xl font-black text-[var(--text-primary)]">Stack</p>
             </div>
           </div>
-          <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <div className="mt-5 flex flex-wrap gap-2.5">
             {capitalStack.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i] }} />
-                <span style={{ fontSize: 12, color: '#8798b0', fontWeight: 600 }}>{item.name}</span>
+              <div key={i} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i] }} />
+                <span className="text-sm text-[var(--text-muted)] font-semibold">{item.name}</span>
               </div>
             ))}
           </div>
         </Card>
       </div>
 
-      <Card
-        style={{
-          background: 'linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(168,85,247,0.1) 100%)',
-        }}
-      >
+      <Card className="bg-gradient-to-br from-[rgba(99,102,241,0.1)] to-[rgba(168,85,247,0.1)] border-[rgba(99,102,241,0.15)]">
         <SectionHeader
           icon={Cpu}
           title="Venture AI Insights"
           subtitle="Financial health summary"
           color="#a855f7"
         />
-        <p style={{ color: '#c7d2f0', fontSize: 15, lineHeight: 1.8, maxWidth: 820 }}>
+        <p className="text-[var(--text-secondary)] text-lg leading-relaxed max-w-2xl mb-5">
           Your current metrics show a <strong>{runwayMonths}-month runway</strong> with a revenue
           growth rate of <strong>{growth}%</strong>.
           {growth > 10
@@ -582,31 +534,16 @@ export default function Dashboard() {
             ? 'initiate Series A conversations now.'
             : 'focus on hitting $15k MRR before fundraising.'}
         </p>
-        <div
-          style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}
-        >
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {efficiencyItems.map((item, i) => (
             <div
               key={i}
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
+              className="p-3.5 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)]"
             >
-              <p
-                style={{
-                  color: '#64748b',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}
-              >
+              <p className="text-[#64748b] text-xs font-bold uppercase tracking-[0.06em]">
                 {item.name}
               </p>
-              <p style={{ color: '#f0f4ff', fontSize: 18, fontWeight: 800, marginTop: 4 }}>
+              <p className="text-[var(--text-primary)] text-lg font-black mt-1">
                 {item.value}
               </p>
             </div>

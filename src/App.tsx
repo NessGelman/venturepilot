@@ -11,9 +11,9 @@ const MarketBench = lazy(() => import('./pages/MarketBench'));
 const InvestorMatch = lazy(() => import('./pages/InvestorMatch'));
 const BusinessPlan = lazy(() => import('./pages/BusinessPlan'));
 
-const Loader = () => (
-  <div className="p-10 text-[var(--text-muted)] font-black text-xl">Loading module…</div>
-);
+import PageLoader from './components/PageLoader';
+
+const Loader = PageLoader;
 
 export default function App() {
   return (

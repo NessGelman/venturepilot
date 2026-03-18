@@ -44,31 +44,42 @@ const { toasts, undo, redo, isDark, toggleTheme } = useApp();
     <div className="dark min-h-screen bg-[var(--bg-base)] [background-image:radial-gradient(ellipse_60%_50%_at_10%_0%,rgba(30,64,175,0.08)_0%,transparent_60%),radial-gradient(ellipse_40%_30%_at_90%_80%,rgba(5,150,105,0.06)_0%,transparent_60%),radial-gradient(ellipse_25%_20%_at_50%_30%,rgba(16,185,129,0.04)_0%,transparent_70%)] text-[var(--text-primary)] relative overflow-hidden">
       <InputSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] min-h-screen flex flex-col ${isSidebarOpen ? 'ml-[290px]' : 'ml-0'}`}>
-        <nav className="sticky top-0 z-[100] h-[72px] border-b border-[rgba(255,255,255,0.08)] bg-[var(--bg-glass)] backdrop-blur-sm flex items-center px-[28px]">
-          <div className="max-w-[1400px] mx-auto w-full flex items-center justify-between gap-4">
+      <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] min-h-screen flex flex-col lg:ml-[290px]`}>
+        <nav className="sticky top-0 z-[100] h-[72px] border-b border-[rgba(255,255,255,0.08)] bg-[var(--bg-glass)] backdrop-blur-sm flex items-center px-7">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
             <Link
               to="/"
-              className="no-underline flex items-center gap-[10px] flex-shrink-0 hover:glow-hover"
+              className="no-underline flex items-center gap-2.5 flex-shrink-0 hover:glow-hover"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1e40af] to-[#059669] flex items-center justify-center shadow-[0_4px_12px_rgba(30,64,175,0.35)] glow-hover">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent)] to-green flex items-center justify-center shadow-[0_4px_12px_rgba(30,64,175,0.35)] glow-hover">
                 <Rocket size={18} color="#fff" />
               </div>
-              <span className="font-black text-lg leading-none [letter-spacing:-0.02em]">
+              <span className="font-black text-lg leading-none [-letter-spacing:-0.02em]">
                 VenturePilot{' '}
-                <span className="text-[#475569] font-medium text-[13px]">v1.5</span>
+                <span className="text-[var(--text-muted)] font-medium text-xs">v2.0.0</span>
               </span>
             </Link>
 
-            <div className="flex gap-1 flex-wrap">
+            {/* Mobile hamburger */}
+            <button 
+              className="lg:hidden p-2.5 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Desktop nav */}
+            <div className="hidden lg:flex gap-1 flex-wrap -mr-2">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl no-underline text-[13px] font-semibold transition-all duration-150 ease-in-out flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl no-underline text-xs font-semibold transition-all duration-150 ease-in-out flex-shrink-0 ${
                     isActive(item.path)
-                      ? 'text-[var(--text-primary)] bg-[rgba(30,64,175,0.15)] border border-[rgba(30,64,175,0.4)]'
-                      : 'text-[var(--text-secondary)] border border-transparent hover:bg-[var(--bg-nav-hover)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)]'
+                      ? 'text-[var(--text-primary)] bg-[rgba(30,64,175,0.15)] border border-[rgba(30,64,175,0.4)] shadow-glow'
+                      : 'text-[var(--text-secondary)] border border-transparent hover:bg-[var(--bg-nav-hover)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] hover:shadow-glow'
                   }`}
                 >
                   <item.icon size={13} />
@@ -77,20 +88,15 @@ const { toasts, undo, redo, isDark, toggleTheme } = useApp();
               ))}
             </div>
 
-            <div className="flex items-center gap-[10px] flex-shrink-0">
-              <button className="px-[18px] py-[9px] rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] text-[13px] font-semibold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,64,175,0.3)]">
-                Log In
-              </button>
+            {/* Actions */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
               <button 
                 onClick={toggleTheme}
-                className="p-[9px] rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,64,175,0.3)] transition-all"
+                className="p-2.25 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,64,175,0.3)] transition-all"
                 title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
                 aria-label={`Toggle ${isDark ? 'light' : 'dark'} theme`}
               >
                 {isDark ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button className="px-[18px] py-[9px] rounded-xl bg-[var(--accent)] border-0 text-white text-[13px] font-black cursor-pointer shadow-[0_4px_12px_rgba(30,64,175,0.4)] hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-light)]/30">
-                Get Started
               </button>
             </div>
           </div>
@@ -110,22 +116,11 @@ const { toasts, undo, redo, isDark, toggleTheme } = useApp();
           </AnimatePresence>
         </main>
 
-        <footer className="border-t border-[rgba(255,255,255,0.05)] px-[28px] pb-[28px] pt-8 bg-[rgba(0,0,0,0.2)]">
-          <div className="max-w-[1400px] mx-auto flex justify-between items-center flex-wrap gap-3">
-            <p className="text-[13px] text-[var(--text-muted)] m-0 leading-relaxed">
+        <footer className="border-t border-[rgba(255,255,255,0.05)] px-7 pb-7 pt-8 bg-[rgba(0,0,0,0.2)]">
+          <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-3">
+            <p className="text-xs text-[var(--text-muted)] m-0 leading-relaxed">
               © 2026 VenturePilot. Built for the next generation of founders.
             </p>
-            <div className="flex gap-5">
-              {['Privacy', 'Terms', 'Support', 'Twitter'].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="text-[13px] text-[var(--text-muted)] no-underline hover:text-[var(--text-secondary)] transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
           </div>
         </footer>
       </div>
@@ -139,7 +134,7 @@ const { toasts, undo, redo, isDark, toggleTheme } = useApp();
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 40 }}
-              className="px-4 py-2.5 rounded-2xl bg-[rgba(30,64,175,0.95)] text-white font-black shadow-[0_8px_24px_rgba(0,0,0,0.3)] text-[13px] backdrop-blur-sm"
+              className="px-4 py-2.5 rounded-2xl bg-[rgba(30,64,175,0.95)] text-white font-black shadow-[0_8px_24px_rgba(0,0,0,0.3)] text-xs backdrop-blur-sm"
             >
               {t.message}
             </motion.div>
