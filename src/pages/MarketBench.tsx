@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, SectionHeader, Badge } from '../components/Shared';
+import { Card } from '../components/Shared';
 import { Database, Filter, ChevronRight, X, Sparkles, TrendingUp, Info } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';

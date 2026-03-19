@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { secureStorage } from '../utils/storage';
-import { useAI, UseAIReturn } from '../hooks/useAI';
-import type { AppState, AppAction, DerivedMetrics, UseAppReturn, Preset, DailySnapshot, Toast, InvestorRecord, ChecklistItem, TimelineMilestone } from '../types/AppContext.types';
+import { useAI } from '../hooks/useAI';
+import type { AppState, AppAction, DerivedMetrics, UseAppReturn, Preset, DailySnapshot, Toast, InvestorRecord } from '../types/AppContext.types';
 
 const AppContext = createContext<UseAppReturn | null>(null);
 
@@ -499,6 +499,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     traction: state.traction, setTraction,
     useOfFunds: state.useOfFunds, setUseOfFunds,
     onboardingComplete: state.onboardingComplete,
+    checklist: state.checklist,
+    timeline: state.timeline,
 
     netBurn: derived.netBurn,
     runwayMonths: derived.runwayMonths,

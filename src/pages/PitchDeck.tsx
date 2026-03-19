@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Presentation, Download, FileJson, Copy, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 

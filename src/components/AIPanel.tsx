@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, ChevronDown, Loader2 } from 'lucide-react';
+import { Sparkles, Send, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 interface Message {
@@ -9,7 +9,8 @@ interface Message {
 }
 
 export default function AIPanel() {
-  const { ai } = useApp();
+  const app = useApp();
+  const { ai } = app;
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -40,10 +41,40 @@ export default function AIPanel() {
 
     try {
       if (ai.session) {
+        // Build rich context
+        const context = `
+          Context:
+          Startup Idea: ${app.idea}
+          Industry: ${app.industry}
+          Stage: ${app.stage}
+          Founder: ${app.founder}
+          Product: ${app.productDescription}
+          Target Customer: ${app.targetCustomer}
+          
+          Financials:
+          ARR: $${(app.revenue * 12).toLocaleString()}
+          Burn: $${app.burn.toLocaleString()} / mo
+          Gross Margin: ${app.grossMargin}%
+          NDR: ${app.ndr}%
+          Cash: $${app.capital.toLocaleString()}
+          Target Raise: $${app.targetRaise.toLocaleString()}
+          
+          Metrics:
+          Runway: ${app.derived.runwayMonths} months
+          Burn Multiple: ${app.derived.burnMultiple}x
+          Rule of 40: ${app.derived.ruleOf40}%
+          LTV/CAC: ${(app.derived.ltv / app.cac).toFixed(2)}x
+          
+          Instructions:
+          Be a senior venture capital advisor. Be concise. Use markdown.
+          If the user's metrics are poor, be direct but constructive.
+          
+          Question: ${text}
+        `;
+
         if (ai.session.backend === 'chrome' && ai.session.promptStreaming) {
-          // Initialize empty AI message
           setMessages(prev => [...prev, { role: 'ai', content: '' }]);
-          await ai.session.promptStreaming(text, (partial) => {
+          await ai.session.promptStreaming(context, (partial) => {
             setMessages(prev => {
               const newMsgs = [...prev];
               newMsgs[newMsgs.length - 1] = { role: 'ai', content: partial };
@@ -51,13 +82,11 @@ export default function AIPanel() {
             });
           });
         } else {
-          const reply = await ai.session.prompt(text);
-          // if 'none', it returns empty string, so we show template
-          const finalReply = reply || "AI running in offline mode: Analyze the key metrics and optimize growth levers by monitoring LTV/CAC limits and reducing non-essential burn.";
+          const reply = await ai.session.prompt(context);
+          const finalReply = reply || "AI running in offline mode: Review your burn rate ($"+app.burn.toLocaleString()+") and ensure your LTV/CAC remains above 3.0x.";
           setMessages(prev => [...prev, { role: 'ai', content: finalReply }]);
         }
       } else {
-        // template fallback
         setMessages(prev => [...prev, { role: 'ai', content: "AI is currently running in template mode. Review your dashboards for dynamic metrics." }]);
       }
     } catch (err: any) {
@@ -65,7 +94,7 @@ export default function AIPanel() {
     } finally {
       setIsTyping(false);
     }
-  }, [ai, isTyping]);
+  }, [ai, isTyping, app]);
 
   useEffect(() => {
     const fn = (e: any) => {

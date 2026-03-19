@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { FileText, Download, Target, ChevronDown, ChevronUp, Check, Sparkles, PieChart as PieIcon, Users, DollarSign, Activity } from 'lucide-react';
+import { FileText, Download, Target, ChevronDown, Check, Sparkles, PieChart as PieIcon, Users, DollarSign, Activity, Rocket } from 'lucide-react';
 import { Card, SectionHeader } from '../components/Shared';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 

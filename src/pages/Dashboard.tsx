@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, SectionHeader, StatCard, MetricTooltip, Badge } from '../components/Shared';
-import { Activity, Download, Zap, BarChart2, TrendingUp, Sparkles, Filter, ShieldCheck, PieChart, Target, CalendarDays, Rocket } from 'lucide-react';
+import { Activity, Download, Zap, BarChart2, TrendingUp, Sparkles, Filter, ShieldCheck, PieChart, Target, CalendarDays } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis,
   BarChart, Bar
 } from 'recharts';
+import type { TimelineMilestone } from '../types/AppContext.types';
 
 export default function Dashboard() {
   const app = useApp();
@@ -300,7 +301,7 @@ export default function Dashboard() {
          
          <div className="relative overflow-x-auto pb-4 custom-scrollbar">
             <div className="flex gap-4 min-w-max">
-               {app.timeline.map((item, idx) => (
+               {app.timeline.map((item: TimelineMilestone, idx: number) => (
                   <div key={item.id} className={`flex-1 min-w-[200px] border border-[rgba(255,255,255,0.08)] rounded-[var(--radius-lg)] p-4 relative overflow-hidden bg-[rgba(255,255,255,0.02)] ${item.done ? 'border-emerald-500/30 bg-emerald-500/5' : ''}`}>
                      {item.done && <div className="absolute right-0 top-0 w-8 h-8 bg-emerald-500/20 rounded-bl-full flex items-center justify-center -mr-1 -mt-1"><ShieldCheck size={12} className="text-emerald-500 ml-1 mb-1" /></div>}
                      <div className="flex items-center gap-2 mb-2">
@@ -334,7 +335,7 @@ export default function Dashboard() {
                            </div>
                         </div>
                         <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
-                           T+{(app.timeline.slice(0,idx).reduce((acc, curr) => acc + curr.durationDays, 0))}d
+                           T+{(app.timeline.slice(0,idx).reduce((acc: number, curr: TimelineMilestone) => acc + curr.durationDays, 0))}d
                         </span>
                      </div>
                   </div>

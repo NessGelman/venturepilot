@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, SectionHeader, StatCard, Badge } from '../components/Shared';
+import { Card, SectionHeader, Badge } from '../components/Shared';
 import { Target, AlertTriangle, ArrowRight, Settings2, Plus, GripVertical, Trash2, ListChecks, SplitSquareHorizontal, Sparkles } from 'lucide-react';
 
 const PRESET_CHECKLISTS = {

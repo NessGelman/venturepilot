@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, Search, Settings2, Target, Presentation, FileText, Database, Users, SunMoon, Activity } from 'lucide-react';
+import { Terminal, Settings2, Target, Presentation, FileText, Database, Users, SunMoon, Activity } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function CommandPalette({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (b: boolean) => void }) {
