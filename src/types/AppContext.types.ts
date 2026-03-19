@@ -175,6 +175,8 @@ export interface UseAppReturn {
   traction: string;
   useOfFunds: string;
   onboardingComplete: boolean;
+  checklist: ChecklistItem[];
+  timeline: TimelineMilestone[];
 
   setCapital: (v: number) => void;
   setBurn: (v: number) => void;
