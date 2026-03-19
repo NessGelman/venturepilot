@@ -1,311 +1,212 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Globe, Users, TrendingUp, Filter } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, SectionHeader } from '../components/Shared';
+import { Card, SectionHeader, Badge } from '../components/Shared';
+import { Database, Filter, ChevronRight, X, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const BENCHMARKS: Record<string, Record<string, any>> = {
+  'B2B SaaS': {
+     growth: { median: 85, top: 120, bottom: 40, desc: 'Year-over-year revenue growth. SaaS investors look for T2D3 (Triple, Triple, Double, Double, Double).', tips: ['Optimize onboarding flow', 'Expand sales team', 'Launch self-serve tier'] },
+     margin: { median: 78, top: 85, bottom: 65, desc: 'Gross margin. Shows scalability of software delivery minus hosting and support.', tips: ['Transition to annual billing', 'Optimize AWS/cloud spend', 'Automate low-tier support'] },
+     ndr: { median: 105, top: 120, bottom: 90, desc: 'Net Dollar Retention. Crucial for compounding growth without new customer acquisition.', tips: ['Launch upsell campaigns', 'Improve customer success', 'Adjust pricing tiers'] },
+     rule40: { median: 35, top: 50, bottom: 20, desc: 'Growth Rate + Profit Margin. The ultimate SaaS health metric.', tips: ['Cut non-performing marketing', 'Raise prices for legacy users', 'Consolidate tech stack'] },
+     burnMult: { median: 1.8, top: 1.2, bottom: 2.5, inverse: true, desc: 'Net Burn / Net New ARR. Measures capital efficiency of growth.', tips: ['Reduce CAC payback period', 'Extend runway with venture debt', 'Focus on organic channels'] },
+  },
+  'Fintech': {
+     growth: { median: 110, top: 160, bottom: 60, desc: 'Year-over-year growth.', tips: ['Localize for new markets', 'Expand product lines', 'Partner with banks'] },
+     margin: { median: 65, top: 75, bottom: 50, desc: 'Gross margin. Lower than SaaS due to payment processing costs.', tips: ['Renegotiate payment rails', 'Move upmarket', 'Verticalize offerings'] },
+     ndr: { median: 115, top: 130, bottom: 100, desc: 'Net Dollar Retention.', tips: ['Increase wallet share', 'Add lending products', 'Improve B2B integration'] },
+     rule40: { median: 30, top: 45, bottom: 15, desc: 'Growth Rate + Margin.', tips: ['Focus on high LTV users', 'Reduce fraud losses', 'Cross-sell insurance'] },
+     burnMult: { median: 2.2, top: 1.5, bottom: 3.0, inverse: true, desc: 'Burn Multiple. Higher due to compliance and capital requirements.', tips: ['Raise compliance efficiency', 'Lower cost of capital', 'Decrease CAC via referrals'] },
+  },
+  'Climate Tech': {
+     growth: { median: 60, top: 90, bottom: 30, desc: 'Slower initial growth due to hardware/infra timelines.', tips: ['Secure government grants', 'Pre-sell capacity', 'Partner with corporates'] },
+     margin: { median: 45, top: 60, bottom: 30, desc: 'Capex heavy, margins improve at scale.', tips: ['Scale manufacturing', 'Value-based pricing', 'Reduce BOM costs'] },
+     ndr: { median: 105, top: 120, bottom: 95, desc: 'Retention of enterprise contracts.', tips: ['Sign multi-year deals', 'Expand facility scope', 'Add data/software layer'] },
+     rule40: { median: 25, top: 40, bottom: 10, desc: 'Lower early focus on Rule 40 compared to deep tech milestones.', tips: ['Focus on unit economics', 'Delay aggressive scaling', 'Non-dilutive funding'] },
+     burnMult: { median: 3.5, top: 2.0, bottom: 5.0, inverse: true, desc: 'High burn is expected pre-commercialization.', tips: ['Hit technical milestones', 'Lease instead of buy infra', 'Leverage tax credits'] },
+  },
+  'Consumer': {
+     growth: { median: 150, top: 300, bottom: 80, desc: 'Must demonstrate explosive viral growth.', tips: ['Optimize viral loops', 'Influencer marketing', 'Gamification features'] },
+     margin: { median: 55, top: 70, bottom: 40, desc: 'Varies by physical vs digital, but acquisition costs eat margins.', tips: ['Reduce shipping/CAC', 'Introduce premium subscriptions', 'In-app purchases'] },
+     ndr: { median: 85, top: 110, bottom: 60, desc: 'Churn is highly prevalent in consumer.', tips: ['Strengthen network effects', 'Daily active habit hooks', 'Annual plans'] },
+     rule40: { median: 40, top: 70, bottom: 20, desc: 'Growth dominates this equation.', tips: ['A/B test onboarding', 'Referral programs', 'Re-engagement loops'] },
+     burnMult: { median: 2.5, top: 1.2, bottom: 4.0, inverse: true, desc: 'Expensive S&M spend reduces efficiency.', tips: ['Lower CAC', 'Increase organic acquisition', 'Extend LTV cohort'] },
+  }
+};
 
 export default function MarketBench() {
-  const { growth, revenue, pipelineCoverage, ltv, cac, industry } = useApp();
+  const app = useApp();
+  const [sector, setSector] = useState(BENCHMARKS[app.industry] ? app.industry : 'B2B SaaS');
+  const [modalData, setModalData] = useState<any>(null);
 
-  const deriveSector = (text = '') => {
-    const l = text.toLowerCase();
-    if (/fintech|payment|bank/.test(l)) return 'Fintech';
-    if (/health|bio/.test(l)) return 'Health';
-    if (/ai|machine learning|ml/.test(l)) return 'AI';
-    if (/infra|cloud|dev/.test(l)) return 'Infra';
-    return 'SaaS';
-  };
+  const bm = BENCHMARKS[sector] || BENCHMARKS['B2B SaaS'];
 
-  const sectorList = ['All', 'SaaS', 'AI', 'Fintech', 'Health', 'Infra'];
-  const [sector, setSector] = useState(() => deriveSector(industry));
-  const [region, setRegion] = useState('US');
-  const [sectorIndex, setSectorIndex] = useState(() => sectorList.indexOf(deriveSector(industry)));
+  // Normalize data for Radar
+  const radarData = useMemo(() => [
+     { name: 'Growth', user: Math.min((app.growth*12) / bm.growth.median * 100, 150), sector: 100 },
+     { name: 'Margin', user: Math.min(app.grossMargin / bm.margin.median * 100, 150), sector: 100 },
+     { name: 'NDR', user: Math.min(app.ndr / bm.ndr.median * 100, 150), sector: 100 },
+     { name: 'Rule 40', user: Math.max(0, Math.min(app.derived.ruleOf40 / bm.rule40.median * 100, 150)), sector: 100 },
+     { name: 'Efficiency', user: Math.min((bm.burnMult.median / Math.max(app.derived.burnMultiple, 0.5)) * 100, 150), sector: 100 },
+  ], [app, bm]);
 
-  useEffect(() => {
-    setSector(deriveSector(industry));
-  }, [industry]);
-
-  const sectorDefaults = {
-    SaaS: { growth: 10, ltv: 3.5, pipeline: 110 },
-    AI: { growth: 14, ltv: 3.2, pipeline: 120 },
-    Fintech: { growth: 9, ltv: 3.0, pipeline: 105 },
-    Health: { growth: 8, ltv: 3.4, pipeline: 100 },
-    Infra: { growth: 11, ltv: 3.6, pipeline: 115 },
-    All: { growth: 9, ltv: 3.2, pipeline: 105 },
-  };
-
-  const peer = sectorDefaults[sector] || sectorDefaults.All;
-  const userLtv = ltv / cac;
-  const userRev = Math.round(revenue / 5);
-
-  const benchmarks = useMemo(
-    () => [
-      {
-        metric: 'MoM Growth',
-        user: `${growth}%`,
-        benchmark: `${peer.growth - 2}–${peer.growth + 2}%`,
-        ok: growth >= peer.growth,
-      },
-      {
-        metric: 'LTV/CAC',
-        user: `${userLtv.toFixed(1)}×`,
-        benchmark: `>${peer.ltv}×`,
-        ok: userLtv >= peer.ltv,
-      },
-      {
-        metric: 'Pipeline Cover',
-        user: `${pipelineCoverage}%`,
-        benchmark: `${peer.pipeline - 10}–${peer.pipeline + 10}%`,
-        ok: pipelineCoverage >= peer.pipeline,
-      },
-      { metric: 'Revenue/Employee', user: `$${userRev}k`, benchmark: '$15k', ok: userRev >= 15 },
-    ],
-    [growth, pipelineCoverage, userLtv, userRev, peer],
-  );
-
-  const competitorData = [
-    { name: 'You', growth, ltv: userLtv.toFixed(1), pipeline: pipelineCoverage },
-    {
-      name: 'Top Quartile',
-      growth: peer.growth + 2,
-      ltv: (peer.ltv + 0.3).toFixed(1),
-      pipeline: peer.pipeline + 10,
-    },
-    { name: 'Median', growth: peer.growth, ltv: peer.ltv.toFixed(1), pipeline: peer.pipeline },
+  const metrics = [
+    { id: 'growth', name: 'Annual Growth Rate', userVal: app.growth * 12, suffix: '%', bmData: bm.growth },
+    { id: 'margin', name: 'Gross Margin', userVal: app.grossMargin, suffix: '%', bmData: bm.margin },
+    { id: 'ndr', name: 'Net Dollar Retention', userVal: app.ndr, suffix: '%', bmData: bm.ndr },
+    { id: 'rule40', name: 'Rule of 40', userVal: app.derived.ruleOf40, suffix: '%', bmData: bm.rule40 },
+    { id: 'burnMult', name: 'Burn Multiple', userVal: app.derived.burnMultiple, suffix: 'x', bmData: bm.burnMult },
   ];
 
+  const getPosition = (val: number, data: any) => {
+    if (data.inverse) {
+      if (val <= data.top) return { label: 'Top Quartile', dot: 'bg-emerald-500', text: 'text-emerald-500' };
+      if (val >= data.bottom) return { label: 'Bottom Quartile', dot: 'bg-red-500', text: 'text-red-500' };
+      return { label: 'Median', dot: 'bg-amber-500', text: 'text-amber-500' };
+    } else {
+      if (val >= data.top) return { label: 'Top Quartile', dot: 'bg-emerald-500', text: 'text-emerald-500' };
+      if (val <= data.bottom) return { label: 'Bottom Quartile', dot: 'bg-red-500', text: 'text-red-500' };
+      return { label: 'Median', dot: 'bg-amber-500', text: 'text-amber-500' };
+    }
+  };
+
+  const submitAI = (prompt: string) => {
+    window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <header>
-        <h1 style={{ fontSize: 30, fontWeight: 800, color: '#f0f4ff' }}>
-          Market{' '}
-          <span
-            style={{
-              background: 'linear-gradient(90deg,#6366f1,#a855f7)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Intelligence
-          </span>
-        </h1>
-        <p style={{ color: '#8798b0', marginTop: 6, fontSize: 15 }}>
-          Benchmark against the top 1% of startups, tuned to your industry.
-        </p>
-      </header>
-
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Filter size={14} color="#8798b0" />
-        <select
-          value={sector}
-          onChange={(e) => setSector(e.target.value)}
-          style={{
-            background: 'rgba(0,0,0,0.25)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: '#f0f4ff',
-            padding: '8px 12px',
-            borderRadius: 9,
-            fontWeight: 700,
-          }}
-        >
-          {sectorList.map((o) => (
-            <option key={o} value={o} style={{ color: '#0f172a' }}>
-              {o}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => {
-            const next = (sectorIndex + 1) % sectorList.length;
-            setSectorIndex(next);
-            setSector(sectorList[next]);
-          }}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 9,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.06)',
-            color: '#f0f4ff',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          Next sector
-        </button>
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          style={{
-            background: 'rgba(0,0,0,0.25)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: '#f0f4ff',
-            padding: '8px 12px',
-            borderRadius: 9,
-            fontWeight: 700,
-          }}
-        >
-          {['US', 'EU', 'APAC'].map((o) => (
-            <option key={o} value={o} style={{ color: '#0f172a' }}>
-              {o}
-            </option>
-          ))}
-        </select>
-        <p style={{ color: '#475569', fontSize: 12 }}>
-          Showing <strong style={{ color: '#8798b0' }}>{sector}</strong> peers in{' '}
-          <strong style={{ color: '#8798b0' }}>{region}</strong>
-        </p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
-        <Card>
-          <SectionHeader
-            icon={Globe}
-            title="Industry Benchmarks"
-            subtitle="Comparison against Series A averages"
-          />
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 10px' }}>
-            <thead>
-              <tr
-                style={{
-                  color: '#475569',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  textAlign: 'left',
-                }}
-              >
-                <th style={{ padding: '0 14px' }}>Metric</th>
-                <th>Your Value</th>
-                <th>Benchmark</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {benchmarks.map((b, i) => (
-                <tr key={i} style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <td
-                    style={{
-                      padding: '14px',
-                      borderRadius: '10px 0 0 10px',
-                      color: '#f0f4ff',
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
-                    {b.metric}
-                  </td>
-                  <td style={{ color: '#8798b0', fontWeight: 600 }}>{b.user}</td>
-                  <td style={{ color: '#8798b0', fontWeight: 600 }}>{b.benchmark}</td>
-                  <td style={{ borderRadius: '0 10px 10px 0' }}>
-                    <span
-                      style={{
-                        background: `${b.ok ? '#10b981' : '#ef4444'}18`,
-                        color: b.ok ? '#10b981' : '#ef4444',
-                        padding: '4px 12px',
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {b.ok ? 'Outperforming' : 'Underperforming'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Card>
-            <SectionHeader
-              icon={BarChart3}
-              title="Competitive Position"
-              subtitle="You vs market percentiles"
-            />
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={competitorData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.05)"
-                  vertical={false}
-                />
-                <XAxis dataKey="name" stroke="#4a6080" fontSize={11} />
-                <YAxis stroke="#4a6080" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    background: '#0d1420',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12,
-                  }}
-                />
-                <Bar dataKey="growth" name="MoM Growth" fill="#6366f1" radius={[5, 5, 0, 0]} />
-                <Bar dataKey="ltv" name="LTV/CAC" fill="#10b981" radius={[5, 5, 0, 0]} />
-                <Bar dataKey="pipeline" name="Pipeline %" fill="#f59e0b" radius={[5, 5, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-
-          <Card>
-            <SectionHeader
-              icon={Users}
-              title="Market Sentiment"
-              subtitle="What VCs are saying"
-              color="#10b981"
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div
-                style={{
-                  padding: 14,
-                  borderRadius: 12,
-                  background: 'rgba(16,185,129,0.05)',
-                  border: '1px solid rgba(16,185,129,0.12)',
-                }}
-              >
-                <p style={{ color: '#10b981', fontSize: 13, fontWeight: 700 }}>
-                  AI/ML Sector: BULLISH
-                </p>
-                <p style={{ color: '#8798b0', fontSize: 12, marginTop: 4, lineHeight: 1.55 }}>
-                  Investors prioritizing horizontal AI apps with integrated workflows.
-                </p>
-              </div>
-              <div
-                style={{
-                  padding: 14,
-                  borderRadius: 12,
-                  background: 'rgba(245,158,11,0.05)',
-                  border: '1px solid rgba(245,158,11,0.12)',
-                }}
-              >
-                <p style={{ color: '#f59e0b', fontSize: 13, fontWeight: 700 }}>Fintech: CAUTIOUS</p>
-                <p style={{ color: '#8798b0', fontSize: 12, marginTop: 4, lineHeight: 1.55 }}>
-                  High-interest env leading to longer diligence for transaction-heavy models.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            style={{
-              background: 'rgba(99,102,241,0.08)',
-              border: '1px solid rgba(99,102,241,0.2)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <TrendingUp size={18} color="#6366f1" />
-              <p style={{ color: '#f0f4ff', fontSize: 14, fontWeight: 700 }}>
-                Market Edge Detected
-              </p>
-            </div>
-            <p style={{ color: '#8798b0', fontSize: 13, lineHeight: 1.55 }}>
-              Your LTV/CAC is {userLtv >= peer.ltv ? 'above' : 'approaching'} the {sector} peer
-              median. Use this as a talking point in your Series A deck.
-            </p>
-          </Card>
+    <div className="max-w-[1200px] mx-auto pb-24 h-full relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 px-2">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <Database className="text-[var(--accent)]" /> Market Benchmarks
+          </h1>
+          <p className="text-[var(--text-muted)] mt-1 font-medium font-mono text-sm tracking-wide">
+            Calibrate against institutional LP expectations.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button onClick={() => submitAI('Based on my current benchmark positioning compared to the '+sector+' sector, what is the single most critical metric I need to improve before pitching?')} className="bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] text-[13px] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all shadow-glow hover:-translate-y-0.5 card-hover">
+             <Sparkles size={14} className="text-[var(--accent-light)]" /> AI Benchmark Report
+          </button>
+          
+          <div className="relative group">
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              className="appearance-none bg-[var(--bg-card)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] text-white pl-4 pr-10 py-2 rounded-xl text-sm font-bold shadow-elevated focus:outline-none cursor-pointer"
+            >
+              <option value="B2B SaaS">B2B SaaS</option>
+              <option value="Fintech">Fintech</option>
+              <option value="Climate Tech">Climate Tech</option>
+              <option value="Consumer">Consumer</option>
+            </select>
+            <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
+          </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+         <Card className="lg:col-span-1 flex flex-col items-center justify-center p-6 h-full min-h-[350px]">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-2 self-start"><TrendingUp size={16} className="inline mr-2 text-[var(--accent)]" /> 360° Assessment</h3>
+            <p className="text-xs text-[var(--text-muted)] self-start mb-4">You vs Sector Median (Normalized to 100%)</p>
+            <div className="w-full flex-1">
+               <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                     <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                     <PolarAngleAxis dataKey="name" tick={{fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 'bold'}} />
+                     <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }} />
+                     <Radar name="Sector Median" dataKey="sector" stroke="rgba(255,255,255,0.2)" fill="rgba(255,255,255,0.05)" fillOpacity={1} strokeDasharray="3 3" />
+                     <Radar name="Your Metrics" dataKey="user" stroke="var(--accent-light)" fill="var(--accent)" fillOpacity={0.5} />
+                  </RadarChart>
+               </ResponsiveContainer>
+            </div>
+            <div className="flex gap-4 mt-2">
+               <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[var(--accent)] rounded-full opacity-50 block"></span><span className="text-xs font-mono text-[var(--text-muted)]">You</span></div>
+               <div className="flex items-center gap-1.5"><span className="w-4 h-0 border-t-2 border-dashed border-[rgba(255,255,255,0.2)] block"></span><span className="text-xs font-mono text-[var(--text-muted)]">Median</span></div>
+            </div>
+         </Card>
+
+         <div className="lg:col-span-2">
+            <Card className="h-full flex flex-col p-6">
+               <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 pb-3 border-b border-[rgba(255,255,255,0.05)] text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider px-4">
+                  <div>Metric</div>
+                  <div className="text-right">Your Value</div>
+                  <div className="text-right">Median</div>
+                  <div className="text-right">Position</div>
+               </div>
+
+               <div className="flex-1 flex flex-col gap-2 mt-4">
+                  {metrics.map(m => {
+                     const pos = getPosition(m.userVal, m.bmData);
+                     return (
+                        <div 
+                           key={m.id} 
+                           onClick={() => setModalData({ name: m.name, user: m.userVal, suffix: m.suffix, pos, desc: m.bmData.desc, tips: m.bmData.tips })}
+                           className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-4 rounded-xl border border-[rgba(255,255,255,0.03)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)] transition-colors cursor-pointer group"
+                        >
+                           <div className="flex items-center gap-2">
+                              <span className="font-bold text-[var(--text-primary)] group-hover:text-[var(--accent-light)] transition-colors">{m.name}</span>
+                              <Info size={14} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                           </div>
+                           <div className="text-right font-mono font-black text-lg text-[var(--text-primary)]">{m.userVal.toFixed(1)}{m.suffix}</div>
+                           <div className="text-right font-mono font-medium text-sm text-[var(--text-muted)]">{m.bmData.median}{m.suffix}</div>
+                           <div className="flex justify-end items-center gap-2 text-right">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider ${pos.text}`}>{pos.label}</span>
+                              <div className={`w-2.5 h-2.5 rounded-full ${pos.dot}`}></div>
+                           </div>
+                        </div>
+                     )
+                  })}
+               </div>
+            </Card>
+         </div>
+      </div>
+
+      <AnimatePresence>
+         {modalData && (
+            <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setModalData(null)}>
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full max-w-md bg-[var(--bg-card)] border border-[rgba(255,255,255,0.1)] rounded-[var(--radius-xl)] shadow-2xl overflow-hidden p-6 relative"
+               >
+                  <button onClick={() => setModalData(null)} className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.1)] transition-colors"><X size={18} /></button>
+                  
+                  <div className="flex items-center gap-3 mb-6">
+                     <div className={`w-3 h-3 rounded-full ${modalData.pos.dot}`} />
+                     <h2 className="text-xl font-bold text-[var(--text-primary)]">{modalData.name}</h2>
+                  </div>
+
+                  <div className="flex gap-4 mb-6 pt-6 border-t border-[rgba(255,255,255,0.05)]">
+                     <div className="flex-1 bg-[rgba(255,255,255,0.02)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] text-center">
+                        <span className="block text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider mb-1">Your Metrics</span>
+                        <span className={`font-mono font-black text-2xl ${modalData.pos.text}`}>{modalData.user.toFixed(1)}{modalData.suffix}</span>
+                     </div>
+                     <div className="flex-1 bg-[rgba(255,255,255,0.02)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] text-center">
+                        <span className="block text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider mb-1">Median</span>
+                        <span className="font-mono font-black text-2xl text-[var(--text-muted)]">{bm[Object.keys(metrics).find(k=>metrics[k as any].name===modalData.name) || 'growth']?.median}{modalData.suffix}</span>
+                     </div>
+                  </div>
+
+                  <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed mb-6 bg-[rgba(99,102,241,0.05)] p-4 rounded-xl border border-[rgba(99,102,241,0.1)] border-l-4 border-l-[var(--accent-light)]">
+                     {modalData.desc}
+                  </p>
+
+                  <h3 className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-3">Actionable Strategies to Improve</h3>
+                  <ul className="flex flex-col gap-2">
+                     {modalData.tips.map((tip: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm font-medium text-[var(--text-primary)]"><ChevronRight size={16} className="text-[var(--accent)] mt-0.5 shrink-0" /> {tip}</li>
+                     ))}
+                  </ul>
+
+               </motion.div>
+            </div>
+         )}
+      </AnimatePresence>
     </div>
   );
 }

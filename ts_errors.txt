@@ -1,0 +1,44 @@
+src/components/AIPanel.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/AIPanel.tsx(3,20): error TS6133: 'X' is declared but its value is never read.
+src/components/AIPanel.tsx(3,42): error TS6133: 'Loader2' is declared but its value is never read.
+src/components/CommandPalette.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/CommandPalette.tsx(3,20): error TS6133: 'Search' is declared but its value is never read.
+src/components/ErrorBoundary.tsx(4,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/ErrorBoundary.tsx(9,35): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/components/ErrorBoundary.tsx(13,21): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/components/ErrorBoundary.tsx(13,28): error TS7006: Parameter 'errorInfo' implicitly has an 'any' type.
+src/components/ErrorBoundary.tsx(22,20): error TS2339: Property 'hasError' does not exist on type 'Readonly<{}>'.
+src/components/ErrorBoundary.tsx(51,14): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+src/components/ErrorBoundary.tsx(51,67): error TS2339: Property 'error' does not exist on type 'Readonly<{}>'.
+src/components/ErrorBoundary.tsx(55,31): error TS2339: Property 'error' does not exist on type 'Readonly<{}>'.
+src/components/ErrorBoundary.tsx(64,23): error TS2339: Property 'children' does not exist on type 'Readonly<{}>'.
+src/components/InputSidebar.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/Onboarding.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/context/AppContext.tsx(3,17): error TS6133: 'UseAIReturn' is declared but its value is never read.
+src/context/AppContext.tsx(4,112): error TS6196: 'ChecklistItem' is declared but never used.
+src/context/AppContext.tsx(4,127): error TS6196: 'TimelineMilestone' is declared but never used.
+src/main.tsx(5,21): error TS2345: Argument of type 'HTMLElement | null' is not assignable to parameter of type 'Container'.
+  Type 'null' is not assignable to type 'Container'.
+src/pages/BusinessPlan.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/BusinessPlan.tsx(3,51): error TS6133: 'ChevronUp' is declared but its value is never read.
+src/pages/BusinessPlan.tsx(140,70): error TS2304: Cannot find name 'Rocket'.
+src/pages/Dashboard.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/Dashboard.tsx(4,121): error TS6133: 'Rocket' is declared but its value is never read.
+src/pages/Dashboard.tsx(7,49): error TS6133: 'PolarRadiusAxis' is declared but its value is never read.
+src/pages/Dashboard.tsx(303,21): error TS2339: Property 'timeline' does not exist on type 'UseAppReturn'.
+src/pages/Dashboard.tsx(303,35): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/pages/Dashboard.tsx(303,41): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/pages/Dashboard.tsx(311,58): error TS2339: Property 'timeline' does not exist on type 'UseAppReturn'.
+src/pages/Dashboard.tsx(327,65): error TS2339: Property 'timeline' does not exist on type 'UseAppReturn'.
+src/pages/Dashboard.tsx(337,36): error TS2339: Property 'timeline' does not exist on type 'UseAppReturn'.
+src/pages/Dashboard.tsx(337,66): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/pages/Dashboard.tsx(337,71): error TS7006: Parameter 'curr' implicitly has an 'any' type.
+src/pages/MarketBench.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/MarketBench.tsx(3,16): error TS6133: 'SectionHeader' is declared but its value is never read.
+src/pages/MarketBench.tsx(3,31): error TS6133: 'Badge' is declared but its value is never read.
+src/pages/PitchDeck.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/PitchDeck.tsx(1,38): error TS6133: 'useRef' is declared but its value is never read.
+src/pages/Strategy.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/Strategy.tsx(1,27): error TS6133: 'useMemo' is declared but its value is never read.
+src/pages/Strategy.tsx(3,31): error TS6133: 'StatCard' is declared but its value is never read.
+src/utils/ai.ts(39,17): error TS2339: Property 'gpu' does not exist on type 'Navigator'.

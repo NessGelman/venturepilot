@@ -1,3 +1,19 @@
+export interface InvestorRecord {
+  id: string;
+  name: string;
+  focus: string;
+  stage: string;
+  contact: 'Active' | 'Interested' | 'Dormant' | 'Passed' | 'Portfolio';
+  link: string;
+  note: string;
+  next: string;
+  sentiment: 1 | 2 | 3 | 4 | 5;
+  lastContacted: string;
+  tags: string[];
+}
+
+import type { UseAIReturn } from '../hooks/useAI';
+
 export interface AppState {
   capital: number;
   burn: number;
@@ -15,11 +31,50 @@ export interface AppState {
   founder: string;
   northStar: string;
   repoUrl: string;
+
+  // New financial fields
+  valuation: number;
+  targetRaise: number;
+  dilution: number;
+  grossMargin: number;
+  ndr: number;
+  magicNumber: number;
+
+  // New narrative fields
+  teamSize: number;
+  productDescription: string;
+  targetCustomer: string;
+  competitors: string;
+  traction: string;
+  useOfFunds: string;
+
+  // New CRM fields
+  investors: InvestorRecord[];
+
+  // Note: aiReady is derived, not stored. So we don't put it here.
+  
   presets: Preset[];
   dailySnapshots: DailySnapshot[];
   history: AppState[];
   future: AppState[];
   lastSaved: string | null;
+  onboardingComplete: boolean;
+  checklist: ChecklistItem[]; // for Strategy page
+  timeline: TimelineMilestone[]; // for Dashboard timeline
+}
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export interface TimelineMilestone {
+  id: string;
+  label: string;
+  done: boolean;
+  durationDays: number;
+  date: string;
 }
 
 export interface Preset {
@@ -39,6 +94,18 @@ export interface Preset {
   stage: string;
   founder: string;
   northStar: string;
+  valuation: number;
+  targetRaise: number;
+  dilution: number;
+  grossMargin: number;
+  ndr: number;
+  magicNumber: number;
+  teamSize: number;
+  productDescription: string;
+  targetCustomer: string;
+  competitors: string;
+  traction: string;
+  useOfFunds: string;
 }
 
 export interface DailySnapshot {
@@ -50,7 +117,10 @@ export interface DailySnapshot {
 }
 
 export type AppAction = 
-  | { type: 'SET_FIELD'; field: keyof Omit<AppState, 'history' | 'future' | 'lastSaved' | 'presets' | 'dailySnapshots'>; value: any }
+  | { type: 'SET_FIELD'; field: keyof Omit<AppState, 'history' | 'future' | 'lastSaved' | 'presets' | 'dailySnapshots' | 'investors'>; value: any }
+  | { type: 'BULK_SET'; payload: Partial<AppState> }
+  | { type: 'UPSERT_INVESTOR'; payload: InvestorRecord }
+  | { type: 'DELETE_INVESTOR'; payload: string }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET_DEFAULTS' }
@@ -65,7 +135,7 @@ export interface UseAppReturn {
   isDark: boolean;
   toggleTheme: () => void;
   toasts: Toast[];
-  addToast: (message: string) => void;
+  addToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   undo: () => void;
   redo: () => void;
   savePreset: (name: string) => void;
@@ -73,7 +143,9 @@ export interface UseAppReturn {
   deletePreset: (name: string) => void;
   resetDefaults: () => void;
   clearData: () => void;
-  // Backwards compat (remove after migration)
+  upsertInvestor: (inv: InvestorRecord) => void;
+  deleteInvestor: (id: string) => void;
+  
   capital: number;
   burn: number;
   revenue: number;
@@ -90,6 +162,20 @@ export interface UseAppReturn {
   founder: string;
   northStar: string;
   repoUrl: string;
+  valuation: number;
+  targetRaise: number;
+  dilution: number;
+  grossMargin: number;
+  ndr: number;
+  magicNumber: number;
+  teamSize: number;
+  productDescription: string;
+  targetCustomer: string;
+  competitors: string;
+  traction: string;
+  useOfFunds: string;
+  onboardingComplete: boolean;
+
   setCapital: (v: number) => void;
   setBurn: (v: number) => void;
   setRevenue: (v: number) => void;
@@ -106,6 +192,19 @@ export interface UseAppReturn {
   setFounder: (v: string) => void;
   setNorthStar: (v: string) => void;
   setRepoUrl: (v: string) => void;
+  setValuation: (v: number) => void;
+  setTargetRaise: (v: number) => void;
+  setDilution: (v: number) => void;
+  setGrossMargin: (v: number) => void;
+  setNdr: (v: number) => void;
+  setMagicNumber: (v: number) => void;
+  setTeamSize: (v: number) => void;
+  setProductDescription: (v: string) => void;
+  setTargetCustomer: (v: string) => void;
+  setCompetitors: (v: string) => void;
+  setTraction: (v: string) => void;
+  setUseOfFunds: (v: string) => void;
+
   netBurn: number;
   runwayMonths: number;
   readinessScore: number;
@@ -115,9 +214,18 @@ export interface UseAppReturn {
   payback: number;
   revenuePerEmployee: number;
   pipelineCoverage: number;
+  burnMultiple: number;
+  ruleOf40: number;
+  impliedValuation: number;
+  dilutedOwnership: number;
+  daysOfRunway: number;
+
   lastSaved: string | null;
   presets: Preset[];
   dailySnapshots: DailySnapshot[];
+  investors: InvestorRecord[];
+  
+  ai: UseAIReturn;
 }
 
 export interface DerivedMetrics {
@@ -130,10 +238,16 @@ export interface DerivedMetrics {
   payback: number;
   revenuePerEmployee: number;
   pipelineCoverage: number;
+  burnMultiple: number;
+  ruleOf40: number;
+  impliedValuation: number;
+  dilutedOwnership: number;
+  daysOfRunway: number;
+  aiReady: boolean;
 }
 
 export interface Toast {
   id: number;
   message: string;
+  type?: 'success' | 'error' | 'info' | 'warning';
 }
-

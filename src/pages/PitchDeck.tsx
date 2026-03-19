@@ -1,549 +1,236 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Zap,
-  ListChecks,
-  Sparkles,
-  Send,
-  ChevronRight,
-  ChevronLeft,
-  Presentation,
-  Download,
-  Plus,
-  Mail,
-  RefreshCcw,
-  LayoutTemplate,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, SectionHeader } from '../components/Shared';
+import { Presentation, Download, FileJson, Copy, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 export default function PitchDeck() {
-  const { idea, capital, revenue, growth, ltv, cac, industry, problem, founder, stage, northStar } =
-    useApp();
-  const [generating, setGenerating] = useState(false);
+  const app = useApp();
   const [activeSlide, setActiveSlide] = useState(0);
-  const [status, setStatus] = useState('');
-  const [shareEmail, setShareEmail] = useState('');
 
-  const buildSlides = () => [
+  const slides = [
     {
+      id: 'title',
+      title: app.idea || 'Company Name',
+      content: app.productDescription || 'One sentence pitch goes here',
+      bg: 'bg-gradient-to-br from-[var(--bg-card)] to-[rgba(99,102,241,0.1)]'
+    },
+    {
+      id: 'problem',
       title: 'The Problem',
-      subtitle: 'Fragmented Intelligence',
-      content:
-        "Founders are flying blind. Existing financial tools are either overly complex spreadsheets or isolated SaaS metrics that don't provide a holistic strategic view.",
+      content: app.problem || 'Describe the pain point you are solving...',
+      bg: 'bg-[var(--bg-card)]'
     },
     {
-      title: 'Industry & Vision',
-      subtitle: industry || 'Category',
-      content:
-        idea ||
-        'An integrated operating system that centralizes all venture data to empower founders with real-time strategic intelligence.',
+      id: 'solution',
+      title: 'Our Solution',
+      content: `We built a product that solves this for ${app.targetCustomer}.`,
+      bg: 'bg-[var(--bg-card)]'
     },
     {
-      title: 'What We Solve',
-      subtitle: 'Customer Pain',
-      content:
-        problem ||
-        'We eliminate the manual, fragmented capital planning process founders struggle with.',
+      id: 'market',
+      title: 'Market Size',
+      content: `Operating in the highly lucrative ${app.industry} space.\n\nTAM: $XX Billion\nSAM: $X Billion\nSOM: $XXX Million`,
+      bg: 'bg-[var(--bg-card)]'
     },
     {
-      title: 'Market Traction',
-      subtitle: 'Exponential Growth',
-      content: `Scaling at ${growth}% MoM with $${((revenue * 12) / 1000).toFixed(0)}k ARR within 6 months of launch.`,
+      id: 'gtm',
+      title: 'Go-To-Market',
+      content: `Targeting: ${app.targetCustomer}\nCAC: $${app.cac.toLocaleString()}\nPayback Period: ${app.derived.payback} months`,
+      bg: 'bg-[var(--bg-card)]'
     },
     {
-      title: 'Financial Engine',
-      subtitle: 'Efficiency at Scale',
-      content: `Operating with $${capital.toLocaleString()} in capital. LTV/CAC is ${(ltv / cac).toFixed(1)}x — top decile efficiency.`,
+      id: 'traction',
+      title: 'Traction',
+      content: app.traction || `ARR: $${(app.derived.arr/1000).toLocaleString()}k\nGrowth: ${app.growth}% MoM\nNDR: ${app.ndr}%`,
+      bg: 'bg-[var(--bg-card)]'
     },
     {
-      title: 'Team & Stage',
-      subtitle: 'Why Us',
-      content: `${founder || 'Founding team'} at ${stage || 'current stage'} executing toward: ${northStar || 'our north star goal'}.`,
+      id: 'product',
+      title: 'Product',
+      content: `Core value proposition: ${app.northStar}`,
+      bg: 'bg-[var(--bg-card)]'
     },
+    {
+      id: 'bizmodel',
+      title: 'Business Model',
+      content: `Pricing: $${app.arpu.toLocaleString()} ARPU/mo\nGross Margin: ${app.grossMargin}%\nLTV: $${app.derived.ltv.toLocaleString()}`,
+      bg: 'bg-[var(--bg-card)]'
+    },
+    {
+      id: 'team',
+      title: 'Team',
+      content: `${app.founder} (${app.teamSize} employees)\n\nWe have the unique insights to win this market.`,
+      bg: 'bg-[var(--bg-card)]'
+    },
+    {
+      id: 'financials',
+      title: 'Financials',
+      content: `Current Runway: ${app.derived.runwayMonths} months\nMonthly Burn: $${app.burn.toLocaleString()}\nBurn Multiple: ${app.derived.burnMultiple}x`,
+      bg: 'bg-[var(--bg-card)]'
+    },
+    {
+      id: 'competition',
+      title: 'Competition',
+      content: `Competitors: ${app.competitors || 'None listed yet.'}\n\nOur Moat: Better UX, better distribution, unique AI integration.`,
+      bg: 'bg-[var(--bg-card)]'
+    },
+    {
+      id: 'ask',
+      title: 'The Ask',
+      content: `Raising $${(app.targetRaise/1000000).toFixed(2)}M\nat a $${(app.valuation/1000000).toFixed(2)}M Cap\n\nUse of Funds:\n${app.useOfFunds || 'Engineering, Go-to-market, Operations'}`,
+      bg: 'bg-gradient-to-tl from-[var(--bg-card)] to-[rgba(16,185,129,0.1)]'
+    }
   ];
 
-  const initialSlides = useMemo(buildSlides, [
-    idea,
-    capital,
-    revenue,
-    growth,
-    ltv,
-    cac,
-    industry,
-    problem,
-    founder,
-    stage,
-    northStar,
-  ]);
-  const [slides, setSlides] = useState(initialSlides);
-
   useEffect(() => {
-    setSlides((prev) => prev.map((s, i) => initialSlides[i] || s));
-  }, [initialSlides]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setActiveSlide(s => Math.min(slides.length - 1, s + 1));
+      if (e.key === 'ArrowLeft') setActiveSlide(s => Math.max(0, s - 1));
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [slides.length]);
 
-  const nextSlide = () => setActiveSlide((p) => (p + 1) % slides.length);
-  const prevSlide = () => setActiveSlide((p) => (p - 1 + slides.length) % slides.length);
-  const updateSlide = (field, val) =>
-    setSlides((prev) => prev.map((s, i) => (i === activeSlide ? { ...s, [field]: val } : s)));
-  const addSlide = () => {
-    setSlides((prev) => [
-      ...prev,
-      { title: 'New Slide', subtitle: 'Add subtitle', content: 'Describe the insight here.' },
-    ]);
-    setActiveSlide(slides.length);
-  };
-
-  const downloadSlides = () => {
-    const content = slides
-      .map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.subtitle}\n${s.content}\n`)
-      .join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
+  const exportMarkdown = () => {
+    const md = slides.map((s, i) => `## Slide ${i+1}: ${s.title}\n\n${s.content}\n\n---\n`).join('\n');
+    const blob = new Blob([md], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), {
-      href: url,
-      download: 'venturepilot-deck.txt',
-    });
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${app.idea.split(' ')[0] || 'pitch'}_deck.md`;
     a.click();
-    URL.revokeObjectURL(url);
-    setStatus('Slide deck exported as .txt');
   };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}${window.location.pathname}#/pitch`,
-      );
-      setStatus('Private view link copied.');
-    } catch {
-      setStatus('Clipboard blocked.');
-    }
+  const exportHTML = () => {
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<title>${app.idea} Pitch Deck</title>
+<style>
+  body { font-family: sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+  .slide { aspect-ratio: 16/9; width: 800px; background: #1e293b; border-radius: 12px; padding: 3rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: center; }
+  .slide h2 { font-size: 2.5rem; margin-top: 0; color: #818cf8; }
+  .slide pre { white-space: pre-wrap; font-family: inherit; font-size: 1.5rem; line-height: 1.5; }
+</style>
+</head>
+<body>
+  ${slides.map((s, i) => `
+  <div class="slide" id="slide-${i}">
+    <h2>${s.title}</h2>
+    <pre>${s.content}</pre>
+  </div>`).join('\n')}
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${app.idea.split(' ')[0] || 'pitch'}_deck.html`;
+    a.click();
   };
 
-  const sendDeck = () => {
-    if (!shareEmail.includes('@')) {
-      setStatus('Add a valid email.');
-      return;
-    }
-    setStatus(`Deck shared with ${shareEmail}`);
-    setShareEmail('');
+  const copySlide = () => {
+    const s = slides[activeSlide];
+    navigator.clipboard.writeText(`Slide: ${s.title}\n\n${s.content}`);
+    app.addToast('Slide copied to clipboard', 'success');
   };
 
-  const inputSt = {
-    width: '100%',
-    background: 'rgba(0,0,0,0.2)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 10,
-    padding: '11px 13px',
-    color: '#f0f4ff',
-    fontWeight: 600,
-    outline: 'none',
+  const submitAI = (prompt: string) => {
+    window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
   };
+
+  const current = slides[activeSlide];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      <header
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}
-      >
+    <div className="max-w-[1200px] mx-auto pb-24 h-full flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 px-2">
         <div>
-          <h1 style={{ fontSize: 30, fontWeight: 800, color: '#f0f4ff' }}>
-            Slide Deck{' '}
-            <span
-              style={{
-                background: 'linear-gradient(90deg,#6366f1,#a855f7)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Generator
-            </span>
+          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <Presentation className="text-[var(--accent)]" /> Pitch Deck Generator
           </h1>
-          <p style={{ color: '#8798b0', marginTop: 6, fontSize: 15 }}>
-            Dynamically generated from your core venture metrics.
+          <p className="text-[var(--text-muted)] mt-1 font-medium font-mono text-sm tracking-wide">
+             12-slide structured narrative. Export anywhere. Use ←/→ arrows to navigate.
           </p>
         </div>
-        <button
-          onClick={addSlide}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '11px 16px',
-            borderRadius: 12,
-            background: 'rgba(99,102,241,0.1)',
-            border: '1px solid rgba(99,102,241,0.2)',
-            color: '#c7d2f0',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={15} /> Add Slide
-        </button>
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Slide viewer */}
-          <Card style={{ padding: 0, height: 480, overflow: 'hidden' }}>
-            <div
-              style={{
-                height: '100%',
-                background: 'linear-gradient(135deg,#0d1420 0%,#080c14 100%)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: '48px 56px',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 32,
-                  left: 56,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <Presentation size={16} color="#6366f1" />
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: 'rgba(99,102,241,0.5)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  VenturePilot // Pitch
-                </span>
-              </div>
-              <motion.div
-                key={activeSlide}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
-              >
-                <h4
-                  style={{
-                    color: '#6366f1',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  {slides[activeSlide]?.subtitle}
-                </h4>
-                <h2 style={{ fontSize: 44, fontWeight: 800, color: '#f0f4ff', lineHeight: 1.1 }}>
-                  {slides[activeSlide]?.title}
-                </h2>
-                <p
-                  style={{
-                    color: '#8798b0',
-                    fontSize: 17,
-                    lineHeight: 1.65,
-                    maxWidth: 560,
-                    marginTop: 8,
-                  }}
-                >
-                  {slides[activeSlide]?.content}
-                </p>
-              </motion.div>
-              <div
-                style={{ position: 'absolute', bottom: 32, right: 36, display: 'flex', gap: 10 }}
-              >
-                <button
-                  onClick={prevSlide}
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 9,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#f0f4ff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 9,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#f0f4ff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 36,
-                  left: 56,
-                  color: '#475569',
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                SLIDE {activeSlide + 1} / {slides.length}
-              </div>
-            </div>
-          </Card>
-
-          {/* Slide thumbnails */}
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-            {slides.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveSlide(i)}
-                style={{
-                  minWidth: 90,
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  background: i === activeSlide ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.03)',
-                  border:
-                    i === activeSlide
-                      ? '1px solid rgba(99,102,241,0.5)'
-                      : '1px solid rgba(255,255,255,0.05)',
-                  color: i === activeSlide ? '#c7d2f0' : '#64748b',
-                  fontWeight: 700,
-                  fontSize: 11,
-                  textAlign: 'left',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {i + 1}. {s.title}
-              </button>
-            ))}
+        
+        <div className="flex items-center gap-3">
+          <button onClick={() => submitAI('Critique my current pitch deck content and suggest one major improvement for the narrative.')} className="bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] text-[13px] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all shadow-glow hover:-translate-y-0.5 card-hover">
+             <Sparkles size={14} className="text-[var(--accent-light)]" /> AI Review
+          </button>
+          <div className="flex bg-[rgba(255,255,255,0.05)] rounded-xl border border-[rgba(255,255,255,0.1)] p-1">
+             <button onClick={exportMarkdown} className="px-3 py-1.5 text-xs font-bold text-[var(--text-muted)] hover:text-white rounded-md hover:bg-[rgba(255,255,255,0.05)] flex items-center gap-2 transition-colors">
+               <FileJson size={14} /> Markdown
+             </button>
+             <button onClick={exportHTML} className="px-3 py-1.5 text-xs font-bold text-[var(--text-muted)] hover:text-white rounded-md hover:bg-[rgba(255,255,255,0.05)] flex items-center gap-2 transition-colors">
+               <Download size={14} /> HTML
+             </button>
           </div>
-
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button
-              onClick={downloadSlides}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                padding: '14px',
-                borderRadius: 12,
-                background: '#6366f1',
-                border: 'none',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 14,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              <Download size={16} /> Export TXT
-            </button>
-            <button
-              onClick={copyLink}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                padding: '14px',
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#f0f4ff',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Copy Link
-            </button>
-            <button
-              onClick={() => setSlides(buildSlides())}
-              style={{
-                flex: 1,
-                minWidth: 150,
-                padding: '14px',
-                borderRadius: 12,
-                background: 'rgba(16,185,129,0.1)',
-                border: '1px solid rgba(16,185,129,0.2)',
-                color: '#10b981',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              <RefreshCcw size={15} /> Sync Metrics
-            </button>
-          </div>
-          {status && <p style={{ color: '#10b981', fontSize: 12, fontWeight: 700 }}>{status}</p>}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* AI Narrator */}
-          <Card>
-            <SectionHeader
-              icon={Sparkles}
-              title="AI Narrator"
-              subtitle="Core messaging refinements"
-              color="#a855f7"
-            />
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                background: 'rgba(168,85,247,0.05)',
-                border: '1px dashed rgba(168,85,247,0.2)',
-                marginBottom: 12,
-              }}
-            >
-              <p style={{ color: '#c7d2f0', fontSize: 13, lineHeight: 1.65, fontStyle: 'italic' }}>
-                {`"Lean into the ${industry || 'market'} edge: you solve '${(problem || '').slice(0, 60) || 'a core pain'}…' and your LTV/CAC ${(ltv / cac).toFixed(1)}x efficiency lets you grow without burning cash."`}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setGenerating(true);
-                setTimeout(() => setGenerating(false), 1800);
-              }}
-              style={{
-                width: '100%',
-                padding: '11px',
-                borderRadius: 9,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#f0f4ff',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {generating ? 'Recalculating…' : 'Optimize Narrative'}
-            </button>
-          </Card>
-
-          {/* Slide editor */}
-          <Card>
-            <SectionHeader
-              icon={LayoutTemplate}
-              title="Slide Editor"
-              subtitle="Edit the active slide"
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input
-                value={slides[activeSlide]?.title || ''}
-                onChange={(e) => updateSlide('title', e.target.value)}
-                placeholder="Slide title"
-                style={inputSt}
-              />
-              <input
-                value={slides[activeSlide]?.subtitle || ''}
-                onChange={(e) => updateSlide('subtitle', e.target.value)}
-                placeholder="Subtitle"
-                style={{ ...inputSt, color: '#c7d2f0' }}
-              />
-              <textarea
-                value={slides[activeSlide]?.content || ''}
-                onChange={(e) => updateSlide('content', e.target.value)}
-                rows={5}
-                style={{
-                  ...inputSt,
-                  color: '#8798b0',
-                  resize: 'vertical',
-                  fontWeight: 500,
-                  lineHeight: 1.55,
-                }}
-              />
-            </div>
-          </Card>
-
-          {/* Share */}
-          <Card>
-            <SectionHeader
-              icon={Mail}
-              title="Share Deck"
-              subtitle="Send a private copy"
-              color="#22c55e"
-            />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                placeholder="investor@firm.com"
-                style={{ ...inputSt, flex: 1 }}
-              />
-              <button
-                onClick={sendDeck}
-                style={{
-                  padding: '11px 16px',
-                  borderRadius: 10,
-                  background: '#22c55e',
-                  border: 'none',
-                  color: '#0b1120',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <Send size={15} /> Send
-              </button>
-            </div>
-          </Card>
-
-          {/* Checklist */}
-          <Card>
-            <SectionHeader
-              icon={ListChecks}
-              title="Series A Checklist"
-              subtitle="Required slide coverage"
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                'Solid Unit Economics',
-                'Clear Growth Roadmap',
-                'Competitive Moat',
-                'Team Background',
-                'Use of Funds',
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 4,
-                      border: '2px solid #6366f1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div style={{ width: 8, height: 8, borderRadius: 1, background: '#6366f1' }} />
-                  </div>
-                  <span style={{ color: '#8798b0', fontSize: 13, fontWeight: 500 }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
         </div>
       </div>
+
+      {/* Main Presentation Screen */}
+      <div className="flex-1 flex items-center justify-center relative min-h-[500px]">
+         <div className="absolute left-0 z-10 p-4">
+            <button 
+               onClick={() => setActiveSlide(s => Math.max(0, s - 1))}
+               disabled={activeSlide === 0}
+               className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center hover:bg-[var(--accent)] text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+               <ChevronLeft size={24} />
+            </button>
+         </div>
+         
+         <div className={`w-full max-w-4xl aspect-video rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.1)] relative overflow-hidden flex flex-col justify-center p-16 ${current.bg} transition-colors duration-500`}>
+            
+            <div className="absolute top-6 right-6 flex gap-2">
+               <button onClick={copySlide} className="p-2 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-muted)] hover:text-white transition-colors">
+                  <Copy size={16} />
+               </button>
+            </div>
+
+            <div className="absolute top-6 left-6 text-sm font-bold font-mono text-[var(--accent-light)] opacity-70">
+               {String(activeSlide + 1).padStart(2, '0')} / {slides.length}
+            </div>
+
+            <h2 className={`text-5xl font-black text-white mb-8 tracking-tight ${activeSlide === 0 ? 'text-6xl text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400' : ''}`}>
+               {current.title}
+            </h2>
+            <div className={`text-2xl text-[var(--text-secondary)] font-medium leading-relaxed whitespace-pre-wrap ${activeSlide === 0 ? 'text-center text-3xl' : ''}`}>
+               {current.content}
+            </div>
+         </div>
+
+         <div className="absolute right-0 z-10 p-4">
+            <button 
+               onClick={() => setActiveSlide(s => Math.min(slides.length - 1, s + 1))}
+               disabled={activeSlide === slides.length - 1}
+               className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center hover:bg-[var(--accent)] text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            >
+               <ChevronRight size={24} />
+            </button>
+         </div>
+      </div>
+
+      {/* Thumbnail Strip */}
+      <div className="mt-8 overflow-x-auto pb-4 custom-scrollbar">
+         <div className="flex gap-4 min-w-max px-2">
+            {slides.map((s, idx) => (
+               <button
+                  key={s.id}
+                  onClick={() => setActiveSlide(idx)}
+                  className={`relative flex flex-col justify-center items-center w-32 aspect-video rounded-xl border-2 transition-all overflow-hidden ${activeSlide === idx ? 'border-[var(--accent)] shadow-glow scale-105 z-10' : 'border-[rgba(255,255,255,0.1)] opacity-50 hover:opacity-100'} ${s.bg}`}
+               >
+                  <span className="text-[10px] font-bold text-[var(--text-primary)] text-center px-2 line-clamp-2">
+                     {s.title}
+                  </span>
+                  <span className="absolute bottom-1 right-2 text-[8px] font-mono font-bold text-[var(--text-muted)] opacity-50">
+                     {idx + 1}
+                  </span>
+               </button>
+            ))}
+         </div>
+      </div>
+
     </div>
   );
 }

@@ -1,534 +1,346 @@
-import React, { useMemo } from 'react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-} from 'recharts';
-import {
-  Clock,
-  DollarSign,
-  TrendingUp,
-  BarChart2,
-  Target,
-  Cpu,
-  Users,
-  Gauge,
-  Download,
-  AlertTriangle,
-  Activity,
-} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { StatCard, Card, SectionHeader } from '../components/Shared';
-
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#a855f7'];
+import { Card, SectionHeader, StatCard, MetricTooltip, Badge } from '../components/Shared';
+import { Activity, Download, Zap, BarChart2, TrendingUp, Sparkles, Filter, ShieldCheck, PieChart, Target, CalendarDays, Rocket } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  BarChart, Bar
+} from 'recharts';
 
 export default function Dashboard() {
-  const {
-    capital,
-    burn,
-    revenue,
-    growth,
-    headcount,
-    cac,
-    arpu,
-    churn,
-    pipeline,
-    runwayMonths,
-    netBurn,
-    readinessScore,
-    ltv,
-    payback,
-    revenuePerEmployee,
-    pipelineCoverage,
-    arr,
-    mrr,
-    industry,
-    problem,
-    founder,
-    stage,
-    northStar,
-    dailySnapshots,
-    addToast,
-  } = useApp();
+  const app = useApp();
+  const [showRaiseScenario, setShowRaiseScenario] = useState(false);
+  const [scenarioRaise, setScenarioRaise] = useState(app.targetRaise || 750000);
 
-  const mc = useMemo(() => {
-    const trials = 200;
-    let under6 = 0;
-    const buckets = [0, 3, 6, 9, 12, 18, 24];
-    const dist = buckets.map((b) => ({ bucket: b, count: 0 }));
-    for (let i = 0; i < trials; i++) {
-      const g = Math.max(-20, growth + (Math.random() - 0.5) * 25);
-      const b = burn * (1 + (Math.random() - 0.5) * 0.15);
-      const rw = capital / Math.max(b - revenue * Math.pow(1 + g / 100, 1), 1);
-      if (rw < 6) under6++;
-      const bi = buckets.findIndex(
-        (x, idx) => rw >= x && (idx === buckets.length - 1 || rw < buckets[idx + 1]),
-      );
-      if (bi >= 0) dist[bi].count += 1;
+  // Health Data for Radar
+  const radarData = useMemo(() => [
+    { subject: 'Growth', A: Math.min(app.growth * 5, 100), fullMark: 100 },
+    { subject: 'Profitability', A: Math.min(app.grossMargin, 100), fullMark: 100 },
+    { subject: 'Efficiency', A: Math.max(0, 100 - app.derived.burnMultiple * 20), fullMark: 100 },
+    { subject: 'Runway', A: Math.min(app.derived.runwayMonths * 5, 100), fullMark: 100 },
+    { subject: 'Retention', A: Math.min(app.ndr, 150) / 1.5, fullMark: 100 },
+    { subject: 'Pipeline', A: Math.min(app.derived.pipelineCoverage, 300) / 3, fullMark: 100 },
+  ], [app]);
+
+  // Cash Projection Chart
+  const projectionData = useMemo(() => {
+    const data = [];
+    let currentCash = app.capital + (showRaiseScenario ? scenarioRaise : 0);
+    let currentRev = app.revenue;
+    const baseBurn = app.burn;
+
+    for (let month = 0; month <= 18; month++) {
+      if (month > 0) {
+        currentCash -= Math.max(baseBurn - currentRev, 0);
+        currentRev *= (1 + app.growth / 100);
+      }
+      data.push({
+        month: `M${month}`,
+        cash: Math.max(currentCash, 0),
+        revenue: currentRev,
+        breakeven: baseBurn
+      });
     }
-    return {
-      risk: Math.round((under6 / trials) * 100),
-      dist: dist.map((d) => ({ ...d, prob: Math.round((d.count / trials) * 100) })),
-    };
-  }, [capital, burn, revenue, growth]);
+    return data;
+  }, [app, showRaiseScenario, scenarioRaise]);
 
-  const chartData = Array.from({ length: 24 }).map((_, i) => ({
-    month: i + 1,
-    cash: Math.max(capital - (burn - revenue) * (i + 1), 0),
-  }));
-
-  const capitalStack = useMemo(() => {
-    let vc = 25, revFin = 15, grants = 15, angel = 25, bootstrap = 20;
+  // Monte Carlo Simulation
+  const { histogram, riskBadge, survivalRate } = useMemo(() => {
+    const TRIALS = 2000;
+    const results = [];
+    let survived = 0;
     
-    // Stage weighting
-    if (stage === 'Seed') angel += 25, vc -= 10;
-    if (stage === 'Series A') vc += 30, angel -= 15;
+    for (let i = 0; i < TRIALS; i++) {
+        let cash = app.capital;
+        let rev = app.revenue;
+        const burn = app.burn;
+        let months = 0;
+        
+        while (cash > 0 && months < 36) {
+            // Random variance +/- 15% revenue growth, +/- 10% burn
+            const rVar = 1 + ((Math.random() * 0.3) - 0.15);
+            const bVar = 1 + ((Math.random() * 0.2) - 0.10);
+            
+            cash -= Math.max((burn * bVar) - rev, 0);
+            rev *= (1 + (app.growth / 100) * rVar);
+            months++;
+        }
+        results.push(months);
+        if (months >= 24) survived++;
+    }
+
+    const survivalRate = Math.round((survived / TRIALS) * 100);
     
-    // Runway adjustment
-    if (runwayMonths < 6) bootstrap += 20, vc -= 10;
-    if (runwayMonths > 12) vc += 15, bootstrap -= 10;
-    
-    // Efficiency
-    const ltvRatio = ltv / cac;
-    if (ltvRatio > 4) revFin += 25;
-    if (readinessScore > 75) vc += 15;
-    
-    // Normalize to 100%
-    const total = vc + revFin + grants + angel + bootstrap;
-    return [
-      { name: 'Venture Capital', value: Math.round((vc / total) * 100) },
-      { name: 'Revenue Financing', value: Math.round((revFin / total) * 100) },
-      { name: 'Grants/Gov', value: Math.round((grants / total) * 100) },
-      { name: 'Angel Investors', value: Math.round((angel / total) * 100) },
-      { name: 'Bootstrap', value: Math.round((bootstrap / total) * 100) },
-    ].filter(s => s.value > 5);
-  }, [stage, runwayMonths, ltv, cac, readinessScore]);
-
-  const efficiencyItems = [
-    { name: 'LTV/CAC', value: (ltv / cac).toFixed(1) },
-    { name: 'Payback (mo)', value: payback },
-    { name: 'Rev/Employee', value: `$${revenuePerEmployee}` },
-    { name: 'Pipeline Cover %', value: pipelineCoverage },
-  ];
-
-  const alerts = [];
-  if (runwayMonths < 6) alerts.push('Runway under 6 months — extend or raise.');
-  if (growth < 8) alerts.push('Growth below 8% MoM — revisit GTM.');
-  if (ltv / cac < 3) alerts.push('LTV/CAC below 3× — efficiency risk.');
-  if (payback > 12) alerts.push('Payback over 12 months — tighten CAC.');
-
-
-
-  const exportMetrics = () => {
-    const rows = [
-      ['metric', 'value'],
-      ['capital', capital],
-      ['burn', burn],
-      ['revenue_mrr', revenue],
-      ['growth_percent', growth],
-      ['headcount', headcount],
-      ['cac', cac],
-      ['arpu', arpu],
-      ['churn_percent', churn],
-      ['pipeline', pipeline],
-      ['runway_months', runwayMonths],
-      ['ltv', ltv],
-      ['payback_months', payback],
-      ['pipeline_coverage_percent', pipelineCoverage],
-    ];
-    const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' });
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: 'venturepilot-metrics.csv',
+    // Binning into 6-month intervals
+    const bins = [0,0,0,0,0,0];
+    results.forEach(m => {
+        if (m < 6) bins[0]++;
+        else if (m < 12) bins[1]++;
+        else if (m < 18) bins[2]++;
+        else if (m < 24) bins[3]++;
+        else if (m < 30) bins[4]++;
+        else bins[5]++;
     });
+
+    const histogram = [
+        { name: '<6m', count: bins[0] },
+        { name: '6-12m', count: bins[1] },
+        { name: '12-18m', count: bins[2] },
+        { name: '18-24m', count: bins[3] },
+        { name: '24-30m', count: bins[4] },
+        { name: '>30m', count: bins[5] }
+    ];
+
+    let riskBadge = { label: 'High Risk', color: 'var(--red)' };
+    if (survivalRate > 80) riskBadge = { label: 'Safe', color: 'var(--green)' };
+    else if (survivalRate > 40) riskBadge = { label: 'Moderate', color: 'var(--amber)' };
+
+    return { histogram, riskBadge, survivalRate };
+  }, [app]);
+
+  const exportCSV = () => {
+    const rows = [
+      ['Metric', 'Value', 'Unit'],
+      ['Runway', app.derived.runwayMonths, 'months'],
+      ['Cash Remaining', app.capital, 'USD'],
+      ['Monthly Revenue', app.revenue, 'USD'],
+      ['Gross Margin', app.grossMargin, '%'],
+      ['Burn Multiple', app.derived.burnMultiple, 'x'],
+      ['Rule of 40', app.derived.ruleOf40, '%'],
+      ['NDR', app.ndr, '%'],
+      ['Implied Valuation', app.derived.impliedValuation, 'USD'],
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vp-export-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
-    URL.revokeObjectURL(a.href);
+  };
+
+  const getBorderColor = (val: number, good: number, bad: number, inverse = false) => {
+      // Return green/yellow/red color string
+      // If inverse=true, LOWER is better (e.g. Burn Multiple)
+      let isGood = inverse ? val <= good : val >= good;
+      let isBad = inverse ? val >= bad : val <= bad;
+      if (isGood) return 'border-l-[10px] border-l-emerald-500';
+      if (isBad) return 'border-l-[10px] border-l-red-500';
+      return 'border-l-[10px] border-l-amber-500';
+  };
+
+  const submitAI = (prompt: string) => {
+    window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
   };
 
   return (
-    <div className="flex flex-col gap-7">
-      <header className="flex justify-between items-center gap-4 flex-wrap">
+    <div className="max-w-[1400px] mx-auto pb-24">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] [-letter-spacing:-0.03em] mb-1.5 bg-gradient-to-r from-[var(--accent)] to-[#a855f7] bg-clip-text text-transparent">
-            Financial Overview
+          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <Activity className="text-[var(--accent)]" /> Dashboard
           </h1>
-          <p className="text-[var(--text-muted)] text-lg">
-            Real-time intelligence based on your current metrics.
+          <p className="text-[var(--text-muted)] mt-1 font-medium font-mono text-sm tracking-wide">
+            Real-time financial telemetry mapped to AI benchmarks.
           </p>
         </div>
-        <div className="flex gap-2.5 flex-wrap">
-          <button
-            onClick={exportMetrics}
-            className="flex items-center gap-2 px-4 py-2.75 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] font-bold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover"
-          >
-            <Download size={15} /> Export CSV
+        
+        <div className="flex items-center gap-3">
+          <button onClick={() => submitAI('Analyze my current dashboard KPIs and give me 3 priority actions.')} className="bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] text-[13px] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all shadow-glow hover:-translate-y-0.5 card-hover">
+             <Sparkles size={14} className="text-[var(--accent-light)]" /> AI Insights
           </button>
-          <button
-            onClick={() => {
-              const s = `Runway: ${runwayMonths}mo | Growth: ${growth}% | MRR: $${mrr.toLocaleString()} | LTV/CAC: ${(ltv / cac).toFixed(1)}x | Payback: ${payback}mo | Pipeline: ${pipelineCoverage}%`;
-              navigator.clipboard.writeText(s).then(
-                () => addToast('Summary copied'),
-                () => addToast('Clipboard blocked'),
-              );
-            }}
-            className="flex items-center gap-2 px-4 py-2.75 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] font-bold cursor-pointer hover:bg-[rgba(255,255,255,0.08)] hover:glow-hover"
-          >
-            Copy Summary
+          <button onClick={exportCSV} className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-glow hover:shadow-[0_0_20px_var(--accent-glow)] transition-all hover:-translate-y-0.5 card-hover text-[13px]">
+            <Download size={14} /> Export CSV
           </button>
         </div>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <StatCard
-          icon={Clock}
-          label="Runway"
-          value={`${runwayMonths} mo`}
-          sub="Until cash-out"
-          color="#6366f1"
-          glow="rgba(99,102,241,0.1)"
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard 
+          icon={TrendingUp} 
+          label="Gross Margin" 
+          value={`${app.grossMargin}%`} 
+          sub="Target: >80% (SaaS)" 
+          className={getBorderColor(app.grossMargin, 80, 60)} 
         />
-        <StatCard
-          icon={DollarSign}
-          label="Monthly Net Burn"
-          value={`$${netBurn.toLocaleString()}`}
-          sub={`${Math.round((revenue / burn) * 100)}% coverage`}
-          color="#10b981"
-          glow="rgba(16,185,129,0.08)"
+        <StatCard 
+          icon={PieChart} 
+          label={<MetricTooltip term="NDR">Net Dollar Retention</MetricTooltip>} 
+          value={`${app.ndr}%`} 
+          sub="Target: >100%" 
+          className={getBorderColor(app.ndr, 100, 80)} 
         />
-        <StatCard
-          icon={TrendingUp}
-          label="Readiness Score"
-          value={`${readinessScore}/100`}
-          sub="Investor perspective"
-          color="#f59e0b"
-          glow="rgba(245,158,11,0.08)"
+        <StatCard 
+          icon={Target} 
+          label={<MetricTooltip term="Rule of 40">Rule of 40</MetricTooltip>} 
+          value={`${app.derived.ruleOf40}%`} 
+          sub="Growth + Margin" 
+          className={getBorderColor(app.derived.ruleOf40, 40, 20)} 
+        />
+        <StatCard 
+          icon={Zap} 
+          label={<MetricTooltip term="Burn Multiple">Burn Multiple</MetricTooltip>} 
+          value={`${app.derived.burnMultiple}x`} 
+          sub="Target: <2.0x" 
+          className={getBorderColor(app.derived.burnMultiple, 1.5, 3.0, true)} 
         />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={DollarSign}
-          label="MRR"
-          value={`$${mrr.toLocaleString()}`}
-          sub="Recurring revenue"
-          color="#22c55e"
-        />
-        <StatCard
-          icon={Users}
-          label="Headcount"
-          value={headcount}
-          sub={`$${revenuePerEmployee}/emp`}
-          color="#38bdf8"
-        />
-        <StatCard
-          icon={Gauge}
-          label="Payback"
-          value={`${payback} mo`}
-          sub="CAC recovery"
-          color="#a855f7"
-        />
-        <StatCard
-          icon={BarChart2}
-          label="Pipeline Cover"
-          value={`${pipelineCoverage}%`}
-          sub="12m pipeline / ARR"
-          color="#f97316"
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+        
+        {/* Main Chart */}
+        <div className="lg:col-span-8">
+          <Card glow="rgba(99,102,241,0.1)" className="h-full flex flex-col relative">
+            <div className="flex justify-between items-center mb-6 z-10">
+              <SectionHeader icon={BarChart2} title="Runway Trajectory" />
+              <div className="flex items-center gap-3">
+                 <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Raise Scenario</span>
+                 <button 
+                  onClick={() => setShowRaiseScenario(!showRaiseScenario)}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${showRaiseScenario ? 'bg-[var(--accent)]' : 'bg-[rgba(255,255,255,0.1)]'}`}
+                 >
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${showRaiseScenario ? 'translate-x-6' : 'translate-x-0'}`} />
+                 </button>
+              </div>
+            </div>
+
+            {showRaiseScenario && (
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--accent)] rounded-full px-4 py-1.5 shadow-glow">
+                 <span className="text-xs font-bold text-[var(--text-primary)]">Injection:</span>
+                 <input 
+                   type="range" 
+                   min={100000} 
+                   max={5000000} 
+                   step={100000} 
+                   value={scenarioRaise} 
+                   onChange={(e)=> setScenarioRaise(Number(e.target.value))}
+                   className="w-32 accent-[var(--accent)]"
+                 />
+                 <span className="text-sm font-mono font-bold text-[var(--accent-light)]">${(scenarioRaise/1000000).toFixed(2)}M</span>
+              </div>
+            )}
+
+            <div className="flex-1 min-h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={projectionData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                     <linearGradient id="colorBurn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'monospace'}} />
+                  <YAxis stroke="rgba(255,255,255,0.3)" tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'monospace'}} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 12, fontFamily: 'monospace' }} 
+                    formatter={(val: number) => `$${val.toLocaleString()}`}
+                  />
+                  <Area type="monotone" dataKey="breakeven" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorBurn)" name="Burn Rate" />
+                  <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" name="Revenue" />
+                  <Area type="monotone" dataKey="cash" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCash)" name="Cash Remaining" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+
+        {/* Radar & Simulation */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <Card padding="1rem">
+             <SectionHeader icon={ShieldCheck} title="Health Radar" />
+             <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="subject" tick={{fill: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 'bold'}} />
+                    <Radar name="Score" dataKey="A" stroke="var(--accent-light)" fill="var(--accent)" fillOpacity={0.4} />
+                  </RadarChart>
+                </ResponsiveContainer>
+             </div>
+          </Card>
+
+          <Card padding="1rem" className="flex-1">
+            <div className="flex justify-between items-start mb-4">
+               <SectionHeader icon={Filter} title="Monte Carlo (2k runs)" />
+               <Badge color={riskBadge.color}>{riskBadge.label}</Badge>
+            </div>
+            <p className="text-3xl font-black text-white font-mono mb-1">{survivalRate}%</p>
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-6">Probability of surviving 24m</p>
+            
+            <div className="h-[120px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={histogram}>
+                   <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                   <XAxis dataKey="name" stroke="none" tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}} />
+                   <Bar dataKey="count" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+               </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
       </div>
 
+      {/* Fundraising Timeline Section */}
       <Card>
-        <SectionHeader
-          icon={Users}
-          title="Profile Snapshot"
-          subtitle="Personalized for your team"
-          color="#38bdf8"
-        />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {[
-            ['Founder / Team', founder],
-            ['Stage', stage],
-            ['Industry', industry || 'Set in sidebar'],
-            ['North Star', northStar],
-          ].map(([label, value], i) => (
-            <div
-              key={i}
-              className="p-3.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
-            >
-              <p className="text-[#64748b] text-xs font-bold uppercase">
-                {label}
-              </p>
-              <p className="text-[var(--text-primary)] font-black text-sm mt-1.5">
-                {value || '—'}
-              </p>
+         <div className="flex justify-between items-center mb-6">
+            <SectionHeader icon={CalendarDays} title="Fundraising Timeline" />
+            <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">Estimated 10 weeks to close</span>
+         </div>
+         
+         <div className="relative overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex gap-4 min-w-max">
+               {app.timeline.map((item, idx) => (
+                  <div key={item.id} className={`flex-1 min-w-[200px] border border-[rgba(255,255,255,0.08)] rounded-[var(--radius-lg)] p-4 relative overflow-hidden bg-[rgba(255,255,255,0.02)] ${item.done ? 'border-emerald-500/30 bg-emerald-500/5' : ''}`}>
+                     {item.done && <div className="absolute right-0 top-0 w-8 h-8 bg-emerald-500/20 rounded-bl-full flex items-center justify-center -mr-1 -mt-1"><ShieldCheck size={12} className="text-emerald-500 ml-1 mb-1" /></div>}
+                     <div className="flex items-center gap-2 mb-2">
+                        <input 
+                          type="checkbox" 
+                          checked={item.done} 
+                          onChange={(e) => {
+                             const newTimeline = [...app.timeline];
+                             newTimeline[idx].done = e.target.checked;
+                             app.dispatch({ type: 'BULK_SET', payload: { timeline: newTimeline } });
+                          }}
+                          className="w-4 h-4 rounded-sm border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                        />
+                        <h4 className={`font-bold text-sm ${item.done ? 'text-emerald-400' : 'text-[var(--text-primary)]'}`}>{item.label}</h4>
+                     </div>
+                     <div className="flex justify-between items-end mt-4">
+                        <div className="flex flex-col">
+                           <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase">Duration</span>
+                           <div className="flex items-center gap-1 group">
+                              <input 
+                                 type="number" 
+                                 value={item.durationDays}
+                                 onChange={(e) => {
+                                    const newTimeline = [...app.timeline];
+                                    newTimeline[idx].durationDays = Number(e.target.value);
+                                    app.dispatch({ type: 'BULK_SET', payload: { timeline: newTimeline } });
+                                 }}
+                                 className="bg-transparent border-b border-transparent group-hover:border-[rgba(255,255,255,0.2)] focus:border-[var(--accent)] outline-none w-8 text-sm font-mono text-[var(--text-primary)] transition-colors p-0 text-center"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] font-medium">days</span>
+                           </div>
+                        </div>
+                        <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
+                           T+{(app.timeline.slice(0,idx).reduce((acc, curr) => acc + curr.durationDays, 0))}d
+                        </span>
+                     </div>
+                  </div>
+               ))}
             </div>
-          ))}
-        </div>
-      </Card>
-
-{alerts.length > 0 && (
-        <Card className="bg-[rgba(239,68,68,0.05)] border-[rgba(239,68,68,0.15)]">
-          <SectionHeader
-            icon={AlertTriangle}
-            title="Risk Alerts"
-            subtitle="Priority issues detected"
-            color="#ef4444"
-          />
-          <ul className="grid gap-2 pl-1 list-none">
-            {alerts.map((a, i) => (
-              <li
-                key={i}
-                className="font-bold text-sm text-[#fca5a5] flex items-center gap-2"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 block flex-shrink-0" />
-                {a}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-        <Card>
-          <SectionHeader
-            icon={Activity}
-            title="Monte Carlo Runway"
-            subtitle="Prob. of running out < 6 months (200 trials)"
-            color="#22c55e"
-          />
-          <p className="text-[var(--text-primary)] text-3xl font-black">{mc.risk}%</p>
-          <p className="text-[var(--text-muted)] text-sm mb-3">
-            Based on 200 trials with burn/growth variance of ±25%.
-          </p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={mc.dist}>
-              <XAxis dataKey="bucket" tickFormatter={(v) => `${v}m`} stroke="#4a6080" />
-              <YAxis stroke="#4a6080" />
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <Tooltip
-                contentStyle={{
-                  background: '#0d1420',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 12,
-                }}
-              />
-              <Bar dataKey="prob" name="% Trials" fill="#22c55e" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-
-      {dailySnapshots.length > 1 && (
-        <Card>
-          <SectionHeader
-            icon={Activity}
-            title="Daily Snapshots"
-            subtitle="Auto-captured trailing 30d"
-            color="#38bdf8"
-          />
-          <button
-            onClick={() => {
-              const rows = [
-                ['date', 'runwayMonths', 'revenue', 'burn', 'growth'],
-                ...dailySnapshots.map((s) => [
-                  s.date,
-                  s.runwayMonths ?? '',
-                  s.revenue ?? '',
-                  s.burn ?? '',
-                  s.growth ?? '',
-                ]),
-              ];
-              const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], {
-                type: 'text/csv',
-              });
-              const a = Object.assign(document.createElement('a'), {
-                href: URL.createObjectURL(blob),
-                download: 'snapshots.csv',
-              });
-              a.click();
-              addToast('Snapshots exported');
-            }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 9,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#c7d2f0',
-              fontWeight: 700,
-              marginBottom: 12,
-              cursor: 'pointer',
-              fontSize: 12,
-            }}
-          >
-            Export Snapshots CSV
-          </button>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
-            {dailySnapshots.map((s) => (
-              <div
-                key={s.date}
-                style={{
-                  minWidth: 100,
-                  padding: 10,
-                  borderRadius: 9,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  flexShrink: 0,
-                }}
-              >
-                <p style={{ color: '#64748b', fontSize: 10, fontWeight: 700 }}>{s.date}</p>
-                <p style={{ color: '#f0f4ff', fontSize: 14, fontWeight: 800 }}>
-                  RW {s.runwayMonths || '—'}m
-                </p>
-                <p style={{ color: '#8798b0', fontSize: 11 }}>
-                  ${(s.revenue || 0).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
-        <Card>
-          <SectionHeader
-            icon={BarChart2}
-            title="Cash Projection"
-            subtitle="24-month forward-looking runway"
-          />
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="rgba(255,255,255,0.05)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                stroke="#4a6080"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#4a6080"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: '#0d1420',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="cash"
-                stroke="#6366f1"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#colorCash)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card>
-          <SectionHeader
-            icon={Target}
-            title="Capital Allocation"
-            subtitle="Optimized funding mix"
-          />
-          <div className="h-[220px] relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={capitalStack}
-                  innerRadius={58}
-                  outerRadius={78}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {capitalStack.map((_, idx) => (
-                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: '#0d1420',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 12,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <p className="text-xs text-[var(--text-muted)] font-bold uppercase">
-                Recommended
-              </p>
-              <p className="text-2xl font-black text-[var(--text-primary)]">Stack</p>
-            </div>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2.5">
-            {capitalStack.map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i] }} />
-                <span className="text-sm text-[var(--text-muted)] font-semibold">{item.name}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <Card className="bg-gradient-to-br from-[rgba(99,102,241,0.1)] to-[rgba(168,85,247,0.1)] border-[rgba(99,102,241,0.15)]">
-        <SectionHeader
-          icon={Cpu}
-          title="Venture AI Insights"
-          subtitle="Financial health summary"
-          color="#a855f7"
-        />
-        <p className="text-[var(--text-secondary)] text-lg leading-relaxed max-w-2xl mb-5">
-          Your current metrics show a <strong>{runwayMonths}-month runway</strong> with a revenue
-          growth rate of <strong>{growth}%</strong>.
-          {growth > 10
-            ? ' You are in the top tier of growth for early-stage SaaS.'
-            : ' Focus on increasing MoM growth to improve investor appetite.'}{' '}
-          Operating in <strong>{industry || 'your market'}</strong>, you're tackling:{' '}
-          {problem || 'a core pain for your segment'}. Based on your {readinessScore}/100 readiness
-          score,{' '}
-          {readinessScore > 65
-            ? 'initiate Series A conversations now.'
-            : 'focus on hitting $15k MRR before fundraising.'}
-        </p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {efficiencyItems.map((item, i) => (
-            <div
-              key={i}
-              className="p-3.5 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)]"
-            >
-              <p className="text-[#64748b] text-xs font-bold uppercase tracking-[0.06em]">
-                {item.name}
-              </p>
-              <p className="text-[var(--text-primary)] text-lg font-black mt-1">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
+         </div>
       </Card>
     </div>
   );

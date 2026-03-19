@@ -20,6 +20,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.82",
     "clsx": "^2.1.1",
     "framer-motion": "^11.11.1",
     "gh-pages": "^6.3.0",
@@ -30,6 +31,7 @@
     "react-router-dom": "^6.26.2",
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.5.2",
+    "vite-plugin-pwa": "^1.2.0",
     "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
