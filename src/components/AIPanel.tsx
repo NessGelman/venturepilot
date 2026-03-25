@@ -152,7 +152,7 @@ export default function AIPanel() {
 
             {/* Loading Bar */}
             {ai.status.loading && ai.status.backend === 'webllm' && (
-              <div className="px-4 py-2 bg-[rgba(30,64,175,0.1)] border-b border-[rgba(30,64,175,0.3)]">
+              <div className="px-4 py-2 bg-[rgba(59,130,246,0.1)] border-b border-[rgba(59,130,246,0.3)]">
                 <div className="flex justify-between items-center mb-1 text-xs">
                   <span className="text-[var(--text-secondary)] font-medium">Downloading AI model...</span>
                   <span className="text-[var(--accent-light)] font-bold">{ai.status.progress}%</span>
