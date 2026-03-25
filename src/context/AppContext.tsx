@@ -19,6 +19,7 @@ const defaults: Omit<AppState, 'history' | 'future' | 'lastSaved'> = {
   arpu: 240,
   churn: 2.4,
   pipeline: 185000,
+  companyName: '',
   idea: 'AI startup helping founders choose the best capital sources',
   industry: 'B2B SaaS',
   problem: 'Founders lack a unified system to plan capital strategy with real-time data.',
@@ -270,6 +271,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           arpu: state.arpu,
           churn: state.churn,
           pipeline: state.pipeline,
+          companyName: state.companyName,
           idea: state.idea,
           industry: state.industry,
           problem: state.problem,
@@ -315,6 +317,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           arpu: preset.arpu,
           churn: preset.churn,
           pipeline: preset.pipeline,
+          companyName: preset.companyName || '',
           idea: preset.idea,
           industry: preset.industry,
           problem: preset.problem,
@@ -432,6 +435,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const setArpu = createSetter('arpu');
   const setChurn = createSetter('churn');
   const setPipeline = createSetter('pipeline');
+  const setCompanyName = createSetter('companyName');
   const setIdea = createSetter('idea');
   const setIndustry = createSetter('industry');
   const setProblem = createSetter('problem');
@@ -507,6 +511,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     arpu: state.arpu, setArpu,
     churn: state.churn, setChurn,
     pipeline: state.pipeline, setPipeline,
+    companyName: state.companyName, setCompanyName,
     idea: state.idea, setIdea,
     industry: state.industry, setIndustry,
     problem: state.problem, setProblem,

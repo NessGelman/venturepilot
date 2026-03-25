@@ -24,6 +24,7 @@ export interface AppState {
   arpu: number;
   churn: number;
   pipeline: number;
+  companyName: string;
   idea: string;
   industry: string;
   problem: string;
@@ -97,6 +98,7 @@ export interface Preset {
   arpu: number;
   churn: number;
   pipeline: number;
+  companyName: string;
   idea: string;
   industry: string;
   problem: string;
@@ -171,6 +173,7 @@ export interface UseAppReturn {
   arpu: number;
   churn: number;
   pipeline: number;
+  companyName: string;
   idea: string;
   industry: string;
   problem: string;
@@ -203,6 +206,8 @@ export interface UseAppReturn {
   setArpu: (v: number) => void;
   setChurn: (v: number) => void;
   setPipeline: (v: number) => void;
+  companyName: string;
+  setCompanyName: (v: string) => void;
   setIdea: (v: string) => void;
   setIndustry: (v: string) => void;
   setProblem: (v: string) => void;

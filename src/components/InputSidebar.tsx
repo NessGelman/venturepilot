@@ -117,7 +117,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
         <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metrics Engine</p>
-            {app.idea && <p className="text-sm font-bold text-[var(--text-primary)] truncate mt-0.5">{app.idea}</p>}
+            {(app.companyName || app.idea) && <p className="text-sm font-bold text-[var(--text-primary)] truncate mt-0.5">{app.companyName || app.idea}</p>}
           </div>
           <div className="shrink-0 flex items-center gap-1.5">
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent-light)]">{app.stage}</span>
@@ -239,7 +239,8 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
           </Accordion>
 
           <Accordion title="Company" icon={Target} defaultOpen>
-            <InputField label="Company Name / Idea" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI procurement for SMBs" />
+            <InputField label="Company Name" value={app.companyName} onChange={app.setCompanyName} type="text" placeholder="e.g. VenturePilot, Acme Corp" />
+            <InputField label="One-line Pitch / Concept" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI that helps founders choose the best capital source" />
             <InputField label="Product Description" value={app.productDescription} onChange={app.setProductDescription} type="text" />
             <div className="grid grid-cols-2 gap-2">
               <InputField label="Stage" value={app.stage} onChange={app.setStage} type="select"
