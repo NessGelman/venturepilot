@@ -1,211 +1,376 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card } from '../components/Shared';
-import { Database, Filter, ChevronRight, X, Sparkles, TrendingUp, Info } from 'lucide-react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Database, Filter, X, TrendingUp, Info, ChevronDown, BarChart2, Target, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Cell, CartesianGrid
+} from 'recharts';
+import { PageHeader, Card, Badge, Button, MetricTooltip } from '../components/Shared';
 
-const BENCHMARKS: Record<string, Record<string, any>> = {
-  'B2B SaaS': {
-     growth: { median: 85, top: 120, bottom: 40, desc: 'Year-over-year revenue growth. SaaS investors look for T2D3 (Triple, Triple, Double, Double, Double).', tips: ['Optimize onboarding flow', 'Expand sales team', 'Launch self-serve tier'] },
-     margin: { median: 78, top: 85, bottom: 65, desc: 'Gross margin. Shows scalability of software delivery minus hosting and support.', tips: ['Transition to annual billing', 'Optimize AWS/cloud spend', 'Automate low-tier support'] },
-     ndr: { median: 105, top: 120, bottom: 90, desc: 'Net Dollar Retention. Crucial for compounding growth without new customer acquisition.', tips: ['Launch upsell campaigns', 'Improve customer success', 'Adjust pricing tiers'] },
-     rule40: { median: 35, top: 50, bottom: 20, desc: 'Growth Rate + Profit Margin. The ultimate SaaS health metric.', tips: ['Cut non-performing marketing', 'Raise prices for legacy users', 'Consolidate tech stack'] },
-     burnMult: { median: 1.8, top: 1.2, bottom: 2.5, inverse: true, desc: 'Net Burn / Net New ARR. Measures capital efficiency of growth.', tips: ['Reduce CAC payback period', 'Extend runway with venture debt', 'Focus on organic channels'] },
-  },
-  'Fintech': {
-     growth: { median: 110, top: 160, bottom: 60, desc: 'Year-over-year growth.', tips: ['Localize for new markets', 'Expand product lines', 'Partner with banks'] },
-     margin: { median: 65, top: 75, bottom: 50, desc: 'Gross margin. Lower than SaaS due to payment processing costs.', tips: ['Renegotiate payment rails', 'Move upmarket', 'Verticalize offerings'] },
-     ndr: { median: 115, top: 130, bottom: 100, desc: 'Net Dollar Retention.', tips: ['Increase wallet share', 'Add lending products', 'Improve B2B integration'] },
-     rule40: { median: 30, top: 45, bottom: 15, desc: 'Growth Rate + Margin.', tips: ['Focus on high LTV users', 'Reduce fraud losses', 'Cross-sell insurance'] },
-     burnMult: { median: 2.2, top: 1.5, bottom: 3.0, inverse: true, desc: 'Burn Multiple. Higher due to compliance and capital requirements.', tips: ['Raise compliance efficiency', 'Lower cost of capital', 'Decrease CAC via referrals'] },
-  },
-  'Climate Tech': {
-     growth: { median: 60, top: 90, bottom: 30, desc: 'Slower initial growth due to hardware/infra timelines.', tips: ['Secure government grants', 'Pre-sell capacity', 'Partner with corporates'] },
-     margin: { median: 45, top: 60, bottom: 30, desc: 'Capex heavy, margins improve at scale.', tips: ['Scale manufacturing', 'Value-based pricing', 'Reduce BOM costs'] },
-     ndr: { median: 105, top: 120, bottom: 95, desc: 'Retention of enterprise contracts.', tips: ['Sign multi-year deals', 'Expand facility scope', 'Add data/software layer'] },
-     rule40: { median: 25, top: 40, bottom: 10, desc: 'Lower early focus on Rule 40 compared to deep tech milestones.', tips: ['Focus on unit economics', 'Delay aggressive scaling', 'Non-dilutive funding'] },
-     burnMult: { median: 3.5, top: 2.0, bottom: 5.0, inverse: true, desc: 'High burn is expected pre-commercialization.', tips: ['Hit technical milestones', 'Lease instead of buy infra', 'Leverage tax credits'] },
-  },
-  'Consumer': {
-     growth: { median: 150, top: 300, bottom: 80, desc: 'Must demonstrate explosive viral growth.', tips: ['Optimize viral loops', 'Influencer marketing', 'Gamification features'] },
-     margin: { median: 55, top: 70, bottom: 40, desc: 'Varies by physical vs digital, but acquisition costs eat margins.', tips: ['Reduce shipping/CAC', 'Introduce premium subscriptions', 'In-app purchases'] },
-     ndr: { median: 85, top: 110, bottom: 60, desc: 'Churn is highly prevalent in consumer.', tips: ['Strengthen network effects', 'Daily active habit hooks', 'Annual plans'] },
-     rule40: { median: 40, top: 70, bottom: 20, desc: 'Growth dominates this equation.', tips: ['A/B test onboarding', 'Referral programs', 'Re-engagement loops'] },
-     burnMult: { median: 2.5, top: 1.2, bottom: 4.0, inverse: true, desc: 'Expensive S&M spend reduces efficiency.', tips: ['Lower CAC', 'Increase organic acquisition', 'Extend LTV cohort'] },
-  }
-};
-
-export default function MarketBench() {
-  const app = useApp();
-  const [sector, setSector] = useState(BENCHMARKS[app.industry] ? app.industry : 'B2B SaaS');
-  const [modalData, setModalData] = useState<any>(null);
-
-  const bm = BENCHMARKS[sector] || BENCHMARKS['B2B SaaS'];
-
-  // Normalize data for Radar
-  const radarData = useMemo(() => [
-     { name: 'Growth', user: Math.min((app.growth*12) / bm.growth.median * 100, 150), sector: 100 },
-     { name: 'Margin', user: Math.min(app.grossMargin / bm.margin.median * 100, 150), sector: 100 },
-     { name: 'NDR', user: Math.min(app.ndr / bm.ndr.median * 100, 150), sector: 100 },
-     { name: 'Rule 40', user: Math.max(0, Math.min(app.derived.ruleOf40 / bm.rule40.median * 100, 150)), sector: 100 },
-     { name: 'Efficiency', user: Math.min((bm.burnMult.median / Math.max(app.derived.burnMultiple, 0.5)) * 100, 150), sector: 100 },
-  ], [app, bm]);
-
-  const metrics = [
-    { id: 'growth', name: 'Annual Growth Rate', userVal: app.growth * 12, suffix: '%', bmData: bm.growth },
-    { id: 'margin', name: 'Gross Margin', userVal: app.grossMargin, suffix: '%', bmData: bm.margin },
-    { id: 'ndr', name: 'Net Dollar Retention', userVal: app.ndr, suffix: '%', bmData: bm.ndr },
-    { id: 'rule40', name: 'Rule of 40', userVal: app.derived.ruleOf40, suffix: '%', bmData: bm.rule40 },
-    { id: 'burnMult', name: 'Burn Multiple', userVal: app.derived.burnMultiple, suffix: 'x', bmData: bm.burnMult },
-  ];
-
-  const getPosition = (val: number, data: any) => {
-    if (data.inverse) {
-      if (val <= data.top) return { label: 'Top Quartile', dot: 'bg-emerald-500', text: 'text-emerald-500' };
-      if (val >= data.bottom) return { label: 'Bottom Quartile', dot: 'bg-red-500', text: 'text-red-500' };
-      return { label: 'Median', dot: 'bg-amber-500', text: 'text-amber-500' };
-    } else {
-      if (val >= data.top) return { label: 'Top Quartile', dot: 'bg-emerald-500', text: 'text-emerald-500' };
-      if (val <= data.bottom) return { label: 'Bottom Quartile', dot: 'bg-red-500', text: 'text-red-500' };
-      return { label: 'Median', dot: 'bg-amber-500', text: 'text-amber-500' };
-    }
+interface BenchmarkSector {
+  id: string;
+  name: string;
+  color: string;
+  description: string;
+  companies: string;
+  metrics: {
+    medianArr: number;
+    medianGrowth: number;
+    medianGrossMargin: number;
+    medianNDR: number;
+    medianLTVCAC: number;
+    medianBurnMultiple: number;
+    medianRule40: number;
+    medianCAC: number;
+    medianMagicNumber: number;
+    medianPayback: number;
   };
+  radarData: { metric: string; p25: number; median: number; p75: number }[];
+}
 
-  const submitAI = (prompt: string) => {
-    window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
-  };
+const SECTORS: BenchmarkSector[] = [
+  {
+    id: 'b2b-saas', name: 'B2B SaaS', color: '#3b82f6', description: 'Horizontal and vertical SaaS applications for business workflows',
+    companies: 'Salesforce, HubSpot, Zendesk, Slack, Notion, Linear',
+    metrics: { medianArr: 2500000, medianGrowth: 18, medianGrossMargin: 73, medianNDR: 118, medianLTVCAC: 4.2, medianBurnMultiple: 1.4, medianRule40: 42, medianCAC: 8500, medianMagicNumber: 0.82, medianPayback: 14 },
+    radarData: [
+      { metric: 'Growth', p25: 12, median: 18, p75: 32 },
+      { metric: 'Gross Margin', p25: 65, median: 73, p75: 82 },
+      { metric: 'NDR', p25: 105, median: 118, p75: 135 },
+      { metric: 'Efficiency', p25: 25, median: 42, p75: 62 },
+      { metric: 'Unit Econ', p25: 60, median: 75, p75: 90 },
+      { metric: 'Capital Eff', p25: 45, median: 65, p75: 85 },
+    ],
+  },
+  {
+    id: 'fintech', name: 'Fintech', color: '#3b82f6', description: 'Payments, lending, insurance, wealth management, and banking infrastructure',
+    companies: 'Stripe, Brex, Plaid, Chime, Robinhood, Ramp',
+    metrics: { medianArr: 5000000, medianGrowth: 28, medianGrossMargin: 52, medianNDR: 125, medianLTVCAC: 3.1, medianBurnMultiple: 2.1, medianRule40: 38, medianCAC: 18000, medianMagicNumber: 0.65, medianPayback: 22 },
+    radarData: [
+      { metric: 'Growth', p25: 18, median: 28, p75: 55 },
+      { metric: 'Gross Margin', p25: 40, median: 52, p75: 68 },
+      { metric: 'NDR', p25: 110, median: 125, p75: 145 },
+      { metric: 'Efficiency', p25: 18, median: 38, p75: 58 },
+      { metric: 'Unit Econ', p25: 45, median: 62, p75: 80 },
+      { metric: 'Capital Eff', p25: 30, median: 50, p75: 72 },
+    ],
+  },
+  {
+    id: 'devtools', name: 'Dev Tools / Infra', color: '#14b8a6', description: 'Developer tooling, APIs, cloud infrastructure, and platform services',
+    companies: 'HashiCorp, Twilio, Cloudflare, GitHub, Vercel, Supabase',
+    metrics: { medianArr: 3500000, medianGrowth: 35, medianGrossMargin: 78, medianNDR: 128, medianLTVCAC: 5.8, medianBurnMultiple: 1.1, medianRule40: 55, medianCAC: 5500, medianMagicNumber: 1.1, medianPayback: 10 },
+    radarData: [
+      { metric: 'Growth', p25: 22, median: 35, p75: 65 },
+      { metric: 'Gross Margin', p25: 68, median: 78, p75: 88 },
+      { metric: 'NDR', p25: 112, median: 128, p75: 148 },
+      { metric: 'Efficiency', p25: 35, median: 55, p75: 80 },
+      { metric: 'Unit Econ', p25: 70, median: 85, p75: 95 },
+      { metric: 'Capital Eff', p25: 55, median: 72, p75: 90 },
+    ],
+  },
+  {
+    id: 'ai-ml', name: 'AI / ML', color: '#f59e0b', description: 'AI applications, ML platforms, foundation model companies, and AI infrastructure',
+    companies: 'OpenAI, Anthropic, Cohere, Scale AI, Weights & Biases, Hugging Face',
+    metrics: { medianArr: 8000000, medianGrowth: 55, medianGrossMargin: 65, medianNDR: 145, medianLTVCAC: 3.8, medianBurnMultiple: 3.2, medianRule40: 48, medianCAC: 22000, medianMagicNumber: 0.75, medianPayback: 28 },
+    radarData: [
+      { metric: 'Growth', p25: 35, median: 55, p75: 120 },
+      { metric: 'Gross Margin', p25: 50, median: 65, p75: 80 },
+      { metric: 'NDR', p25: 120, median: 145, p75: 180 },
+      { metric: 'Efficiency', p25: 25, median: 48, p75: 75 },
+      { metric: 'Unit Econ', p25: 50, median: 68, p75: 85 },
+      { metric: 'Capital Eff', p25: 20, median: 42, p75: 68 },
+    ],
+  },
+];
+
+const METRIC_KEYS: { key: keyof BenchmarkSector['metrics']; label: string; format: (v: number) => string; higherBetter: boolean; tooltip: string }[] = [
+  { key: 'medianArr', label: 'Median ARR', format: v => v >= 1e6 ? `$${(v/1e6).toFixed(1)}M` : `$${(v/1e3).toFixed(0)}K`, higherBetter: true, tooltip: 'Annual Recurring Revenue at median for this sector at Series A stage' },
+  { key: 'medianGrowth', label: 'YoY Growth', format: v => `${v}%`, higherBetter: true, tooltip: 'Year-over-year ARR growth rate at Series A/B stage' },
+  { key: 'medianGrossMargin', label: 'Gross Margin', format: v => `${v}%`, higherBetter: true, tooltip: 'Revenue minus COGS as a percentage of revenue' },
+  { key: 'medianNDR', label: 'NDR', format: v => `${v}%`, higherBetter: true, tooltip: 'Net Dollar Retention — measures expansion minus churn' },
+  { key: 'medianLTVCAC', label: 'LTV:CAC', format: v => `${v.toFixed(1)}×`, higherBetter: true, tooltip: 'Lifetime Value to Customer Acquisition Cost ratio' },
+  { key: 'medianBurnMultiple', label: 'Burn Multiple', format: v => `${v.toFixed(1)}×`, higherBetter: false, tooltip: 'Net burn divided by net new ARR — lower is more efficient' },
+  { key: 'medianRule40', label: 'Rule of 40', format: v => `${v}`, higherBetter: true, tooltip: 'Growth rate + profit margin — target 40+' },
+  { key: 'medianPayback', label: 'CAC Payback', format: v => `${v}mo`, higherBetter: false, tooltip: 'Months to recover customer acquisition cost' },
+];
+
+function CompareBar({ value, benchmark, format, higherBetter }: { value: number; benchmark: number; format: (v: number) => string; higherBetter: boolean }) {
+  const ratio = benchmark > 0 ? value / benchmark : 0;
+  const isGood = higherBetter ? value >= benchmark : value <= benchmark;
+  const color = isGood ? 'var(--green)' : value >= benchmark * 0.8 && higherBetter ? 'var(--amber)' : !higherBetter && value <= benchmark * 1.2 ? 'var(--amber)' : 'var(--red)';
+  const pct = Math.min(ratio * 50, 100);
 
   return (
-    <div className="max-w-[1200px] mx-auto pb-24 h-full relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 px-2">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <Database className="text-[var(--accent)]" /> Market Benchmarks
-          </h1>
-          <p className="text-[var(--text-muted)] mt-1 font-medium font-mono text-sm tracking-wide">
-            Calibrate against institutional LP expectations.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <button onClick={() => submitAI('Based on my current benchmark positioning compared to the '+sector+' sector, what is the single most critical metric I need to improve before pitching?')} className="bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] text-[13px] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all shadow-glow hover:-translate-y-0.5 card-hover">
-             <Sparkles size={14} className="text-[var(--accent-light)]" /> AI Benchmark Report
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-2 bg-[var(--border)] rounded-full overflow-hidden">
+        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6 }}
+          className="h-full rounded-full" style={{ background: color }} />
+      </div>
+      <div className="flex items-center gap-1.5 w-24 justify-end">
+        <span className="text-sm font-bold" style={{ color }}>{format(value)}</span>
+        {isGood ? <ArrowUp size={12} style={{ color: 'var(--green)' }} /> : <ArrowDown size={12} style={{ color: 'var(--red)' }} />}
+      </div>
+    </div>
+  );
+}
+
+export default function MarketBench() {
+  const { state } = useApp() as any;
+  const { mrr = 0, arr = 0, monthlyGrowth = 0, grossMargin = 70, ndr = 100, ltv = 0, cac = 0, burnMultiple = 0, rule40 = 0 } = state || {};
+
+  const [selectedSector, setSelectedSector] = useState('b2b-saas');
+  const [modalSector, setModalSector] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'compare' | 'radar'>('overview');
+
+  const sector = SECTORS.find(s => s.id === selectedSector)!;
+  const modalData = SECTORS.find(s => s.id === modalSector);
+
+  const userMetrics = {
+    medianArr: arr || mrr * 12,
+    medianGrowth: monthlyGrowth * 12,
+    medianGrossMargin: grossMargin,
+    medianNDR: ndr,
+    medianLTVCAC: cac > 0 ? ltv / cac : 0,
+    medianBurnMultiple: burnMultiple,
+    medianRule40: rule40,
+    medianPayback: 0,
+    medianCAC: cac,
+    medianMagicNumber: 0,
+  };
+
+  const comparisonData = METRIC_KEYS.map(m => ({
+    ...m,
+    yourValue: userMetrics[m.key],
+    benchmark: sector.metrics[m.key],
+  }));
+
+  // Radar comparison data
+  const radarCompare = sector.radarData.map(d => ({
+    metric: d.metric,
+    Benchmark: d.median,
+    'P75 Top': d.p75,
+    'P25 Bottom': d.p25,
+  }));
+
+  const allSectorsBar = SECTORS.map(s => ({
+    name: s.name.replace(' / ', '/'),
+    growth: s.metrics.medianGrowth,
+    ndr: s.metrics.medianNDR,
+    rule40: s.metrics.medianRule40,
+    color: s.color,
+  }));
+
+  return (
+    <div className="max-w-[1400px] mx-auto space-y-6">
+      <PageHeader
+        title="Benchmarks"
+        subtitle="See where you stack up"
+        badge={{ label: sector.name, variant: 'default' }}
+      />
+
+      {/* Sector selector */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {SECTORS.map(s => (
+          <motion.button key={s.id} onClick={() => setSelectedSector(s.id)} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
+            className="p-4 rounded-[var(--radius-lg)] border text-left transition-all relative overflow-hidden"
+            style={{ background: selectedSector === s.id ? `${s.color}15` : 'var(--bg-card)', borderColor: selectedSector === s.id ? s.color : 'var(--border)' }}>
+            {selectedSector === s.id && <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: s.color }} />}
+            <div className="font-bold text-sm mb-0.5" style={{ color: selectedSector === s.id ? s.color : 'var(--text-primary)' }}>{s.name}</div>
+            <div className="text-[10px] text-[var(--text-muted)] leading-tight line-clamp-2">{s.description}</div>
+            <div className="mt-2 text-[10px] font-bold" style={{ color: s.color }}>{s.metrics.medianGrowth}% med. growth</div>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Tab navigation */}
+      <div className="flex items-center gap-1 p-1 rounded-[var(--radius-lg)] bg-[var(--bg-card)] border border-[var(--border)] w-fit">
+        {(['overview', 'compare', 'radar'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className="px-4 py-1.5 rounded-[var(--radius-md)] text-xs font-bold capitalize transition-all"
+            style={{ background: activeTab === tab ? sector.color : 'transparent', color: activeTab === tab ? 'white' : 'var(--text-muted)' }}>
+            {tab}
           </button>
-          
-          <div className="relative group">
-            <select
-              value={sector}
-              onChange={(e) => setSector(e.target.value)}
-              className="appearance-none bg-[var(--bg-card)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] text-white pl-4 pr-10 py-2 rounded-xl text-sm font-bold shadow-elevated focus:outline-none cursor-pointer"
-            >
-              <option value="B2B SaaS">B2B SaaS</option>
-              <option value="Fintech">Fintech</option>
-              <option value="Climate Tech">Climate Tech</option>
-              <option value="Consumer">Consumer</option>
-            </select>
-            <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-         <Card className="lg:col-span-1 flex flex-col items-center justify-center p-6 h-full min-h-[350px]">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-2 self-start"><TrendingUp size={16} className="inline mr-2 text-[var(--accent)]" /> 360° Assessment</h3>
-            <p className="text-xs text-[var(--text-muted)] self-start mb-4">You vs Sector Median (Normalized to 100%)</p>
-            <div className="w-full flex-1">
-               <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                     <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                     <PolarAngleAxis dataKey="name" tick={{fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 'bold'}} />
-                     <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }} />
-                     <Radar name="Sector Median" dataKey="sector" stroke="rgba(255,255,255,0.2)" fill="rgba(255,255,255,0.05)" fillOpacity={1} strokeDasharray="3 3" />
-                     <Radar name="Your Metrics" dataKey="user" stroke="var(--accent-light)" fill="var(--accent)" fillOpacity={0.5} />
-                  </RadarChart>
-               </ResponsiveContainer>
-            </div>
-            <div className="flex gap-4 mt-2">
-               <div className="flex items-center gap-1.5"><span className="w-3 h-3 bg-[var(--accent)] rounded-full opacity-50 block"></span><span className="text-xs font-mono text-[var(--text-muted)]">You</span></div>
-               <div className="flex items-center gap-1.5"><span className="w-4 h-0 border-t-2 border-dashed border-[rgba(255,255,255,0.2)] block"></span><span className="text-xs font-mono text-[var(--text-muted)]">Median</span></div>
-            </div>
-         </Card>
+      <AnimatePresence mode="wait">
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
 
-         <div className="lg:col-span-2">
-            <Card className="h-full flex flex-col p-6">
-               <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 pb-3 border-b border-[rgba(255,255,255,0.05)] text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider px-4">
-                  <div>Metric</div>
-                  <div className="text-right">Your Value</div>
-                  <div className="text-right">Median</div>
-                  <div className="text-right">Position</div>
-               </div>
-
-               <div className="flex-1 flex flex-col gap-2 mt-4">
-                  {metrics.map(m => {
-                     const pos = getPosition(m.userVal, m.bmData);
-                     return (
-                        <div 
-                           key={m.id} 
-                           onClick={() => setModalData({ name: m.name, user: m.userVal, suffix: m.suffix, pos, desc: m.bmData.desc, tips: m.bmData.tips })}
-                           className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center p-4 rounded-xl border border-[rgba(255,255,255,0.03)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)] transition-colors cursor-pointer group"
-                        >
-                           <div className="flex items-center gap-2">
-                              <span className="font-bold text-[var(--text-primary)] group-hover:text-[var(--accent-light)] transition-colors">{m.name}</span>
-                              <Info size={14} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                           </div>
-                           <div className="text-right font-mono font-black text-lg text-[var(--text-primary)]">{m.userVal.toFixed(1)}{m.suffix}</div>
-                           <div className="text-right font-mono font-medium text-sm text-[var(--text-muted)]">{m.bmData.median}{m.suffix}</div>
-                           <div className="flex justify-end items-center gap-2 text-right">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider ${pos.text}`}>{pos.label}</span>
-                              <div className={`w-2.5 h-2.5 rounded-full ${pos.dot}`}></div>
-                           </div>
-                        </div>
-                     )
-                  })}
-               </div>
-            </Card>
-         </div>
-      </div>
-
-      <AnimatePresence>
-         {modalData && (
-            <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setModalData(null)}>
-               <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  onClick={e => e.stopPropagation()}
-                  className="w-full max-w-md bg-[var(--bg-card)] border border-[rgba(255,255,255,0.1)] rounded-[var(--radius-xl)] shadow-2xl overflow-hidden p-6 relative"
-               >
-                  <button onClick={() => setModalData(null)} className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.1)] transition-colors"><X size={18} /></button>
-                  
-                  <div className="flex items-center gap-3 mb-6">
-                     <div className={`w-3 h-3 rounded-full ${modalData.pos.dot}`} />
-                     <h2 className="text-xl font-bold text-[var(--text-primary)]">{modalData.name}</h2>
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-5">
+              <Card>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-black text-base">{sector.name} Benchmarks</h3>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">Median metrics at Series A/B stage</p>
                   </div>
-
-                  <div className="flex gap-4 mb-6 pt-6 border-t border-[rgba(255,255,255,0.05)]">
-                     <div className="flex-1 bg-[rgba(255,255,255,0.02)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] text-center">
-                        <span className="block text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider mb-1">Your Metrics</span>
-                        <span className={`font-mono font-black text-2xl ${modalData.pos.text}`}>{modalData.user.toFixed(1)}{modalData.suffix}</span>
-                     </div>
-                     <div className="flex-1 bg-[rgba(255,255,255,0.02)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] text-center">
-                        <span className="block text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider mb-1">Median</span>
-                        <span className="font-mono font-black text-2xl text-[var(--text-muted)]">{bm[Object.keys(metrics).find(k=>metrics[k as any].name===modalData.name) || 'growth']?.median}{modalData.suffix}</span>
-                     </div>
-                  </div>
-
-                  <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed mb-6 bg-[rgba(99,102,241,0.05)] p-4 rounded-xl border border-[rgba(99,102,241,0.1)] border-l-4 border-l-[var(--accent-light)]">
-                     {modalData.desc}
+                  <Badge variant="default" size="sm">{sector.companies.split(',').length} companies</Badge>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {METRIC_KEYS.slice(0, 8).map(m => (
+                    <div key={m.key} className="p-3 rounded-[var(--radius-md)] bg-[var(--bg-base)] border border-[var(--border)]">
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest">{m.label}</span>
+                        <MetricTooltip term={m.label} definition={m.tooltip} />
+                      </div>
+                      <div className="text-xl font-black" style={{ color: sector.color }}>{m.format(sector.metrics[m.key])}</div>
+                      <div className="text-[9px] text-[var(--text-muted)] mt-0.5">Industry median</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+                  <p className="text-xs text-[var(--text-muted)]">
+                    <span className="font-bold text-[var(--text-secondary)]">Representative companies: </span>{sector.companies}
                   </p>
+                </div>
+              </Card>
 
-                  <h3 className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-3">Actionable Strategies to Improve</h3>
-                  <ul className="flex flex-col gap-2">
-                     {modalData.tips.map((tip: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm font-medium text-[var(--text-primary)]"><ChevronRight size={16} className="text-[var(--accent)] mt-0.5 shrink-0" /> {tip}</li>
-                     ))}
-                  </ul>
-
-               </motion.div>
+              {/* Cross-sector bar charts */}
+              <Card>
+                <h3 className="font-bold text-sm mb-4">Cross-Sector Comparison</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    { title: 'YoY Growth Rate', key: 'growth' as const, suffix: '%' },
+                    { title: 'Net Dollar Retention', key: 'ndr' as const, suffix: '%' },
+                    { title: 'Rule of 40 Score', key: 'rule40' as const, suffix: '' },
+                  ].map(chart => (
+                    <div key={chart.key}>
+                      <div className="text-xs font-bold text-[var(--text-muted)] mb-3">{chart.title}</div>
+                      <ResponsiveContainer width="100%" height={140}>
+                        <BarChart data={allSectorsBar} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                          <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 9, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={28} />
+                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`${v}${chart.suffix}`, chart.title]} />
+                          <Bar dataKey={chart.key} radius={[3, 3, 0, 0]}>
+                            {allSectorsBar.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} opacity={entry.name.includes(sector.name.split(' ')[0]) ? 1 : 0.5} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
-         )}
+          )}
+
+          {/* Compare Tab */}
+          {activeTab === 'compare' && (
+            <Card>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-sm">Your Metrics vs. {sector.name} Benchmarks</h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Update your metrics in the sidebar to see personalized comparison</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--green)]" />Above benchmark</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--red)]" />Below benchmark</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {comparisonData.map((m, i) => (
+                  <div key={m.key}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[var(--text-primary)]">{m.label}</span>
+                        <MetricTooltip term={m.label} definition={m.tooltip} />
+                      </div>
+                      <div className="text-xs text-[var(--text-muted)]">Benchmark: <span className="font-bold text-[var(--text-secondary)]">{m.format(m.benchmark)}</span></div>
+                    </div>
+                    {m.yourValue > 0 ? (
+                      <CompareBar value={m.yourValue} benchmark={m.benchmark} format={m.format} higherBetter={m.higherBetter} />
+                    ) : (
+                      <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                        <div className="h-full w-px bg-[var(--text-muted)] mx-auto" />
+                      </div>
+                    )}
+                    {i < comparisonData.length - 1 && <div className="mt-3 border-b border-[var(--border-subtle)]" />}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Radar Tab */}
+          {activeTab === 'radar' && (
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-sm">{sector.name} Performance Distribution</h3>
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-2 h-0.5 rounded" style={{ background: sector.color }} />P75</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-0.5 rounded border-dashed" style={{ borderTop: `1px dashed ${sector.color}`, borderWidth: '1px 0 0 0' }} />Median</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-0.5 rounded opacity-40" style={{ background: sector.color }} />P25</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={380}>
+                <RadarChart data={sector.radarData}>
+                  <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                  <Radar name="P75 Top" dataKey="p75" stroke={sector.color} fill={sector.color} fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 2" />
+                  <Radar name="Median" dataKey="median" stroke={sector.color} fill={sector.color} fillOpacity={0.25} strokeWidth={2} />
+                  <Radar name="P25 Bottom" dataKey="p25" stroke={sector.color} fill="transparent" fillOpacity={0} strokeWidth={1} strokeDasharray="2 4" strokeOpacity={0.5} />
+                  <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }} />
+                </RadarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-4 rounded-[var(--radius-lg)] bg-[rgba(255,255,255,0.02)] border border-[var(--border)]">
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  <span className="font-bold text-[var(--text-secondary)]">How to read this: </span>
+                  The radar shows the 25th percentile (bottom), median, and 75th percentile (top) for {sector.name} companies at Series A/B stage across 6 key performance dimensions. Aim to be at or above the median across all dimensions before fundraising.
+                </p>
+              </div>
+            </Card>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Sector detail cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {SECTORS.map(s => (
+          <button key={s.id} onClick={() => setModalSector(s.id)}
+            className="p-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--bg-card)] text-left hover:border-[var(--accent)] transition-all group">
+            <div className="font-bold text-sm mb-1 group-hover:text-[var(--accent)] transition-colors" style={{ color: s.color }}>{s.name}</div>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3">{s.description}</p>
+            <div className="flex gap-3">
+              <div><div className="text-[9px] text-[var(--text-muted)] mb-0.5">Growth</div><div className="text-sm font-bold" style={{ color: s.color }}>{s.metrics.medianGrowth}%</div></div>
+              <div><div className="text-[9px] text-[var(--text-muted)] mb-0.5">NDR</div><div className="text-sm font-bold" style={{ color: s.color }}>{s.metrics.medianNDR}%</div></div>
+              <div><div className="text-[9px] text-[var(--text-muted)] mb-0.5">R40</div><div className="text-sm font-bold" style={{ color: s.color }}>{s.metrics.medianRule40}</div></div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modalSector && modalData && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}
+            onClick={() => setModalSector(null)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6 w-full max-w-2xl shadow-[var(--shadow-elevated)] max-h-[80vh] overflow-y-auto custom-scrollbar"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-black text-base" style={{ color: modalData.color }}>{modalData.name}</h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{modalData.description}</p>
+                </div>
+                <button onClick={() => setModalSector(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-lg">✕</button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                {METRIC_KEYS.map(m => (
+                  <div key={m.key} className="p-3 rounded-[var(--radius-md)] bg-[var(--bg-base)] border border-[var(--border)] text-center">
+                    <div className="text-lg font-black" style={{ color: modalData.color }}>{m.format(modalData.metrics[m.key])}</div>
+                    <div className="text-[9px] text-[var(--text-muted)] mt-0.5">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-[var(--text-muted)]"><span className="font-bold text-[var(--text-secondary)]">Notable companies: </span>{modalData.companies}</p>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

@@ -1,180 +1,221 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Target, Presentation, FileText, Database, Users, Sparkles, TerminalSquare, AlertCircle, CheckCircle, Info, Menu } from 'lucide-react';
+import {
+  Activity, Target, Presentation, FileText, Database, Users,
+  Sparkles, CheckCircle, AlertCircle, Info, X,
+  Command, Moon, Sun, TrendingUp, Calculator
+} from 'lucide-react';
 import InputSidebar from './InputSidebar';
 import AIPanel from './AIPanel';
 import CommandPalette from './CommandPalette';
-import Onboarding from './Onboarding';
+
+const nav = [
+  { to: '/', icon: Activity, label: 'Dashboard', shortcut: '1' },
+  { to: '/strategy', icon: Target, label: 'Strategy', shortcut: '2' },
+  { to: '/pitch', icon: Presentation, label: 'Pitch Deck', shortcut: '3' },
+  { to: '/plan', icon: FileText, label: 'Business Plan', shortcut: '4' },
+  { to: '/bench', icon: Database, label: 'Benchmarks', shortcut: '5' },
+  { to: '/investors', icon: Users, label: 'Investors', shortcut: '6' },
+  { to: '/valuation', icon: Calculator, label: 'Valuation', shortcut: '7' },
+  { to: '/update', icon: TrendingUp, label: 'Investor Update', shortcut: '8' },
+];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { isDark, toasts, ai, derived, investors } = useApp() as any;
+  const { isDark, toggleTheme, toasts, ai, derived, investors, runwayMonths, readinessScore } = useApp() as any;
+  const location = useLocation();
 
-  // Let's create removeToast if it wasn't on AppContext, or just rely on toasts auto-dismissing.
-  // Actually, AppContext addToast does auto dismiss, but no manual dismiss. I will handle auto dismiss there and manual here if needed, 
-  // wait we need progress bar for toast. Let's build a custom Toast container here instead of relying solely on Context, or just render Context toasts.
+  const activeInvestors = investors?.filter((i: any) => i.contact === 'Active' || i.contact === 'Interested').length || 0;
+  const runwayAlert = runwayMonths < 6;
+  const isGoodRunway = runwayMonths >= 12;
 
-  const activeInvestors = investors?.filter((i: any) => i.contact === 'Active').length || 0;
-  const runwayAlert = derived.runwayMonths < 6;
-
-  const nav = [
-    { to: '/', icon: Activity, label: 'Dashboard', shortcut: '⌘ 1' },
-    { to: '/strategy', icon: Target, label: 'Strategy Planner', shortcut: '⌘ 2', dot: runwayAlert },
-    { to: '/pitch', icon: Presentation, label: 'Pitch Deck Generator', shortcut: '⌘ 3' },
-    { to: '/plan', icon: FileText, label: 'Business Plan', shortcut: '⌘ 4' },
-    { to: '/bench', icon: Database, label: 'Market Benchmarks', shortcut: '⌘ 5' },
-    { to: '/investors', icon: Users, label: 'Investor CRM', shortcut: '⌘ 6', badge: activeInvestors },
-  ];
-
-  const getToastIcon = (type: string) => {
-    switch(type) {
-      case 'success': return <CheckCircle size={16} className="text-emerald-500" />;
-      case 'error': return <AlertCircle size={16} className="text-red-500" />;
-      case 'warning': return <AlertCircle size={16} className="text-amber-500" />;
-      default: return <Info size={16} className="text-blue-500" />;
+  // Keyboard shortcuts
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      setCmdOpen(o => !o);
     }
+    if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+      e.preventDefault();
+      setSidebarOpen(o => !o);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  const toastIcons = {
+    success: CheckCircle,
+    error: AlertCircle,
+    warning: AlertCircle,
+    info: Info,
+  };
+  const toastColors = {
+    success: 'var(--green)',
+    error: 'var(--red)',
+    warning: 'var(--amber)',
+    info: 'var(--blue)',
   };
 
   return (
-    <div className={`min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] font-sans antialiased overflow-hidden flex ${isDark ? 'dark' : ''}`}>
-      {/* Onboarding */}
-      <Onboarding />
-      
-      {/* Global Modals */}
-      <CommandPalette isOpen={cmdOpen} setIsOpen={setCmdOpen} />
-
-      {/* Sidebar - Settings */}
+    <div className={`min-h-screen flex bg-[var(--bg-base)] text-[var(--text-primary)] font-sans antialiased overflow-hidden ${isDark ? 'dark' : ''}`}>
+      {/* Sidebar */}
       <InputSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-      {/* Main Content Area */}
-      <div 
-        className="flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ marginLeft: sidebarOpen ? 340 : 0 }}
-      >
-        {/* Top Navigation Bar */}
-        <header className="h-[72px] bg-[var(--bg-card)] border-b border-[rgba(255,255,255,0.08)] flex items-center px-6 justify-between gap-6 shrink-0 z-40 backdrop-blur-md sticky top-0 shadow-sm relative">
-          <div className="flex items-center gap-6">
-            <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-400 tracking-tight flex items-center gap-2">
-              <Sparkles size={18} className="text-indigo-400" />
-              VenturePilot
-            </h1>
+      {/* Command Palette */}
+      <CommandPalette isOpen={cmdOpen} setIsOpen={setCmdOpen} />
 
-            <nav className="flex gap-2 relative">
-              {nav.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  className={({ isActive }) => `
-                    relative px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition-all overflow-hidden group
-                    ${isActive ? 'bg-[rgba(99,102,241,0.1)] text-[var(--accent)] shadow-inner' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.03)]'}
-                  `}
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent)] shadow-glow rounded-r" />}
-                      <n.icon size={16} className={`${isActive ? 'text-[var(--accent)]' : 'opacity-70 group-hover:opacity-100'} transition-opacity`} />
-                      <span className="relative">{n.label}</span>
-                      {n.badge > 0 && (
-                        <span className="ml-1.5 px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[10px] font-black pointer-events-none shadow-glow">
-                          {n.badge}
-                        </span>
-                      )}
-                      {n.dot && (
-                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
-                      )}
-                      
-                      {/* Keyboard shortcut hint */}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-mono">
-                        {n.shortcut}
-                      </div>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
+      {/* Main content area */}
+      <div
+        className="flex-1 flex flex-col h-screen overflow-hidden"
+        style={{ marginLeft: sidebarOpen ? 'var(--sidebar-width)' : '0', transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
+      >
+        {/* Top bar */}
+        <header className="h-[60px] bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center px-5 gap-4 shrink-0 z-40 sticky top-0">
+          {/* Logo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-[var(--radius-md)] bg-[var(--accent)] flex items-center justify-center shadow-[var(--shadow-glow-sm)]">
+              <Sparkles size={14} className="text-white" />
+            </div>
+            <span className="font-black text-sm tracking-tight gradient-text-blue">VenturePilot</span>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* AI Status Indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] cursor-default">
-              <span className={`w-2 h-2 rounded-full ${ai?.status.ready ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : ai?.status.loading ? 'bg-amber-400 animate-pulse' : 'bg-[var(--text-muted)]'}`} />
-              <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
-                {ai?.status.backend === 'chrome' ? 'Chrome AI • ON' : ai?.status.backend === 'webllm' ? 'WebLLM • ON' : 'AI • Offline'}
-              </span>
+          <div className="w-px h-5 bg-[var(--border)] mx-1" />
+
+          {/* Nav */}
+          <nav className="flex items-center gap-0.5 flex-1 overflow-x-auto custom-scrollbar">
+            {nav.map(n => (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                className={({ isActive }) =>
+                  `nav-link shrink-0 ${isActive ? 'active' : ''}`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <n.icon size={13} />
+                    {n.label}
+                    {n.to === '/investors' && activeInvestors > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white text-[9px] font-black">
+                        {activeInvestors}
+                      </span>
+                    )}
+                    {n.to === '/strategy' && runwayAlert && (
+                      <span className="ml-1 w-2 h-2 rounded-full bg-[var(--red)] animate-pulse" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Runway pill */}
+            <div
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold"
+              style={{
+                background: runwayAlert ? 'var(--red-dim)' : isGoodRunway ? 'var(--green-dim)' : 'var(--amber-dim)',
+                color: runwayAlert ? 'var(--red)' : isGoodRunway ? 'var(--green)' : 'var(--amber)',
+                border: `1px solid ${runwayAlert ? 'rgba(239,68,68,0.25)' : isGoodRunway ? 'rgba(16,185,129,0.25)' : 'rgba(245,158,11,0.25)'}`,
+              }}
+            >
+              <span className="status-dot" style={{ background: 'currentColor', width: 6, height: 6 }} />
+              {runwayMonths}mo runway
             </div>
 
+            {/* AI status */}
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[rgba(255,255,255,0.03)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-muted)]">
+              <span
+                className="status-dot"
+                style={{
+                  background: ai?.status.ready ? 'var(--green)' : ai?.status.loading ? 'var(--amber)' : 'rgba(255,255,255,0.2)',
+                  boxShadow: ai?.status.ready ? '0 0 6px rgba(16,185,129,0.6)' : ai?.status.loading ? '0 0 6px rgba(245,158,11,0.6) ' : 'none',
+                }}
+              />
+              {ai?.status.ready
+                ? (ai.status.backend === 'chrome' ? 'Chrome AI' : 'WebLLM')
+                : ai?.status.loading ? `${ai.status.progress}%` : 'AI Offline'}
+            </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-8 h-8 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+              title="Toggle theme"
+            >
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
+            {/* Command palette */}
             <button
               onClick={() => setCmdOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-all card-hover"
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.03)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-colors text-xs font-medium"
+              title="Command palette (⌘K)"
             >
-              <TerminalSquare size={16} />
-              <div className="flex items-center gap-1 font-mono text-[10px] font-bold">
-                <kbd className="px-1.5 py-0.5 rounded bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)]">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 rounded bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)]">K</kbd>
-              </div>
+              <Command size={12} />
+              <span className="text-[10px] font-mono">⌘K</span>
             </button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 custom-scrollbar relative bg-[var(--bg-base)]">
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 custom-scrollbar relative">
           <AnimatePresence mode="wait">
-            {children}
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              className="h-full"
+            >
+              {children}
+            </motion.div>
           </AnimatePresence>
         </main>
       </div>
-      
+
       {/* AI Panel */}
       <AIPanel />
 
-      {/* Toast Notifications */}
-      <div className="fixed bottom-6 right-6 z-[1000] flex flex-col gap-3 min-w-[320px] pointer-events-none">
+      {/* Toast container */}
+      <div className="fixed bottom-5 right-5 z-[1000] flex flex-col gap-2 w-80 pointer-events-none">
         <AnimatePresence>
-          {[...(toasts || [])].reverse().map((t: any) => (
-            <motion.div
-              layout
-              key={t.id}
-              initial={{ opacity: 0, scale: 0.9, x: 20 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.9, x: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={`pointer-events-auto bg-[var(--bg-card)] border border-[rgba(255,255,255,0.08)] rounded-[var(--radius-lg)] p-4 shadow-elevated flex flex-col gap-2 relative overflow-hidden`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">
-                  {getToastIcon(t.type || 'info')}
-                </div>
-                <p className="text-sm font-medium text-[var(--text-primary)] flex-1">{t.message}</p>
-                <button 
-                  onClick={() => {
-                     // Since we don't have removeToast in context, we could just hide it locally, but it's simpler to just let it auto dismiss 
-                     // unless I implement full ToastProvider. I'll just use css visually.
-                     const el = document.getElementById(`toast-${t.id}`);
-                     if (el) el.style.display = 'none';
-                  }} 
-                  className="text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.1)] rounded p-0.5 transition-colors absolute top-3 right-3"
-                >
-                  <Menu size={14} className="opacity-0" /> {/* Transparent so just for spacing */}
-                </button>
-              </div>
-              
-              {/* Progress bar line */}
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-[rgba(255,255,255,0.05)]">
-                 <motion.div 
+          {[...(toasts || [])].reverse().map((t: any) => {
+            const Icon = toastIcons[t.type as keyof typeof toastIcons] || Info;
+            const color = toastColors[t.type as keyof typeof toastColors] || 'var(--blue)';
+            return (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, x: 24, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 24, scale: 0.95 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+                className="pointer-events-auto bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] px-4 py-3 shadow-[var(--shadow-elevated)] flex items-start gap-3 relative overflow-hidden"
+              >
+                <Icon size={15} style={{ color, flexShrink: 0, marginTop: 1 }} />
+                <p className="text-sm font-medium text-[var(--text-primary)] flex-1 leading-snug">{t.message}</p>
+                {/* Progress bar */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--border-subtle)]">
+                  <motion.div
                     initial={{ width: '100%' }}
                     animate={{ width: 0 }}
                     transition={{ duration: 3, ease: 'linear' }}
-                    className={`h-full ${t.type === 'success' ? 'bg-emerald-500' : t.type === 'error' ? 'bg-red-500' : t.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'}`}
-                 />
-              </div>
-            </motion.div>
-          ))}
+                    style={{ height: '100%', background: color, borderRadius: 99 }}
+                  />
+                </div>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
-
     </div>
   );
 }

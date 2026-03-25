@@ -12,6 +12,8 @@ const PitchDeck = lazy(() => import('./pages/PitchDeck'));
 const MarketBench = lazy(() => import('./pages/MarketBench'));
 const InvestorMatch = lazy(() => import('./pages/InvestorMatch'));
 const BusinessPlan = lazy(() => import('./pages/BusinessPlan'));
+const Valuation = lazy(() => import('./pages/Valuation'));
+const InvestorUpdate = lazy(() => import('./pages/InvestorUpdate'));
 
 import PageLoader from './components/PageLoader';
 
@@ -50,6 +52,8 @@ function AppContent() {
             <Route path="/plan" element={<BusinessPlan />} />
             <Route path="/bench" element={<MarketBench />} />
             <Route path="/investors" element={<InvestorMatch />} />
+            <Route path="/valuation" element={<Valuation />} />
+            <Route path="/update" element={<InvestorUpdate />} />
             <Route path="*" element={<div className="p-12 text-center flex flex-col items-center justify-center h-full"><h1 className="text-4xl font-black mb-4">404</h1><p className="text-[var(--text-muted)]">Page not found</p></div>} />
           </Routes>
         </Suspense>

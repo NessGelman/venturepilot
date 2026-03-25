@@ -1,432 +1,430 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card } from '../components/Shared';
-import { Users, Plus, Search, Star, Edit2, Trash2, Download, Sparkles, LayoutGrid, List, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { InvestorRecord } from '../types/AppContext.types';
+import {
+  Users, Plus, Search, Star, Edit2, Trash2, Download,
+  LayoutGrid, List, Mail, Phone, Globe, ExternalLink,
+  ChevronDown, ArrowUpDown, Filter, CheckCircle2, Clock, X
+} from 'lucide-react';
+import { PageHeader, Card, Badge, Button, AlertBanner } from '../components/Shared';
 
-const STATUSES: InvestorRecord['contact'][] = ['Active', 'Interested', 'Dormant', 'Passed', 'Portfolio'];
+interface Investor {
+  id: string;
+  name: string;
+  firm: string;
+  tier: 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Angel';
+  focus: string[];
+  checkSize: string;
+  contact: 'Not Contacted' | 'Contacted' | 'Active' | 'Interested' | 'Passed' | 'Committed';
+  matchScore: number;
+  notes: string;
+  email?: string;
+  linkedin?: string;
+  lastContact?: string;
+  portfolio?: string;
+}
 
-export default function InvestorMatch() {
-  const app = useApp();
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof InvestorRecord, dir: 'asc'|'desc' }>({ key: 'sentiment', dir: 'desc' });
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingInv, setEditingInv] = useState<Partial<InvestorRecord> | null>(null);
+const DEFAULT_INVESTORS: Investor[] = [
+  { id: 'i1', name: 'Marc Andreessen', firm: 'a16z', tier: 'Tier 1', focus: ['SaaS', 'AI/ML', 'Crypto', 'Consumer'], checkSize: '$5M–$50M', contact: 'Not Contacted', matchScore: 88, notes: 'Strong SaaS thesis. Look for viral distribution and network effects.', portfolio: 'GitHub, Lyft, Airbnb', linkedin: 'https://www.linkedin.com/in/pmarca' },
+  { id: 'i2', name: 'Roelof Botha', firm: 'Sequoia', tier: 'Tier 1', focus: ['Fintech', 'SaaS', 'Healthcare', 'Enterprise'], checkSize: '$5M–$100M', contact: 'Active', matchScore: 92, notes: 'Deep fintech expertise. Portfolio includes Stripe, Square. Board seat expected.', portfolio: 'Stripe, YouTube, MongoDB', linkedin: 'https://www.linkedin.com/in/roelofbotha' },
+  { id: 'i3', name: 'Reid Hoffman', firm: 'Greylock', tier: 'Tier 1', focus: ['Network Effects', 'B2B SaaS', 'AI', 'Marketplace'], checkSize: '$3M–$30M', contact: 'Interested', matchScore: 85, notes: 'Pioneer of network effect investing. LinkedIn founder — deep GTM and growth expertise.', portfolio: 'LinkedIn, Airbnb, Palo Alto Networks' },
+  { id: 'i4', name: 'John Lilly', firm: 'Greylock', tier: 'Tier 1', focus: ['Developer Tools', 'Infrastructure', 'Open Source'], checkSize: '$2M–$25M', contact: 'Not Contacted', matchScore: 79, notes: 'Former Mozilla CEO. Deep devtools domain expertise.', portfolio: 'Dropbox, Tumblr' },
+  { id: 'i5', name: 'Aileen Lee', firm: 'Cowboy Ventures', tier: 'Tier 2', focus: ['Consumer', 'B2B SaaS', 'Future of Work'], checkSize: '$1M–$10M', contact: 'Contacted', matchScore: 74, notes: 'Coined the term "unicorn." Strong consumer and SaaS operator background.', portfolio: 'Dollar Shave Club, Rent the Runway' },
+  { id: 'i6', name: 'Keith Rabois', firm: 'Founders Fund', tier: 'Tier 1', focus: ['Fintech', 'Real Estate', 'Commerce', 'Enterprise'], checkSize: '$3M–$50M', contact: 'Passed', matchScore: 62, notes: 'PayPal mafia. Very hands-on. Look for monopolistic markets.', portfolio: 'PayPal, LinkedIn, Square, Yelp' },
+  { id: 'i7', name: 'Sarah Tavel', firm: 'Benchmark', tier: 'Tier 1', focus: ['Consumer', 'Marketplace', 'SaaS', 'Network Effects'], checkSize: '$3M–$25M', contact: 'Not Contacted', matchScore: 71, notes: 'Expertise in engagement metrics and viral loops. Pinterest background.', portfolio: 'Yelp, Pinterest, Chainalysis' },
+  { id: 'i8', name: 'Elad Gil', firm: 'Elad Gil / Angel', tier: 'Angel', focus: ['AI/ML', 'SaaS', 'Infrastructure', 'Biotech'], checkSize: '$500K–$5M', contact: 'Active', matchScore: 90, notes: 'High-growth handbook author. Incredible operator experience. Fast decision-maker.', portfolio: 'Airbnb, Coinbase, Stripe, Instacart' },
+];
 
-  // Hardcoded simple preferences for the default investors for Match %
-  const getMatchScore = (inv: InvestorRecord) => {
-     let score = 50;
-     if (inv.focus.toLowerCase().includes(app.industry.toLowerCase().split(' ')[0])) score += 20;
-     if (inv.stage.toLowerCase().includes(app.stage.toLowerCase())) score += 15;
-     if (app.derived.burnMultiple < 2.0) score += 5;
-     if (app.derived.ruleOf40 > 30) score += 10;
-     return Math.min(100, score);
-  };
+const CONTACT_CONFIG: Record<Investor['contact'], { color: string; bg: string; label: string }> = {
+  'Not Contacted': { color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.04)', label: 'Not Contacted' },
+  'Contacted': { color: 'var(--blue)', bg: 'rgba(59,130,246,0.12)', label: 'Contacted' },
+  'Active': { color: 'var(--amber)', bg: 'var(--amber-dim)', label: 'Active' },
+  'Interested': { color: 'var(--green)', bg: 'var(--green-dim)', label: 'Interested' },
+  'Passed': { color: 'var(--red)', bg: 'var(--red-dim)', label: 'Passed' },
+  'Committed': { color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', label: 'Committed' },
+};
 
-  const filteredData = useMemo(() => {
-     let data = app.investors.filter(i => 
-        (statusFilter === 'All' || i.contact === statusFilter) &&
-        (i.name.toLowerCase().includes(search.toLowerCase()) || i.focus.toLowerCase().includes(search.toLowerCase()) || i.tags.join(' ').toLowerCase().includes(search.toLowerCase()))
-     );
-     data.sort((a,b) => {
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
-        if (valA < valB) return sortConfig.dir === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.dir === 'asc' ? 1 : -1;
-        return 0;
-     });
-     return data;
-  }, [app.investors, search, statusFilter, sortConfig]);
+const TIER_COLORS: Record<string, string> = {
+  'Tier 1': '#f59e0b', 'Tier 2': '#3b82f6', 'Tier 3': '#6b7280', 'Angel': '#10b981',
+};
 
-  const toggleSort = (key: keyof InvestorRecord) => {
-     setSortConfig(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
-  };
+const CONTACT_STAGES: Investor['contact'][] = ['Not Contacted', 'Contacted', 'Active', 'Interested', 'Passed', 'Committed'];
 
-  const selectAll = () => {
-    if (selectedIds.size === filteredData.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filteredData.map(i => i.id)));
-  };
-
-  const toggleSelect = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedIds(next);
-  };
-
-  const bulkDelete = () => {
-     if (window.confirm(`Delete ${selectedIds.size} investors?`)) {
-        selectedIds.forEach(id => app.deleteInvestor(id));
-        setSelectedIds(new Set());
-        app.addToast('Investors deleted', 'success');
-     }
-  };
-
-  const bulkUpdateStatus = (status: InvestorRecord['contact']) => {
-     selectedIds.forEach(id => {
-        const inv = app.investors.find(i => i.id === id);
-        if (inv) app.upsertInvestor({ ...inv, contact: status });
-     });
-     setSelectedIds(new Set());
-     app.addToast(`Updated to ${status}`, 'success');
-  };
-
-  const bulkExport = () => {
-     const toExport = app.investors.filter(i => selectedIds.has(i.id));
-     const rows = [['Name','Focus','Stage','Status','Sentiment','Last Contact']];
-     toExport.forEach(i => rows.push([i.name, i.focus, i.stage, i.contact, String(i.sentiment), i.lastContacted]));
-     const csv = rows.map(r => r.join(',')).join('\n');
-     const blob = new Blob([csv], { type: 'text/csv' });
-     const a = document.createElement('a');
-     a.href = URL.createObjectURL(blob);
-     a.download = 'investors.csv';
-     a.click();
-     app.addToast('Exported CSV', 'success');
-  };
-
-  const saveModal = () => {
-     if (!editingInv?.name) return app.addToast('Name is required', 'error');
-     
-     const id = editingInv.id || Math.random().toString(36).substring(7);
-     const complete: InvestorRecord = {
-        id,
-        name: editingInv.name,
-        focus: editingInv.focus || '',
-        stage: editingInv.stage || '',
-        contact: editingInv.contact || 'Active',
-        link: editingInv.link || '',
-        note: editingInv.note || '',
-        next: editingInv.next || '',
-        sentiment: editingInv.sentiment || 3,
-        lastContacted: editingInv.lastContacted || new Date().toISOString().split('T')[0],
-        tags: editingInv.tags || [],
-     };
-     app.upsertInvestor(complete);
-     setIsModalOpen(false);
-     app.addToast(editingInv.id ? 'Investor updated' : 'Investor added', 'success');
-  };
-
-  const onDragStart = (e: any, id: string) => e.dataTransfer.setData('id', id);
-  const onDragOver = (e: any) => e.preventDefault();
-  const onDrop = (e: any, status: InvestorRecord['contact']) => {
-     const id = e.dataTransfer.getData('id');
-     const inv = app.investors.find(i => i.id === id);
-     if (inv && inv.contact !== status) {
-        app.upsertInvestor({ ...inv, contact: status });
-     }
-  };
-
-  const bgForStatus = (s: string) => {
-     if (s === 'Active') return 'var(--green-dim)';
-     if (s === 'Interested') return 'var(--accent-glow)';
-     if (s === 'Dormant') return 'var(--yellow-dim)';
-     if (s === 'Passed') return 'var(--red-dim)';
-     return 'rgba(255,255,255,0.1)';
-  };
-  const colorForStatus = (s: string) => {
-     if (s === 'Active') return 'var(--green)';
-     if (s === 'Interested') return 'var(--accent-light)';
-     if (s === 'Dormant') return 'var(--amber)';
-     if (s === 'Passed') return 'var(--red)';
-     return 'var(--text-primary)';
-  };
-
-  const renderStars = (rating: number) => {
-     return (
-        <div className="flex gap-0.5">
-           {[1,2,3,4,5].map(n => (
-              <Star key={n} size={12} className={n <= rating ? 'text-amber-400 fill-amber-400' : 'text-[rgba(255,255,255,0.1)]'} />
-           ))}
-        </div>
-     );
-  };
-
-  const submitAI = (prompt: string) => {
-    window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
-  };
+function InvestorCard({ investor, onEdit, onDelete, onStatusChange, compact }: {
+  investor: Investor; onEdit: () => void; onDelete: () => void;
+  onStatusChange: (status: Investor['contact']) => void; compact?: boolean;
+}) {
+  const cfg = CONTACT_CONFIG[investor.contact];
+  const [showStages, setShowStages] = useState(false);
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-24 h-full relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 px-2">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <Users className="text-[var(--accent)]" /> Investor CRM
-          </h1>
-          <p className="text-[var(--text-muted)] mt-1 font-medium font-mono text-sm tracking-wide">
-            Manage your pipeline and track alignment scores.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button onClick={() => submitAI('Rank my investor list based on my current metrics and stage, and tell me who to prioritize.')} className="bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] text-[13px] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all shadow-glow hover:-translate-y-0.5 card-hover hidden md:flex">
-             <Sparkles size={14} className="text-[var(--accent-light)]" /> Rank Investors
-          </button>
-          <div className="flex bg-[rgba(255,255,255,0.05)] rounded-xl border border-[rgba(255,255,255,0.1)] p-1">
-             <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-colors ${viewMode === 'table' ? 'bg-[rgba(255,255,255,0.1)] text-white' : 'text-[var(--text-muted)] hover:text-white'}`}>
-               <List size={16} />
-             </button>
-             <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-colors ${viewMode === 'kanban' ? 'bg-[rgba(255,255,255,0.1)] text-white' : 'text-[var(--text-muted)] hover:text-white'}`}>
-               <LayoutGrid size={16} />
-             </button>
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 hover:border-[var(--accent)] transition-all group relative"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shrink-0"
+            style={{ background: `${TIER_COLORS[investor.tier]}20`, color: TIER_COLORS[investor.tier] }}>
+            {investor.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
-          <button 
-             onClick={() => { setEditingInv({}); setIsModalOpen(true); }}
-             className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold transition-colors shadow-glow hover:shadow-[0_0_20px_var(--accent-glow)] hover:-translate-y-0.5 card-hover text-[13px]"
-          >
-             <Plus size={16} /> Add Investor
-          </button>
+          <div>
+            <div className="font-bold text-sm leading-tight">{investor.name}</div>
+            <div className="text-xs text-[var(--text-muted)]">{investor.firm}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="text-xs font-black px-2 py-0.5 rounded-full"
+            style={{ background: `${TIER_COLORS[investor.tier]}20`, color: TIER_COLORS[investor.tier] }}>
+            {investor.tier}
+          </div>
+          <div className="flex items-center gap-0.5">
+            <Star size={11} className="fill-[var(--amber)]" style={{ color: 'var(--amber)' }} />
+            <span className="text-[11px] font-bold text-[var(--amber)]">{investor.matchScore}</span>
+          </div>
         </div>
       </div>
 
-      {/* Snapshot Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-         <Card padding="1.25rem" className="flex items-center justify-between">
-            <div>
-               <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Active Pipeline</p>
-               <p className="text-2xl font-black font-mono text-white">{app.investors.filter(i => i.contact === 'Active' || i.contact === 'Interested').length}</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center"><Activity size={18} className="text-indigo-400" /></div>
-         </Card>
-         <Card padding="1.25rem" className="flex items-center justify-between">
-            <div>
-               <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Total Tracked</p>
-               <p className="text-2xl font-black font-mono text-white flex items-baseline gap-2">
-                  {app.investors.length}
-                  <span className="text-xs font-medium text-[var(--text-muted)] hidden sm:inline">contacts</span>
-               </p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"><Users size={18} className="text-emerald-400" /></div>
-         </Card>
-         <Card padding="1.25rem" className="flex justify-between items-center sm:col-span-1">
-            <div className="flex-1">
-               <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Profile Alignment</p>
-               <div className="w-full bg-[rgba(255,255,255,0.05)] h-2 rounded-full mt-2 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-400 to-indigo-400" style={{ width: `${Math.max(10, Math.min(100, app.derived.readinessScore))}%` }}></div>
-               </div>
-            </div>
-         </Card>
+      <div className="flex flex-wrap gap-1 mb-3">
+        {investor.focus.slice(0, 3).map(f => (
+          <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-muted)] border border-[var(--border)]">{f}</span>
+        ))}
+        {investor.focus.length > 3 && <span className="text-[9px] text-[var(--text-muted)]">+{investor.focus.length - 3}</span>}
       </div>
 
-      {/* Filters & Bulk Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 bg-[rgba(255,255,255,0.02)] p-2 rounded-xl border border-[rgba(255,255,255,0.05)]">
-         <div className="flex items-center gap-2 flex-1">
-            <div className="relative flex-1 max-w-xs">
-               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-               <input 
-                  type="text" 
-                  placeholder="Search investors, focus, tags..." 
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-               />
-            </div>
-            <select
-               value={statusFilter}
-               onChange={e => setStatusFilter(e.target.value)}
-               className="bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-            >
-               <option value="All">All Statuses</option>
-               {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-         </div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] text-[var(--text-muted)]">Check: <span className="font-bold text-[var(--text-secondary)]">{investor.checkSize}</span></span>
+      </div>
 
-         <AnimatePresence>
-            {selectedIds.size > 0 && (
-               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--accent-light)] mr-2">{selectedIds.size} selected</span>
-                  <select 
-                     onChange={e => { if(e.target.value) bulkUpdateStatus(e.target.value as any); e.target.value = ''; }}
-                     className="bg-[var(--accent)] text-white text-xs font-bold rounded-lg px-3 py-1.5 focus:outline-none cursor-pointer border-none shadow-glow"
-                     defaultValue=""
-                  >
-                     <option value="" disabled>Move to...</option>
-                     {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <button onClick={bulkExport} className="p-1.5 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-primary)] transition-colors" title="Export CSV"><Download size={14} /></button>
-                  <button onClick={bulkDelete} className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors" title="Delete"><Trash2 size={14} /></button>
-               </motion.div>
+      {!compact && investor.notes && (
+        <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3 line-clamp-2">{investor.notes}</p>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div className="relative">
+          <button onClick={() => setShowStages(v => !v)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all"
+            style={{ background: cfg.bg, color: cfg.color, borderColor: 'transparent' }}>
+            {cfg.label} <ChevronDown size={10} />
+          </button>
+          <AnimatePresence>
+            {showStages && (
+              <motion.div initial={{ opacity: 0, y: 4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
+                className="absolute bottom-full left-0 mb-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-1.5 z-20 shadow-[var(--shadow-elevated)] w-36">
+                {CONTACT_STAGES.map(stage => (
+                  <button key={stage} onClick={() => { onStatusChange(stage); setShowStages(false); }}
+                    className="w-full text-left px-3 py-1.5 rounded-md text-xs font-bold transition-colors hover:bg-[rgba(255,255,255,0.05)]"
+                    style={{ color: CONTACT_CONFIG[stage].color }}>
+                    {stage}
+                  </button>
+                ))}
+              </motion.div>
             )}
-         </AnimatePresence>
+          </AnimatePresence>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {investor.linkedin && (
+            <a href={investor.linkedin} target="_blank" rel="noopener noreferrer"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--blue)] hover:bg-[rgba(59,130,246,0.1)] transition-colors">
+              <ExternalLink size={12} />
+            </a>
+          )}
+          <button onClick={onEdit} className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"><Edit2 size={12} /></button>
+          <button onClick={onDelete} className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--red)] hover:bg-[var(--red-dim)] transition-colors"><Trash2 size={12} /></button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+const EMPTY_FORM = { name: '', firm: '', tier: 'Tier 2' as Investor['tier'], focus: '', checkSize: '', contact: 'Not Contacted' as Investor['contact'], matchScore: 70, notes: '', email: '', linkedin: '' };
+
+export default function InvestorMatch() {
+  const { state, dispatch } = useApp() as any;
+
+  const [investors, setInvestors] = useState<Investor[]>(() => {
+    try { return JSON.parse(localStorage.getItem('vp_investors') || 'null') || DEFAULT_INVESTORS; } catch { return DEFAULT_INVESTORS; }
+  });
+
+  const save = (inv: Investor[]) => {
+    setInvestors(inv);
+    localStorage.setItem('vp_investors', JSON.stringify(inv));
+  };
+
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<Investor['contact'] | 'all'>('all');
+  const [filterTier, setFilterTier] = useState<Investor['tier'] | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
+  const [sortKey, setSortKey] = useState<'matchScore' | 'name' | 'tier'>('matchScore');
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const filtered = useMemo(() => {
+    let list = investors;
+    if (search) list = list.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.firm.toLowerCase().includes(search.toLowerCase()));
+    if (filterStatus !== 'all') list = list.filter(i => i.contact === filterStatus);
+    if (filterTier !== 'all') list = list.filter(i => i.tier === filterTier);
+    return [...list].sort((a, b) => {
+      if (sortKey === 'matchScore') return b.matchScore - a.matchScore;
+      if (sortKey === 'name') return a.name.localeCompare(b.name);
+      if (sortKey === 'tier') return a.tier.localeCompare(b.tier);
+      return 0;
+    });
+  }, [investors, search, filterStatus, filterTier, sortKey]);
+
+  const stats = useMemo(() => ({
+    total: investors.length,
+    active: investors.filter(i => i.contact === 'Active' || i.contact === 'Interested').length,
+    committed: investors.filter(i => i.contact === 'Committed').length,
+    avgScore: investors.length > 0 ? Math.round(investors.reduce((s, i) => s + i.matchScore, 0) / investors.length) : 0,
+  }), [investors]);
+
+  const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setShowModal(true); };
+  const openEdit = (inv: Investor) => {
+    setForm({ name: inv.name, firm: inv.firm, tier: inv.tier, focus: inv.focus.join(', '), checkSize: inv.checkSize, contact: inv.contact, matchScore: inv.matchScore, notes: inv.notes, email: inv.email || '', linkedin: inv.linkedin || '' });
+    setEditingId(inv.id);
+    setShowModal(true);
+  };
+
+  const submitForm = () => {
+    if (!form.name.trim() || !form.firm.trim()) return;
+    const investor: Investor = {
+      id: editingId || `inv-${Date.now()}`,
+      name: form.name.trim(), firm: form.firm.trim(), tier: form.tier,
+      focus: form.focus.split(',').map(f => f.trim()).filter(Boolean),
+      checkSize: form.checkSize, contact: form.contact, matchScore: form.matchScore,
+      notes: form.notes, email: form.email, linkedin: form.linkedin,
+    };
+    save(editingId ? investors.map(i => i.id === editingId ? investor : i) : [...investors, investor]);
+    setShowModal(false);
+  };
+
+  const exportCSV = () => {
+    const header = 'Name,Firm,Tier,Focus,Check Size,Status,Match Score,Notes';
+    const rows = investors.map(i => `"${i.name}","${i.firm}","${i.tier}","${i.focus.join('; ')}","${i.checkSize}","${i.contact}","${i.matchScore}","${i.notes}"`);
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'investors.csv'; a.click();
+  };
+
+  const kanbanColumns = CONTACT_STAGES.map(stage => ({
+    stage, investors: filtered.filter(i => i.contact === stage),
+    cfg: CONTACT_CONFIG[stage],
+  }));
+
+  return (
+    <div className="max-w-[1400px] mx-auto space-y-6">
+      <PageHeader
+        title="Investor CRM"
+        subtitle="Your fundraise pipeline. Move deals forward."
+        badge={{ label: `${stats.active} active`, variant: stats.active > 0 ? 'success' : 'default' }}
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportCSV}>Export</Button>
+            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={openAdd}>Add Investor</Button>
+          </div>
+        }
+      />
+
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total Tracked', value: stats.total, color: 'var(--text-primary)' },
+          { label: 'Active Pipeline', value: stats.active, color: 'var(--amber)' },
+          { label: 'Committed', value: stats.committed, color: 'var(--green)' },
+          { label: 'Avg Match Score', value: `${stats.avgScore}/100`, color: 'var(--accent)' },
+        ].map(s => (
+          <div key={s.label} className="p-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--bg-card)] text-center">
+            <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-[10px] text-[var(--text-muted)] mt-0.5">{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      {viewMode === 'table' ? (
-         <Card padding="0" className="overflow-x-auto min-h-[400px]">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-               <thead className="bg-[rgba(255,255,255,0.02)] border-b border-[rgba(255,255,255,0.05)] text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  <tr>
-                     <th className="p-4 w-12 text-center">
-                        <input type="checkbox" checked={selectedIds.size === filteredData.length && filteredData.length > 0} onChange={selectAll} className="accent-[var(--accent)] cursor-pointer" />
-                     </th>
-                     <th className="p-4 cursor-pointer hover:text-[var(--text-primary)]" onClick={() => toggleSort('name')}>Investor {sortConfig.key==='name' && (sortConfig.dir==='asc'?'↑':'↓')}</th>
-                     <th className="p-4 cursor-pointer hover:text-[var(--text-primary)]" onClick={() => toggleSort('contact')}>Status {sortConfig.key==='contact' && (sortConfig.dir==='asc'?'↑':'↓')}</th>
-                     <th className="p-4 cursor-pointer hover:text-[var(--text-primary)]" onClick={() => toggleSort('sentiment')}>Sentiment {sortConfig.key==='sentiment' && (sortConfig.dir==='asc'?'↑':'↓')}</th>
-                     <th className="p-4 cursor-pointer hover:text-[var(--text-primary)]" onClick={() => toggleSort('focus')}>Focus / Stage {sortConfig.key==='focus' && (sortConfig.dir==='asc'?'↑':'↓')}</th>
-                     <th className="p-4 text-center">Match %</th>
-                     <th className="p-4">Actions</th>
-                  </tr>
-               </thead>
-               <tbody className="divide-y divide-[rgba(255,255,255,0.02)] text-[var(--text-primary)]">
-                  {filteredData.length === 0 && (
-                     <tr><td colSpan={7} className="p-8 text-center text-[var(--text-muted)] italic">No investors found.</td></tr>
-                  )}
-                  {filteredData.map(inv => (
-                     <tr key={inv.id} className={`hover:bg-[rgba(255,255,255,0.01)] transition-colors ${selectedIds.has(inv.id) ? 'bg-[rgba(99,102,241,0.05)]' : ''}`}>
-                        <td className="p-4 text-center">
-                           <input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} className="accent-[var(--accent)] cursor-pointer" />
-                        </td>
-                        <td className="p-4 font-bold max-w-[200px] truncate">
-                           <div className="flex flex-col">
-                              <span>{inv.name}</span>
-                              <span className="text-[10px] font-medium text-[var(--text-muted)] font-mono">{inv.tags.join(', ')}</span>
-                           </div>
-                        </td>
-                        <td className="p-4">
-                           <span className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] items-center font-bold uppercase tracking-wider" style={{ background: bgForStatus(inv.contact), color: colorForStatus(inv.contact) }}>
-                              {inv.contact}
-                           </span>
-                        </td>
-                        <td className="p-4">
-                           {renderStars(inv.sentiment)}
-                        </td>
-                        <td className="p-4 text-xs">
-                           <div className="flex flex-col">
-                              <span className="font-medium">{inv.focus}</span>
-                              <span className="text-[10px] text-[var(--text-muted)]">{inv.stage}</span>
-                           </div>
-                        </td>
-                        <td className="p-4 text-center relative">
-                           {/* Match Donut */}
-                           <div className="inline-flex items-center justify-center relative w-8 h-8">
-                              <svg className="w-8 h-8 -rotate-90">
-                                 <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                                 <circle cx="16" cy="16" r="14" fill="none" stroke="var(--accent-light)" strokeWidth="3" strokeDasharray={`${getMatchScore(inv) * 0.88}, 100`} />
-                              </svg>
-                              <span className="absolute text-[9px] font-mono font-bold text-white max-w-full text-center leading-none tracking-tighter" style={{ fontSize: getMatchScore(inv) === 100 ? '7px' : '9px' }}>{getMatchScore(inv)}</span>
-                           </div>
-                        </td>
-                        <td className="p-4">
-                           <div className="flex items-center gap-2">
-                              <button onClick={() => { setEditingInv(inv); setIsModalOpen(true); }} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-light)] transition-colors rounded hover:bg-[rgba(255,255,255,0.05)]"><Edit2 size={14} /></button>
-                              <button onClick={() => submitAI(`Draft a 3-paragraph follow up email to ${inv.name} highlighting our $${(app.derived.arr/1000).toLocaleString()}k ARR and ${app.growth}% growth.`)} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-light)] transition-colors rounded hover:bg-[rgba(255,255,255,0.05)]" title="Draft Email with AI"><Sparkles size={14} /></button>
-                           </div>
-                        </td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </Card>
-      ) : (
-         <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar min-h-[500px]">
-            {STATUSES.map(status => (
-               <div 
-                  key={status} 
-                  className="flex-1 min-w-[280px] bg-[rgba(255,255,255,0.01)] border border-[rgba(255,255,255,0.05)] rounded-[var(--radius-xl)] flex flex-col"
-                  onDragOver={onDragOver}
-                  onDrop={e => onDrop(e, status)}
-               >
-                  <div className="p-3 border-b border-[rgba(255,255,255,0.05)] flex justify-between items-center" style={{ borderTop: `2px solid ${colorForStatus(status)}`, borderTopLeftRadius: 'var(--radius-xl)', borderTopRightRadius: 'var(--radius-xl)' }}>
-                     <span className="font-bold text-xs uppercase tracking-wider text-[var(--text-primary)]">{status}</span>
-                     <span className="px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.1)] text-[10px] font-mono font-bold">{filteredData.filter(i => i.contact === status).length}</span>
-                  </div>
-                  <div className="p-2 flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-                     {filteredData.filter(i => i.contact === status).map(inv => (
-                        <div 
-                           key={inv.id} 
-                           draggable 
-                           onDragStart={e => onDragStart(e, inv.id)}
-                           className="bg-[var(--bg-card)] border border-[rgba(255,255,255,0.05)] p-3 rounded-xl shadow-sm cursor-grab active:cursor-grabbing hover:border-[var(--accent-light)] transition-colors"
-                        >
-                           <div className="flex justify-between items-start mb-1">
-                              <h4 className="font-bold text-sm text-[var(--text-primary)]">{inv.name}</h4>
-                              <span className="text-[10px] font-mono font-bold text-[var(--accent-light)]">{getMatchScore(inv)}%</span>
-                           </div>
-                           <p className="text-xs text-[var(--text-muted)] font-medium mb-2">{inv.focus}</p>
-                           {renderStars(inv.sentiment)}
-                           {inv.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-3">
-                                 {inv.tags.slice(0,3).map(t => <span key={t} className="px-1.5 py-0.5 bg-[rgba(255,255,255,0.05)] rounded text-[9px] text-[var(--text-secondary)]">{t}</span>)}
-                              </div>
-                           )}
-                           <button onClick={(e) => { e.stopPropagation(); setEditingInv(inv); setIsModalOpen(true); }} className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-white"><Edit2 size={12} /></button>
-                        </div>
-                     ))}
-                  </div>
-               </div>
+      {/* Filters + view toggle */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search investors…"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] pl-8 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]" />
+        </div>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as any)}
+          className="bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <option value="all">All Status</option>
+          {CONTACT_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={filterTier} onChange={e => setFilterTier(e.target.value as any)}
+          className="bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <option value="all">All Tiers</option>
+          {['Tier 1', 'Tier 2', 'Tier 3', 'Angel'].map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={sortKey} onChange={e => setSortKey(e.target.value as any)}
+          className="bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <option value="matchScore">Sort: Match Score</option>
+          <option value="name">Sort: Name</option>
+          <option value="tier">Sort: Tier</option>
+        </select>
+        <div className="flex items-center gap-1 p-1 rounded-[var(--radius-md)] bg-[var(--bg-card)] border border-[var(--border)]">
+          {([['grid', <LayoutGrid size={14} />], ['list', <List size={14} />], ['kanban', <ArrowUpDown size={14} />]] as const).map(([mode, icon]) => (
+            <button key={mode} onClick={() => setViewMode(mode as any)}
+              className="w-8 h-7 flex items-center justify-center rounded transition-all"
+              style={{ background: viewMode === mode ? 'var(--accent)' : 'transparent', color: viewMode === mode ? 'white' : 'var(--text-muted)' }}>
+              {icon}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid view */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <AnimatePresence>
+            {filtered.map(inv => (
+              <InvestorCard key={inv.id} investor={inv} onEdit={() => openEdit(inv)}
+                onDelete={() => save(investors.filter(i => i.id !== inv.id))}
+                onStatusChange={status => save(investors.map(i => i.id === inv.id ? { ...i, contact: status } : i))}
+              />
             ))}
-         </div>
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* List view */}
+      {viewMode === 'list' && (
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[700px]">
+            <thead>
+              <tr className="border-b border-[var(--border)]">
+                {['Name / Firm', 'Tier', 'Focus', 'Check Size', 'Status', 'Match', ''].map(h => (
+                  <th key={h} className="text-left py-2 px-3 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {filtered.map(inv => {
+                  const cfg = CONTACT_CONFIG[inv.contact];
+                  return (
+                    <motion.tr key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="border-b border-[var(--border-subtle)] hover:bg-[rgba(255,255,255,0.02)] transition-colors group">
+                      <td className="py-3 px-3">
+                        <div className="font-bold text-sm">{inv.name}</div>
+                        <div className="text-xs text-[var(--text-muted)]">{inv.firm}</div>
+                      </td>
+                      <td className="py-3 px-3"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${TIER_COLORS[inv.tier]}20`, color: TIER_COLORS[inv.tier] }}>{inv.tier}</span></td>
+                      <td className="py-3 px-3"><div className="flex flex-wrap gap-1">{inv.focus.slice(0, 2).map(f => <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-muted)]">{f}</span>)}</div></td>
+                      <td className="py-3 px-3 text-xs text-[var(--text-muted)]">{inv.checkSize}</td>
+                      <td className="py-3 px-3"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span></td>
+                      <td className="py-3 px-3"><div className="flex items-center gap-1"><Star size={10} style={{ color: 'var(--amber)', fill: 'var(--amber)' }} /><span className="text-xs font-bold text-[var(--amber)]">{inv.matchScore}</span></div></td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(inv)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"><Edit2 size={13} /></button>
+                          <button onClick={() => save(investors.filter(i => i.id !== inv.id))} className="p-1 text-[var(--text-muted)] hover:text-[var(--red)]"><Trash2 size={13} /></button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      {/* Kanban view */}
+      {viewMode === 'kanban' && (
+        <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+          {kanbanColumns.filter(c => c.stage !== 'Not Contacted' || c.investors.length > 0).map(col => (
+            <div key={col.stage} className="flex-shrink-0 w-64">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold" style={{ color: col.cfg.color }}>{col.stage}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: col.cfg.bg, color: col.cfg.color }}>{col.investors.length}</span>
+                </div>
+              </div>
+              <div className="space-y-2 min-h-[60px]">
+                {col.investors.map(inv => (
+                  <InvestorCard key={inv.id} investor={inv} compact onEdit={() => openEdit(inv)}
+                    onDelete={() => save(investors.filter(i => i.id !== inv.id))}
+                    onStatusChange={status => save(investors.map(i => i.id === inv.id ? { ...i, contact: status } : i))}
+                  />
+                ))}
+                {col.investors.length === 0 && (
+                  <div className="h-16 rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] flex items-center justify-center">
+                    <span className="text-xs text-[var(--text-muted)]">Drop here</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Add/Edit Modal */}
       <AnimatePresence>
-         {isModalOpen && (
-            <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
-               <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="w-full max-w-lg bg-[var(--bg-surface)] border border-[rgba(255,255,255,0.1)] rounded-[var(--radius-xl)] shadow-2xl flex flex-col max-h-[90vh]"
-               >
-                  <div className="p-5 border-b border-[rgba(255,255,255,0.05)] flex justify-between items-center bg-[rgba(255,255,255,0.02)]">
-                     <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><Users size={18} className="text-[var(--accent-light)]"/> {editingInv?.id ? 'Edit Investor' : 'Add Investor'}</h2>
+        {showModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}
+            onClick={() => setShowModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6 w-full max-w-md shadow-[var(--shadow-elevated)] max-h-[90vh] overflow-y-auto custom-scrollbar"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-black text-base">{editingId ? 'Edit Investor' : 'Add Investor'}</h3>
+                <button onClick={() => setShowModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-lg leading-none">✕</button>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { label: 'Name *', key: 'name', type: 'text', placeholder: 'John Smith' },
+                  { label: 'Firm *', key: 'firm', type: 'text', placeholder: 'Sequoia Capital' },
+                  { label: 'Check Size', key: 'checkSize', type: 'text', placeholder: '$1M–$5M' },
+                  { label: 'Focus Areas', key: 'focus', type: 'text', placeholder: 'SaaS, AI/ML, Fintech' },
+                  { label: 'Email', key: 'email', type: 'email', placeholder: 'partner@vc.com' },
+                  { label: 'LinkedIn URL', key: 'linkedin', type: 'url', placeholder: 'https://linkedin.com/in/...' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1.5 block">{f.label}</label>
+                    <input type={f.type} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]" />
                   </div>
-                  
-                  <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4 custom-scrollbar">
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Investor Name</label>
-                           <input type="text" value={editingInv?.name || ''} onChange={e => setEditingInv(prev => ({...prev, name: e.target.value}))} className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)]" />
-                        </div>
-                        <div>
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Focus</label>
-                           <input type="text" value={editingInv?.focus || ''} onChange={e => setEditingInv(prev => ({...prev, focus: e.target.value}))} placeholder="e.g. B2B, AI" className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)]" />
-                        </div>
-                        <div>
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Stage</label>
-                           <input type="text" value={editingInv?.stage || ''} onChange={e => setEditingInv(prev => ({...prev, stage: e.target.value}))} placeholder="e.g. Seed, Series A" className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)]" />
-                        </div>
-                        <div>
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Status</label>
-                           <select value={editingInv?.contact || 'Active'} onChange={e => setEditingInv(prev => ({...prev, contact: e.target.value as any}))} className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)] cursor-pointer appearance-none">
-                              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                           </select>
-                        </div>
-                        <div>
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Sentiment (1-5)</label>
-                           <div className="flex gap-2 items-center h-[38px] px-2 bg-[rgba(0,0,0,0.2)] rounded-lg border border-[rgba(255,255,255,0.1)]">
-                              {[1,2,3,4,5].map(n => (
-                                 <Star 
-                                    key={n} size={18} 
-                                    onClick={() => setEditingInv(prev => ({...prev, sentiment: n as any}))}
-                                    className={`cursor-pointer transition-colors ${n <= (editingInv?.sentiment || 3) ? 'text-amber-400 fill-amber-400' : 'text-[rgba(255,255,255,0.2)] hover:text-amber-400/50'}`} 
-                                 />
-                              ))}
-                           </div>
-                        </div>
-                        <div className="col-span-2">
-                           <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Tags (comma separated)</label>
-                           <input 
-                              type="text" 
-                              value={editingInv?.tags?.join(', ') || ''} 
-                              onChange={e => setEditingInv(prev => ({...prev, tags: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)}))} 
-                              className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)]" 
-                              placeholder="e.g. AI, Deeptech, Warm Intro"
-                           />
-                        </div>
-                     </div>
+                ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1.5 block">Tier</label>
+                    <select value={form.tier} onChange={e => setForm(p => ({ ...p, tier: e.target.value as any }))}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+                      {['Tier 1', 'Tier 2', 'Tier 3', 'Angel'].map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
                   </div>
-
-                  <div className="p-4 border-t border-[rgba(255,255,255,0.05)] flex justify-end gap-3 bg-[rgba(255,255,255,0.02)]">
-                     <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-bold text-[var(--text-muted)] hover:text-white transition-colors">Cancel</button>
-                     <button onClick={saveModal} className="px-5 py-2 bg-[var(--accent)] text-white text-sm font-bold rounded-xl shadow-glow hover:shadow-[0_0_20px_var(--accent-glow)] transition-all">Save</button>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1.5 block">Status</label>
+                    <select value={form.contact} onChange={e => setForm(p => ({ ...p, contact: e.target.value as any }))}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+                      {CONTACT_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
-               </motion.div>
-            </div>
-         )}
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1.5 block">Match Score: {form.matchScore}</label>
+                  <input type="range" min="0" max="100" value={form.matchScore} onChange={e => setForm(p => ({ ...p, matchScore: +e.target.value }))}
+                    className="w-full accent-[var(--accent)]" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1.5 block">Notes</label>
+                  <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Investment thesis, preferences, intro source…"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <Button variant="secondary" className="flex-1" onClick={() => setShowModal(false)}>Cancel</Button>
+                <Button variant="primary" className="flex-1" onClick={submitForm}>{editingId ? 'Save Changes' : 'Add Investor'}</Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-
     </div>
   );
 }
