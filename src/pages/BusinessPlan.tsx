@@ -716,7 +716,7 @@ export default function BusinessPlan() {
       )}
 
       {!hasData && (
-        <div className="flex items-start gap-3 p-4 rounded-[var(--radius-lg)] border border-[rgba(99,102,241,0.3)] bg-[rgba(99,102,241,0.08)]">
+        <div className="flex items-start gap-3 p-4 rounded-[var(--radius-lg)] border border-[rgba(30,64,175,0.3)] bg-[rgba(30,64,175,0.08)]">
           <AlertCircle size={16} style={{ color: '#3b82f6' }} className="shrink-0 mt-0.5" />
           <p className="text-sm text-[var(--text-secondary)]">
             Fill in your company details in the sidebar first — company name, problem, solution, and financials — then generate your plan.
