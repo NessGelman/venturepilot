@@ -212,7 +212,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
             <InputField label="NDR" value={app.ndr} onChange={app.setNdr} suffix="%" annotation="Net Dollar Retention" slider={{ min: 0, max: 200, step: 1 }} />
             <InputField label="Active Pipeline" value={app.pipeline} onChange={app.setPipeline} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }} />
             <Divider label="Fundraise" />
-            <InputField label="Target Raise" value={app.targetRaise} onChange={app.setTargetRaise} prefix="$" slider={{ min: 0, max: 10000000, step: 50000 }} />
+            <InputField label="Target Raise" value={app.targetRaise} onChange={app.setTargetRaise} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }} />
             <InputField label="Valuation Cap" value={app.valuation} onChange={app.setValuation} prefix="$" slider={{ min: 0, max: 50000000, step: 500000 }} />
             <InputField label="Dilution" value={app.dilution} onChange={app.setDilution} suffix="%" slider={{ min: 0, max: 100, step: 1 }} />
           </Accordion>
