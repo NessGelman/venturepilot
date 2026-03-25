@@ -194,7 +194,7 @@ export default function Onboarding() {
                   <NumInput value={data.revenue} onChange={v => setData(d => ({ ...d, revenue: v }))} prefix="$" min={0} max={1000000} step={1000} />
                 </Field>
                 <Field label="Target Raise">
-                  <NumInput value={data.targetRaise} onChange={v => setData(d => ({ ...d, targetRaise: v }))} prefix="$" min={100000} max={20000000} step={50000} />
+                  <NumInput value={data.targetRaise} onChange={v => setData(d => ({ ...d, targetRaise: v }))} prefix="$" min={0} max={20000000} step={10000} />
                 </Field>
               </div>
               <OnboardingNav step={step} setStep={setStep} onNext={next} />
