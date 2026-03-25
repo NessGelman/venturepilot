@@ -168,40 +168,120 @@ export default function BusinessPlan() {
   const hasData = !!(problemStatement || solutionStatement || ideaDesc || mrr > 0);
   const currentSectionGenerated = !!generatedContent[openSection];
 
-  // Generate a single section
-  const generateSection = useCallback(async (sectionId: string) => {
-    const session = ai?.session;
-    if (!session) {
-      addToast('AI not available. Click "Load AI" in the AI panel first.', 'warning');
-      return;
+  // Build data-driven prose fallback for each section — no AI required
+  const buildTemplateProse = useCallback((sectionId: string): string => {
+    const name = ideaName;
+    const ltvCacStr = ltv > 0 && cac > 0 ? `${(ltv / cac).toFixed(1)}×` : 'strong';
+    const y1arr = arr;
+    const y2arr = y1arr * Math.pow(1 + monthlyGrowth / 100, 12);
+    const y3arr = y1arr * Math.pow(1 + monthlyGrowth / 100, 24);
+    const raiseUse = state?.useOfFunds || 'product development, sales, and operations';
+    const competitors_list = state?.competitors || 'existing solutions';
+    const icp = state?.targetCustomer || 'target customers';
+    const northStar = state?.northStar || '';
+    const industry = state?.industry || 'B2B SaaS';
+
+    switch (sectionId) {
+      case 'executive':
+        return [
+          `${name} is a ${stage}-stage ${revenueModel} company${industry ? ` in the ${industry} space` : ''}.${problemStatement ? ` The company addresses a critical market gap: ${problemStatement}` : ''}`,
+          solutionStatement
+            ? `Our solution: ${solutionStatement}${uniqueInsight ? ` What makes us different — ${uniqueInsight}` : ''}`
+            : `${name} delivers a purpose-built solution that directly addresses the pain points of ${icp}.${uniqueInsight ? ` Our core insight: ${uniqueInsight}` : ''}`,
+          mrr > 0
+            ? `${name} is generating ${fmt(mrr)} in monthly recurring revenue (${fmt(arr)} ARR), growing at ${monthlyGrowth.toFixed(1)}% month-over-month with ${fmtPct(grossMargin)} gross margins and ${fmtPct(ndr)} NDR.${traction ? ` ${traction}` : ''}`
+            : `${name} is in the early stages of development${traction ? `, with early validation including: ${traction}` : ' and actively building its first customer relationships'}.`,
+          `We are raising ${fmt(targetRaise)} at a ${fmt(state?.valuation || 0)} valuation cap to ${raiseUse}. This round extends our runway to ${runwayMonths + 18}+ months and funds the milestones required to reach ${fmt(y2arr)} ARR.${northStar ? ` Our north star: ${northStar}.` : ''}`,
+        ].join('\n\n');
+
+      case 'market':
+        return [
+          `${name} targets a ${fmt(tam)} total addressable market, with a serviceable addressable market of ${fmt(sam)} and an immediately obtainable market of ${fmt(som)}. ${industry ? `The ${industry} sector` : 'This market'} is experiencing rapid expansion driven by digital transformation, shifting buyer behavior, and a growing demand for purpose-built solutions.`,
+          `The addressable market is underserved: ${competitors_list ? `current solutions like ${competitors_list} were built for a different era and fail to adequately serve the needs of ${icp}` : `legacy and generic solutions fail to address the specific needs of ${icp}`}. This creates a significant opportunity for a focused, modern approach.`,
+          `Market timing is favorable. ${uniqueInsight ? uniqueInsight : `Buyers in this category are actively searching for better alternatives`}, and the convergence of technology, regulatory shifts, and changing customer expectations creates a clear window for ${name} to establish a dominant position. Companies that move now can capture disproportionate market share before the market consolidates.`,
+          `Our SAM of ${fmt(sam)} (${sam > 0 && tam > 0 ? ((sam / tam) * 100).toFixed(0) : '~15'}% of TAM) represents the segment we can realistically serve with our current product and go-to-market motion. Our SOM of ${fmt(som)} defines our 3-year capture target, representing a ${som > 0 && sam > 0 ? ((som / sam) * 100).toFixed(0) : '~10'}% penetration of SAM — a conservative and achievable goal.`,
+        ].join('\n\n');
+
+      case 'product':
+        return [
+          `${name}'s product is built around a core insight: ${uniqueInsight || `${icp} need a solution that fits their specific workflow, not a generic tool adapted for their use case`}. ${solutionStatement || `The platform delivers exactly what ${icp} need, with no unnecessary complexity.`}`,
+          `The product's core differentiation lies in its technical architecture and depth of focus. Unlike ${competitors_list || 'competitors'}, ${name} was designed from the ground up for ${icp}, which means features and workflows that would take competitors years of retrofitting are native to our system. This creates a structural moat that is difficult to replicate.`,
+          `Network and data effects compound our advantage over time. As more customers use the platform, the system accumulates proprietary data and improves its core models, creating an intelligence flywheel that widens the gap between ${name} and alternatives. Switching costs increase as customers integrate the product more deeply into their operations.`,
+          `Our current product roadmap is focused on three priorities: (1) deepening the core product to increase activation and retention among ${icp}, (2) building the integrations and APIs that make ${name} the hub of customers' workflows, and (3) developing the data layer that will power AI-driven insights and automation.`,
+        ].join('\n\n');
+
+      case 'gtm':
+        return [
+          `${name}'s primary go-to-market motion is focused on ${icp}. Our top acquisition channels are ${revenueModel === 'SaaS' ? 'product-led growth, content marketing, and outbound sales' : revenueModel === 'Marketplace' ? 'supply-side partnerships, demand-side SEO, and direct outreach' : 'direct sales, partnership channels, and content-driven inbound'}. Early traction validates that ${icp} respond well to a ${revenueModel === 'SaaS' ? 'bottom-up, try-before-you-buy' : 'direct value demonstration'} approach.`,
+          `Our sales motion is built for efficiency. With a CAC of ${fmt(cac)} and an LTV:CAC ratio of ${ltvCacStr}, we have strong unit economics that support aggressive reinvestment in acquisition. The payback period of ${derived?.payback || Math.round(cac / Math.max(state?.arpu || 1, 1))} months means we recover customer acquisition costs quickly, creating a capital-efficient growth engine.`,
+          `Pricing is designed to align with customer value. Our ${revenueModel} model means customers pay in proportion to the value they receive, reducing friction to adoption and creating natural expansion revenue. NDR of ${fmtPct(ndr)} confirms that customers find enough value to grow their spend over time — one of the strongest validation signals in SaaS.`,
+          `Over the next 12 months, our go-to-market milestones are: (1) grow MRR from ${fmt(mrr)} to ${fmt(mrr * Math.pow(1 + monthlyGrowth / 100, 12))}, (2) establish 2-3 key partnership channels, (3) build a repeatable outbound motion with fully loaded CAC below ${fmt(cac * 0.8)}, and (4) achieve net revenue retention above ${fmtPct(Math.min(ndr + 5, 130))}.`,
+        ].join('\n\n');
+
+      case 'financials':
+        return [
+          `${name} is currently generating ${fmt(mrr)} MRR (${fmt(arr)} ARR) with ${fmtPct(grossMargin)} gross margins and ${fmtPct(ndr)} net dollar retention. Monthly burn is ${fmt(burnRate)}, net of revenue, providing ${runwayMonths} months of runway on current cash of ${fmt(cashOnHand)}.${burnMultiple > 0 ? ` Our burn multiple of ${burnMultiple}× is ${burnMultiple <= 1.5 ? 'best-in-class' : burnMultiple <= 2.5 ? 'healthy for our stage' : 'expected at this growth rate and will improve as revenue scales'}.` : ''}`,
+          `Unit economics are strong and improving. LTV of ${fmt(ltv)} against a CAC of ${fmt(cac)} gives an LTV:CAC ratio of ${ltvCacStr}. At ${fmtPct(monthlyGrowth)} MoM growth, we project ARR to reach ${fmt(y2arr)} by end of Year 2 and ${fmt(y3arr)} by end of Year 3, assuming growth rates moderate as we scale.`,
+          `The ${fmt(targetRaise)} raise will be deployed as follows: ${raiseUse}. This investment funds the growth milestones required to reach a Series ${stage === 'Seed' ? 'A' : stage === 'Series A' ? 'B' : 'C'}-ready profile, including demonstrating repeatable growth, improving unit economics, and expanding the team to support the next phase of scale.`,
+          `Our path to profitability assumes a ${Math.round(24 + (burnRate / Math.max(mrr * monthlyGrowth / 100, 1)))} month horizon to cash flow breakeven, achieved by continuing to grow revenue faster than costs and driving gross margin expansion through scale and automation. Rule of 40 score is currently ${rule40}, with a target of 40+ within 18 months post-raise.`,
+        ].join('\n\n');
+
+      case 'team':
+        return [
+          founderNames
+            ? `${name} was founded by ${founderNames}.${founderBios ? ` ${founderBios}` : ` The founding team brings deep domain expertise in ${industry}, with complementary skill sets across product, technology, and go-to-market.`}`
+            : `${name} is built by a ${teamSize}-person founding team with direct experience in ${industry} and a track record of building and scaling products for ${icp}.`,
+          `The founding team's unfair advantages include domain expertise, existing relationships within the target customer base, and a deep understanding of the problem space developed over years of firsthand experience. This is not a team that stumbled into this market — we have lived the problem and built the solution.`,
+          `The current ${teamSize}-person team covers the critical functions needed for this stage: product development, customer success, and early sales. Post-raise, we plan to make key hires in ${stage === 'Pre-seed' || stage === 'Seed' ? 'engineering, sales, and customer success' : 'sales leadership, engineering, and marketing'} to accelerate growth and prepare the organization for the next stage.`,
+          `We are building a culture of ownership, speed, and customer obsession. Every hire is evaluated not just for their skills but for their ability to operate effectively in an early-stage environment and their passion for the problem we are solving. This culture is a competitive advantage that compounds as the team grows.`,
+        ].join('\n\n');
+
+      default:
+        return 'Content not available for this section.';
     }
+  }, [state, derived, ideaName, arr, mrr, burnRate, cashOnHand, targetRaise, cac, ndr, grossMargin,
+      monthlyGrowth, teamSize, tam, sam, som, founderNames, founderBios, problemStatement,
+      solutionStatement, uniqueInsight, revenueModel, traction, stage, ltv, runwayMonths,
+      burnMultiple, rule40]);
+
+  // Generate a single section — AI if available, smart template otherwise
+  const generateSection = useCallback(async (sectionId: string) => {
     setGenerating(prev => ({ ...prev, [sectionId]: true }));
     try {
-      const ctx = buildDataContext(state, derived);
-      const prompt = SECTION_PROMPTS[sectionId](ctx);
-      const result = await session.prompt(prompt);
-      setGeneratedContent(prev => ({ ...prev, [sectionId]: result }));
+      const session = ai?.session;
+      if (session) {
+        const ctx = buildDataContext(state, derived);
+        const prompt = SECTION_PROMPTS[sectionId](ctx);
+        const result = await session.prompt(prompt);
+        setGeneratedContent(prev => ({ ...prev, [sectionId]: result }));
+      } else {
+        // Use smart data-driven template — no AI needed
+        await new Promise(r => setTimeout(r, 400)); // brief animation delay
+        const result = buildTemplateProse(sectionId);
+        setGeneratedContent(prev => ({ ...prev, [sectionId]: result }));
+      }
     } catch (err: any) {
       addToast(`Failed to generate: ${err.message || 'Unknown error'}`, 'error');
     } finally {
       setGenerating(prev => ({ ...prev, [sectionId]: false }));
     }
-  }, [ai, state, derived, addToast]);
+  }, [ai, state, derived, addToast, buildTemplateProse]);
 
   // Generate all sections
   const generateAll = useCallback(async () => {
-    const session = ai?.session;
-    if (!session) {
-      addToast('AI not ready. Open the AI panel and click "Load AI" first.', 'warning');
-      return;
-    }
     setGeneratingAll(true);
-    const ctx = buildDataContext(state, derived);
     for (const section of SECTIONS) {
       setGenerating(prev => ({ ...prev, [section.id]: true }));
       try {
-        const result = await session.prompt(SECTION_PROMPTS[section.id](ctx));
-        setGeneratedContent(prev => ({ ...prev, [section.id]: result }));
+        const session = ai?.session;
+        if (session) {
+          const ctx = buildDataContext(state, derived);
+          const result = await session.prompt(SECTION_PROMPTS[section.id](ctx));
+          setGeneratedContent(prev => ({ ...prev, [section.id]: result }));
+        } else {
+          await new Promise(r => setTimeout(r, 300));
+          setGeneratedContent(prev => ({ ...prev, [section.id]: buildTemplateProse(section.id) }));
+        }
       } catch (err: any) {
         addToast(`${section.title} failed: ${err.message}`, 'error');
       } finally {
@@ -210,7 +290,7 @@ export default function BusinessPlan() {
     }
     setGeneratingAll(false);
     addToast('Business plan generated.', 'success');
-  }, [ai, state, derived, addToast]);
+  }, [ai, state, derived, addToast, buildTemplateProse]);
 
   const exportHTML = () => {
     const allGenerated = SECTIONS.every(s => !!generatedContent[s.id]);

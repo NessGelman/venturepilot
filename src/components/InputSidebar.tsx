@@ -173,7 +173,33 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
 
         {/* Scrollable inputs */}
         <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-          <Accordion title="Financials" icon={Activity} defaultOpen>
+          <Accordion title="Company" icon={Target} defaultOpen>
+            <InputField label="Company Name" value={app.companyName} onChange={app.setCompanyName} type="text" placeholder="e.g. VenturePilot, Acme Corp" />
+            <InputField label="One-line Pitch / Concept" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI that helps founders choose the best capital source" />
+            <InputField label="Product Description" value={app.productDescription} onChange={app.setProductDescription} type="text" />
+            <div className="grid grid-cols-2 gap-2">
+              <InputField label="Stage" value={app.stage} onChange={app.setStage} type="select"
+                options={['Pre-seed', 'Seed', 'Series A', 'Series B', 'Growth']} />
+              <InputField label="Industry" value={app.industry} onChange={app.setIndustry} type="select"
+                options={['B2B SaaS', 'AI/ML', 'Fintech', 'Healthtech', 'Consumer', 'Deep Tech', 'Infrastructure', 'Other']} />
+            </div>
+            <InputField label="Founders" value={app.founder} onChange={app.setFounder} type="text" placeholder="e.g. Jane Smith, John Lee" />
+            <InputField label="Founder Bios" value={app.founderBios} onChange={app.setFounderBios} multiline placeholder="Short background for each founder, comma-separated" />
+            <InputField label="Team Size" value={app.teamSize} onChange={app.setTeamSize} slider={{ min: 1, max: 200, step: 1 }} />
+            <InputField label="Target Customer (ICP)" value={app.targetCustomer} onChange={app.setTargetCustomer} type="text" />
+            <InputField label="Competitors" value={app.competitors} onChange={app.setCompetitors} type="text" annotation="Comma-separated" />
+            <InputField label="North Star Goal" value={app.northStar} onChange={app.setNorthStar} type="text" />
+          </Accordion>
+
+          <Accordion title="Narrative" icon={Pen} defaultOpen={false}>
+            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline placeholder="The acute pain your customers experience today." />
+            <InputField label="Your Solution" value={app.solutionStatement} onChange={app.setSolutionStatement} multiline placeholder="How your product solves that problem." />
+            <InputField label="Unique Insight" value={app.uniqueInsight} onChange={app.setUniqueInsight} multiline placeholder="What do you know that others don't?" />
+            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline placeholder="Key wins, logos, growth signals." />
+            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline placeholder="Where does the raise go?" />
+          </Accordion>
+
+          <Accordion title="Financials" icon={Activity} defaultOpen={false}>
             <InputField label="Capital (Bank Balance)" value={app.capital} onChange={app.setCapital} prefix="$" slider={{ min: 0, max: 5000000, step: 10000 }} />
             <InputField label="Monthly Gross Burn" value={app.burn} onChange={app.setBurn} prefix="$"
               annotation={`Net: $${Math.max(netBurnNum, 0).toLocaleString()}/mo`}
@@ -236,32 +262,6 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
                 </div>
               ))}
             </div>
-          </Accordion>
-
-          <Accordion title="Company" icon={Target} defaultOpen>
-            <InputField label="Company Name" value={app.companyName} onChange={app.setCompanyName} type="text" placeholder="e.g. VenturePilot, Acme Corp" />
-            <InputField label="One-line Pitch / Concept" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI that helps founders choose the best capital source" />
-            <InputField label="Product Description" value={app.productDescription} onChange={app.setProductDescription} type="text" />
-            <div className="grid grid-cols-2 gap-2">
-              <InputField label="Stage" value={app.stage} onChange={app.setStage} type="select"
-                options={['Pre-seed', 'Seed', 'Series A', 'Series B', 'Growth']} />
-              <InputField label="Industry" value={app.industry} onChange={app.setIndustry} type="select"
-                options={['B2B SaaS', 'AI/ML', 'Fintech', 'Healthtech', 'Consumer', 'Deep Tech', 'Infrastructure', 'Other']} />
-            </div>
-            <InputField label="Founders" value={app.founder} onChange={app.setFounder} type="text" placeholder="e.g. Jane Smith, John Lee" />
-            <InputField label="Founder Bios" value={app.founderBios} onChange={app.setFounderBios} multiline placeholder="Short background for each founder, comma-separated" />
-            <InputField label="Team Size" value={app.teamSize} onChange={app.setTeamSize} slider={{ min: 1, max: 200, step: 1 }} />
-            <InputField label="Target Customer (ICP)" value={app.targetCustomer} onChange={app.setTargetCustomer} type="text" />
-            <InputField label="Competitors" value={app.competitors} onChange={app.setCompetitors} type="text" annotation="Comma-separated" />
-            <InputField label="North Star Goal" value={app.northStar} onChange={app.setNorthStar} type="text" />
-          </Accordion>
-
-          <Accordion title="Narrative" icon={Pen} defaultOpen={false}>
-            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline placeholder="The acute pain your customers experience today." />
-            <InputField label="Your Solution" value={app.solutionStatement} onChange={app.setSolutionStatement} multiline placeholder="How your product solves that problem." />
-            <InputField label="Unique Insight" value={app.uniqueInsight} onChange={app.setUniqueInsight} multiline placeholder="What do you know that others don't?" />
-            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline placeholder="Key wins, logos, growth signals." />
-            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline placeholder="Where does the raise go?" />
           </Accordion>
 
           <Accordion title="Dev Tools" icon={Github} defaultOpen={false}>
