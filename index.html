@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self' blob:;">
     <title>VenturePilot | AI-Powered Startup Financing Strategy</title>
+    <script>
+      // Unregister any old service workers so stale caches never block updates
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+        caches.keys().then(function(keys) {
+          keys.forEach(function(k) { caches.delete(k); });
+        });
+      }
+    </script>
     <script type="text/javascript">
       (function (l) {
         if (l.search) {
