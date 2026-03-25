@@ -185,16 +185,16 @@ export default function Onboarding() {
             >
               <div className="space-y-4">
                 <Field label="Current Bank Balance" hint={`${Math.round(data.capital / Math.max(data.burn - data.revenue, 1))} mo runway`}>
-                  <NumInput value={data.capital} onChange={v => setData(d => ({ ...d, capital: v }))} prefix="$" min={0} max={50000000} step={10000} />
+                  <NumInput value={data.capital} onChange={v => setData(d => ({ ...d, capital: v }))} prefix="$" min={0} max={5000000} step={10000} />
                 </Field>
                 <Field label="Monthly Gross Burn" hint={`Net: $${formatNum(Math.max(data.burn - data.revenue, 0))}/mo`}>
-                  <NumInput value={data.burn} onChange={v => setData(d => ({ ...d, burn: v }))} prefix="$" min={1000} max={2000000} step={1000} />
+                  <NumInput value={data.burn} onChange={v => setData(d => ({ ...d, burn: v }))} prefix="$" min={0} max={1000000} step={100} />
                 </Field>
                 <Field label="Monthly Revenue (MRR)" hint={`ARR: $${formatNum(data.revenue * 12)}`}>
                   <NumInput value={data.revenue} onChange={v => setData(d => ({ ...d, revenue: v }))} prefix="$" min={0} max={1000000} step={1000} />
                 </Field>
                 <Field label="Target Raise">
-                  <NumInput value={data.targetRaise} onChange={v => setData(d => ({ ...d, targetRaise: v }))} prefix="$" min={0} max={20000000} step={10000} />
+                  <NumInput value={data.targetRaise} onChange={v => setData(d => ({ ...d, targetRaise: v }))} prefix="$" min={0} max={10000000} step={10000} />
                 </Field>
               </div>
               <OnboardingNav step={step} setStep={setStep} onNext={next} />
