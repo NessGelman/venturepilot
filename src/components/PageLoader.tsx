@@ -11,7 +11,7 @@ export default function PageLoader({ label = 'Loading...' }: PageLoaderProps) {
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className="w-12 h-12 mb-6 rounded-2xl bg-gradient-to-r from-[var(--accent)] to-[#a855f7] flex items-center justify-center shadow-glow"
+        className="w-12 h-12 mb-6 rounded-2xl bg-gradient-to-r from-[var(--accent)] to-[#06b6d4] flex items-center justify-center shadow-glow"
       >
         <Loader2 className="w-6 h-6 text-white" />
       </motion.div>
