@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: { enabled: true, type: 'module' },
       injectManifest: {
-        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // No precaching — SW is only used for COOP/COEP header injection
+        globPatterns: [],
       },
       manifest: {
         name: 'VenturePilot',
