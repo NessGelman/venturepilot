@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from './context/AppContext';
@@ -22,15 +22,7 @@ const Loader = PageLoader;
 function AppContent() {
   const location = useLocation();
   const app = useApp();
-  const [showOnboarding, setShowOnboarding] = useState(true);
-
-  useEffect(() => {
-    if (app.onboardingComplete) {
-      setShowOnboarding(false);
-    }
-  }, [app.onboardingComplete]);
-
-  if (showOnboarding) {
+  if (!app.onboardingComplete) {
     return <Onboarding />;
   }
 

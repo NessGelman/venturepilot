@@ -147,9 +147,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   const getStoredState = useCallback((): Partial<AppState> => {
     try {
-      const raw = secureStorage.sessionGet('vp-state');
+      const raw = secureStorage.getItem('persist');
       if (!raw) return {};
-      return JSON.parse(raw);
+      return raw;
     } catch {
       return {};
     }
@@ -358,7 +358,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   useEffect(() => {
     try {
       const { investors, ...restState } = state;
-      secureStorage.sessionSet('vp-state', {
+      secureStorage.setItem('persist', {
         ...restState,
         history: state.history.slice(-20),
         future: [],
@@ -367,11 +367,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     } catch {}
   }, [state]);
 
-  useEffect(() => {
-    return () => {
-      secureStorage.clearSensitiveData();
-    };
-  }, []);
+  // Note: intentionally not clearing on unmount so state persists across navigation
 
   const derived: DerivedMetrics = useMemo(() => {
     const netBurn = Math.max(state.burn - state.revenue, 1);
