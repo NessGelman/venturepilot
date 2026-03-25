@@ -28,85 +28,104 @@ const fmtPct = (n: number) => `${n.toFixed(1)}%`;
 
 function useSlides(state: any): SlideData[] {
   const {
-    ideaName = 'Your Startup', stage = 'Seed', mrr = 0, arr = 0, burnRate = 0,
-    monthlyGrowth = 0, ltv = 0, cac = 0, ndr = 100, grossMargin = 70,
-    teamSize = 3, targetRaise = 0, founderNames = '', founderBios = '',
-    problemStatement = '', solutionStatement = '', uniqueInsight = '',
-    tam = 0, sam = 0, som = 0, revenueModel = 'SaaS', runwayMonths = 0,
-    burnMultiple = 0, rule40 = 0
+    idea: ideaName = 'Your Startup',
+    stage = 'Seed',
+    revenue: mrr = 0,
+    growth: monthlyGrowth = 0,
+    burn: burnRate = 0,
+    cac = 0,
+    ndr = 100,
+    grossMargin = 70,
+    teamSize = 3,
+    targetRaise = 0,
+    founder: founderNames = '',
+    problem: problemStatement = '',
+    tam = 0,
+    sam = 0,
+    som = 0,
+    revenueModel = 'SaaS',
+    solutionStatement = '',
+    uniqueInsight = '',
+    founderBios = '',
   } = state || {};
+
+  const arr = mrr * 12;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
+  const runwayMonths = state?.capital ? Math.round(state.capital / Math.max(burnRate - mrr, 1)) : 0;
+  const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(1)) : 0;
+  const rule40 = Number((monthlyGrowth + (mrr > 0 ? ((mrr - burnRate) / mrr) * 100 : 0)).toFixed(0));
 
   return [
     {
       id: 1, type: 'cover', title: ideaName,
-      subtitle: `${stage} · ${revenueModel} · ${ideaName}`,
-      notes: `Opening slide. State company name, stage, and one-line pitch. Spend no more than 30 seconds on this slide. The goal is to set context and build intrigue — let the investors lean in.`,
+      subtitle: `${stage} · ${revenueModel}`,
+      notes: `Opening slide. State company name, stage, and one-line pitch. Spend no more than 30 seconds here. Set context, build intrigue — let investors lean in.`,
     },
     {
       id: 2, type: 'problem',
-      title: '🔥 The Problem',
+      title: 'The Problem',
       subtitle: problemStatement || 'Describe the acute pain your customers experience today.',
-      notes: `This is your most important slide. Make the pain visceral and quantifiable. Use the "before" state — what does life look like without your solution? Lead with a customer story or striking statistic. Investors need to believe this problem is urgent, large, and underserved.`,
+      notes: `Most important slide in the deck. Make the pain visceral and quantifiable. Use the "before" state — what does life look like without your solution? Lead with a customer story or striking statistic. Investors need to believe this problem is urgent, large, and underserved.`,
     },
     {
       id: 3, type: 'solution',
-      title: '💡 Our Solution',
+      title: 'Our Solution',
       subtitle: solutionStatement || 'A clear, differentiated answer to the problem above.',
-      notes: `Introduce ${ideaName} in one crisp sentence. Show the "after" state — what does the customer's world look like with your product? Highlight your unique insight: ${uniqueInsight || 'what do you know that others don\'t?'}. Avoid feature lists — focus on the transformation you deliver.`,
+      notes: `Introduce ${ideaName} in one crisp sentence. Show the "after" state — what does the customer's world look like with your product? Highlight your unique insight: ${uniqueInsight || "what do you know that others don't?"}. Avoid feature lists — focus on the transformation you deliver.`,
     },
     {
       id: 4, type: 'market',
-      title: '📊 Market Opportunity',
+      title: 'Market Opportunity',
       subtitle: tam ? `TAM: ${fmt(tam)} · SAM: ${fmt(sam)} · SOM: ${fmt(som)}` : 'Total addressable, serviceable, and obtainable market.',
-      notes: `Walk through the market sizing methodology — not just the numbers. TAM shows ambition, SAM shows focus, SOM shows realism. Use a bottom-up approach: # of target customers × ACV = SAM. Address why this market is growing and what's driving the tailwind (regulatory, tech, behavior shift).`,
+      notes: `Walk through the market sizing methodology — not just the numbers. TAM shows ambition, SAM shows focus, SOM shows realism. Use a bottom-up approach: # of target customers × ACV = SAM. Address why this market is growing and what's driving the tailwind.`,
     },
     {
       id: 5, type: 'product',
-      title: '⚡ Product',
+      title: 'Product',
       subtitle: "What you've built, how it works, and why it's defensible.",
-      notes: `Demo or screenshots here. Walk through the core user journey in 60 seconds. Emphasize: (1) time-to-value, (2) stickiness mechanisms, (3) data / network effects. If you have a proprietary data moat or novel ML, highlight it here as your technical defensibility.`,
+      notes: `Demo or screenshots here. Walk through the core user journey in 60 seconds. Emphasize: (1) time-to-value, (2) stickiness mechanisms, (3) data / network effects. If you have a proprietary data moat or novel ML, highlight it here.`,
     },
     {
       id: 6, type: 'traction',
-      title: `📈 Traction`,
+      title: 'Traction',
       subtitle: mrr > 0 ? `${fmt(mrr)} MRR · ${fmtPct(monthlyGrowth)} MoM · NDR ${fmtPct(ndr)}` : 'Show your growth trajectory and key signals of product-market fit.',
-      notes: `Lead with your best metric. ${mrr > 0 ? `MRR is ${fmt(mrr)} growing at ${fmtPct(monthlyGrowth)} month-over-month.` : ''} Show the growth curve, not just current state. Include: customer count, NPS, churn rate, logos of notable customers. Social proof matters enormously at this stage. If pre-revenue, show engagement metrics or waitlist size.`,
+      notes: `Lead with your best metric. ${mrr > 0 ? `MRR is ${fmt(mrr)} growing at ${fmtPct(monthlyGrowth)} month-over-month.` : ''} Show the growth curve, not just current state. Include customer count, NPS, churn rate, logos of notable customers. If pre-revenue, show engagement metrics or waitlist size.`,
     },
     {
       id: 7, type: 'model',
-      title: '💰 Business Model',
+      title: 'Business Model',
       subtitle: `${revenueModel} · ${fmt(arr)} ARR · ${fmtPct(grossMargin)} Gross Margin`,
-      notes: `Explain exactly how you make money. Cover: pricing tiers, expansion revenue mechanics, and payback period. LTV/CAC ratio is ${ltv > 0 && cac > 0 ? `${(ltv / cac).toFixed(1)}x` : 'to be calculated'} — ${ltv / Math.max(cac, 1) >= 3 ? 'above the 3× threshold investors expect.' : 'work toward the 3× benchmark.'} Show the path to unit economics improvement as you scale.`,
+      notes: `Explain exactly how you make money. Cover: pricing tiers, expansion revenue mechanics, payback period. LTV/CAC ratio is ${ltv > 0 && cac > 0 ? `${(ltv / cac).toFixed(1)}x` : 'to be calculated'} — ${ltv / Math.max(cac, 1) >= 3 ? 'above the 3× threshold investors expect.' : 'work toward the 3× benchmark.'} Show the path to unit economics improvement at scale.`,
     },
     {
       id: 8, type: 'competition',
-      title: '🗺️ Competitive Landscape',
-      subtitle: 'Why now, why us, and why can\'t incumbents copy us.',
-      notes: `Use a 2×2 matrix comparing key dimensions where ${ideaName} wins. Acknowledge competitors — investors know they exist. Explain your unfair advantage: proprietary data, founder expertise, distribution moat, or network effects. The question investors really ask: "Why can't [incumbent] just build this?"`,
+      title: 'Competitive Landscape',
+      subtitle: "Why now, why us, and why incumbents can't copy us.",
+      notes: `Use a 2×2 matrix comparing key dimensions where ${ideaName} wins. Acknowledge competitors — investors know they exist. Explain your unfair advantage: proprietary data, founder expertise, distribution moat, or network effects. Answer: "Why can't [incumbent] just build this?"`,
     },
     {
       id: 9, type: 'team',
-      title: '👥 Team',
+      title: 'Team',
       subtitle: founderNames || `${teamSize}-person founding team`,
-      notes: `${founderBios || 'Highlight founder-market fit. Why is THIS team uniquely positioned to win this market?'} Cover: domain expertise, past exits, technical depth, and key advisors or investors already backing you. The team slide is often the deciding factor at early stages — investors bet on people.`,
+      notes: `${founderBios || 'Highlight founder-market fit. Why is THIS team uniquely positioned to win this market?'} Cover: domain expertise, past exits, technical depth, and key advisors or investors already backing you. The team slide is often the deciding factor at early stages.`,
     },
     {
       id: 10, type: 'financials',
-      title: '📉 Financials',
-      subtitle: `${runwayMonths}mo runway · ${fmt(burnRate)}/mo burn · Rule of 40: ${rule40.toFixed(0)}`,
-      notes: `Show the last 12 months of actuals and 24-month forecast. Key metrics: burn rate ${fmt(burnRate)}/month, runway ${runwayMonths} months. Burn Multiple is ${burnMultiple.toFixed(1)}x — ${burnMultiple <= 1 ? 'excellent capital efficiency.' : burnMultiple <= 2 ? 'reasonable, with room to improve.' : 'high; show the path to < 1.5×.'} Demonstrate you understand the business deeply and can manage capital.`,
+      title: 'Financials',
+      subtitle: `${runwayMonths}mo runway · ${fmt(burnRate)}/mo burn · Rule of 40: ${rule40}`,
+      notes: `Show the last 12 months of actuals and 24-month forecast. Key metrics: burn rate ${fmt(burnRate)}/month, runway ${runwayMonths} months. Burn Multiple is ${burnMultiple}x — ${burnMultiple <= 1 ? 'excellent capital efficiency.' : burnMultiple <= 2 ? 'reasonable, with room to improve.' : 'high; show the path to < 1.5×.'} Demonstrate you understand the business and can manage capital.`,
     },
     {
       id: 11, type: 'ask',
-      title: '🚀 The Ask',
+      title: 'The Ask',
       subtitle: targetRaise > 0 ? `Raising ${fmt(targetRaise)} · ${stage} Round` : 'Specify your raise amount, valuation, and use of funds.',
-      notes: `Be specific: ${targetRaise > 0 ? `Raising ${fmt(targetRaise)}` : 'state the raise amount'}. Break down use of proceeds: typically 40-50% engineering/product, 30-40% GTM, 10-20% ops/overhead. State your 18-month milestones: what does this capital unlock? End with the key ask — introductions, specific expertise, or a meeting to go deeper.`,
+      notes: `Be specific: ${targetRaise > 0 ? `Raising ${fmt(targetRaise)}` : 'state the raise amount'}. Break down use of proceeds: typically 40-50% engineering/product, 30-40% GTM, 10-20% ops/overhead. State your 18-month milestones. End with the key ask — introductions, specific expertise, or a meeting to go deeper.`,
     },
     {
       id: 12, type: 'appendix',
-      title: '📎 Appendix',
+      title: 'Appendix',
       subtitle: 'Detailed financials, cohort analysis, technical architecture.',
-      notes: `Keep detailed models here. Include: monthly cohort retention curves, detailed P&L, cap table summary, product roadmap, and customer case studies. Don't present these unless asked — but be ready to pull them up when diligence questions arise. A deep appendix signals operational maturity.`,
+      notes: `Keep detailed models here. Include: monthly cohort retention curves, detailed P&L, cap table summary, product roadmap, customer case studies. Don't present these unless asked — but be ready to pull them up when diligence questions arise. A deep appendix signals operational maturity.`,
     },
   ];
 }
@@ -120,9 +139,150 @@ const SLIDE_ICONS: Record<string, React.ReactNode> = {
 
 const SLIDE_COLORS: Record<string, string> = {
   cover: '#3b82f6', problem: '#ef4444', solution: '#3b82f6', market: '#14b8a6',
-  traction: '#10b981', product: '#60a5fa', model: '#f59e0b', competition: '#6366f1',
+  traction: '#10b981', product: '#60a5fa', model: '#f59e0b', competition: '#3b82f6',
   team: '#ec4899', financials: '#f97316', ask: '#3b82f6', appendix: '#6b7280',
 };
+
+function SlideVisual({ slide, state, color }: { slide: SlideData; state: any; color: string }) {
+  const {
+    revenue: mrr = 0, growth: monthlyGrowth = 0, burn: burnRate = 0,
+    ndr = 100, grossMargin = 70, cac = 0, targetRaise = 0,
+    tam = 0, sam = 0, som = 0, stage = 'Seed', revenueModel = 'SaaS',
+  } = state || {};
+
+  const arr = mrr * 12;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
+  const runwayMonths = state?.capital ? Math.round(state.capital / Math.max(burnRate - mrr, 1)) : 0;
+  const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(1)) : 0;
+
+  if (slide.type === 'cover') {
+    return (
+      <div className="flex flex-wrap gap-2 mt-4">
+        {[
+          { label: 'MRR', value: fmt(mrr), show: mrr > 0 },
+          { label: 'MoM', value: `+${fmtPct(monthlyGrowth)}`, show: monthlyGrowth > 0 },
+          { label: 'Stage', value: stage, show: true },
+          { label: 'Model', value: revenueModel, show: true },
+        ].filter(m => m.show).map(m => (
+          <div key={m.label} className="px-3 py-1.5 rounded-full border text-xs font-bold"
+            style={{ borderColor: `${color}40`, background: `${color}12`, color }}>
+            {m.label}: {m.value}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (slide.type === 'market' && (tam > 0 || sam > 0)) {
+    const markets = [
+      { label: 'TAM', value: tam, color: '#3b82f6' },
+      { label: 'SAM', value: sam, color: '#14b8a6' },
+      { label: 'SOM', value: som, color: '#10b981' },
+    ];
+    const max = Math.max(...markets.map(m => m.value), 1);
+    return (
+      <div className="mt-4 space-y-2">
+        {markets.map(m => (
+          <div key={m.label} className="flex items-center gap-3">
+            <div className="text-[10px] font-black w-8 shrink-0" style={{ color: m.color }}>{m.label}</div>
+            <div className="flex-1 h-5 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${(m.value / max) * 100}%`, background: m.color, opacity: 0.85 }} />
+            </div>
+            <div className="text-xs font-bold font-mono w-16 text-right shrink-0" style={{ color: m.color }}>{fmt(m.value)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (slide.type === 'traction') {
+    const metrics = [
+      { label: 'MRR', value: fmt(mrr), color: '#10b981', show: mrr > 0 },
+      { label: 'MoM Growth', value: `+${fmtPct(monthlyGrowth)}`, color: '#3b82f6', show: monthlyGrowth > 0 },
+      { label: 'NDR', value: fmtPct(ndr), color: ndr >= 110 ? '#10b981' : '#f59e0b', show: ndr !== 100 },
+      { label: 'Gross Margin', value: fmtPct(grossMargin), color: grossMargin >= 70 ? '#10b981' : '#f59e0b', show: grossMargin > 0 },
+    ].filter(m => m.show);
+    if (metrics.length === 0) return null;
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {metrics.map(m => (
+          <div key={m.label} className="px-3 py-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-center">
+            <div className="text-base font-black font-mono" style={{ color: m.color }}>{m.value}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wide text-[rgba(255,255,255,0.4)] mt-0.5">{m.label}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (slide.type === 'financials') {
+    const metrics = [
+      { label: 'Runway', value: `${runwayMonths}mo`, color: runwayMonths >= 18 ? '#10b981' : runwayMonths >= 9 ? '#f59e0b' : '#ef4444' },
+      { label: 'Burn/mo', value: fmt(burnRate), color: '#f97316' },
+      { label: 'Burn×', value: `${burnMultiple}×`, color: burnMultiple <= 1.5 ? '#10b981' : burnMultiple <= 2.5 ? '#f59e0b' : '#ef4444' },
+      { label: 'ARR', value: fmt(arr), color: '#3b82f6' },
+    ];
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {metrics.map(m => (
+          <div key={m.label} className="px-3 py-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-center">
+            <div className="text-base font-black font-mono" style={{ color: m.color }}>{m.value}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wide text-[rgba(255,255,255,0.4)] mt-0.5">{m.label}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (slide.type === 'ask' && targetRaise > 0) {
+    const allocations = [
+      { label: 'Eng & Product', pct: 45, color: '#3b82f6' },
+      { label: 'Sales & GTM', pct: 30, color: '#14b8a6' },
+      { label: 'Operations', pct: 15, color: '#f59e0b' },
+      { label: 'R&D', pct: 10, color: '#10b981' },
+    ];
+    return (
+      <div className="mt-4">
+        <div className="text-2xl font-black font-mono mb-3" style={{ color }}>
+          {fmt(targetRaise)} <span className="text-sm font-medium opacity-60">{stage} Round</span>
+        </div>
+        <div className="space-y-1.5">
+          {allocations.map(a => (
+            <div key={a.label} className="flex items-center gap-2">
+              <div className="text-[10px] font-bold w-24 shrink-0 text-[rgba(255,255,255,0.6)]">{a.label}</div>
+              <div className="flex-1 h-3.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${a.pct}%`, background: a.color, opacity: 0.8 }} />
+              </div>
+              <div className="text-[10px] font-black w-8 text-right shrink-0" style={{ color: a.color }}>{a.pct}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (slide.type === 'model') {
+    const ltvCac = cac > 0 && ltv > 0 ? (ltv / cac).toFixed(1) : null;
+    const items = [
+      { label: 'ARR', value: fmt(arr), show: arr > 0 },
+      { label: 'Gross Margin', value: fmtPct(grossMargin), show: true },
+      { label: 'LTV:CAC', value: ltvCac ? `${ltvCac}×` : '—', show: true },
+      { label: 'Model', value: revenueModel, show: true },
+    ];
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {items.map(m => m.show ? (
+          <div key={m.label} className="px-3 py-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-center">
+            <div className="text-sm font-black font-mono" style={{ color }}>{m.value}</div>
+            <div className="text-[9px] font-bold uppercase tracking-wide text-[rgba(255,255,255,0.4)] mt-0.5">{m.label}</div>
+          </div>
+        ) : null)}
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export default function PitchDeck() {
   const { state } = useApp() as any;
@@ -131,7 +291,6 @@ export default function PitchDeck() {
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
-  const [exportFormat, setExportFormat] = useState<'md' | 'html' | null>(null);
 
   const slide = slides[current];
   const color = SLIDE_COLORS[slide.type] || '#3b82f6';
@@ -160,7 +319,7 @@ export default function PitchDeck() {
   };
 
   const exportHTML = () => {
-    const ideaName = state?.ideaName || 'VenturePilot';
+    const ideaName = state?.idea || 'VenturePilot';
     const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${ideaName} Pitch Deck</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#04060d;color:#e2e8f0;padding:40px}h1{font-size:2em;margin-bottom:.25em;background:linear-gradient(135deg,#3b82f6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}h2{font-size:1.1em;color:#93c5fd;margin-bottom:1em}.slide{border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px;margin-bottom:32px;background:rgba(255,255,255,0.02)}.meta{font-size:.7em;color:#64748b;margin-bottom:.5em}.notes{margin-top:1em;padding:1em;background:rgba(59,130,246,0.08);border-left:3px solid #3b82f6;border-radius:4px;font-size:.85em;color:#94a3b8;line-height:1.6}hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:24px 0}</style></head><body>
 <h1>${ideaName} Pitch Deck</h1><p style="color:#64748b;margin-bottom:32px">Generated by VenturePilot · ${new Date().toLocaleDateString()}</p>
@@ -248,17 +407,20 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
                 <div className="flex-1 flex flex-col justify-center">
                   <motion.h1
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="text-3xl lg:text-5xl font-black mb-4 leading-tight"
+                    className="text-3xl lg:text-4xl font-black mb-3 leading-tight"
                     style={{ background: `linear-gradient(135deg, #fff, ${color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                   >
                     {slide.title}
                   </motion.h1>
                   {slide.subtitle && (
                     <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                      className="text-sm lg:text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+                      className="text-sm lg:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl">
                       {slide.subtitle}
                     </motion.p>
                   )}
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <SlideVisual slide={slide} state={state} color={color} />
+                  </motion.div>
                 </div>
 
                 {/* Navigation */}
@@ -267,7 +429,7 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
                     className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                     <ChevronLeft size={15} /> Previous
                   </button>
-                  <span className="text-xs text-[var(--text-muted)] hidden sm:block">← → Arrow keys to navigate · F to toggle fullscreen</span>
+                  <span className="text-xs text-[var(--text-muted)] hidden sm:block">← → Arrow keys · F for fullscreen</span>
                   <button onClick={() => go(1)} disabled={current === slides.length - 1}
                     className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     style={{ background: current === slides.length - 1 ? 'var(--border)' : color }}>
@@ -322,7 +484,9 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
               <button key={s.id} onClick={() => setCurrent(i)}
                 className="rounded-[var(--radius-lg)] border p-3 text-left transition-all hover:scale-[1.02] group"
                 style={{ background: current === i ? `${SLIDE_COLORS[s.type]}12` : 'var(--bg-card)', borderColor: current === i ? SLIDE_COLORS[s.type] : 'var(--border)' }}>
-                <div className="text-lg mb-1 group-hover:scale-110 transition-transform inline-block">{['🎯','🔥','💡','📊','⚡','📈','💰','🗺️','👥','📉','🚀','📎'][i]}</div>
+                <div className="text-lg mb-1 group-hover:scale-110 transition-transform inline-block">
+                  {['🎯','🔥','💡','📊','⚡','📈','💰','🗺️','👥','📉','🚀','📎'][i]}
+                </div>
                 <div className="text-[10px] font-bold text-[var(--text-primary)] leading-tight line-clamp-2">{s.title}</div>
                 <div className="text-[9px] mt-1 uppercase tracking-wide font-bold" style={{ color: SLIDE_COLORS[s.type] }}>{s.type}</div>
               </button>

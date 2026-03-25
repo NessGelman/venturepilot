@@ -38,6 +38,13 @@ const defaults: Omit<AppState, 'history' | 'future' | 'lastSaved'> = {
   competitors: '',
   traction: '',
   useOfFunds: '',
+  solutionStatement: '',
+  uniqueInsight: '',
+  founderBios: '',
+  tam: 5000000000,
+  sam: 750000000,
+  som: 75000000,
+  revenueModel: 'SaaS',
   investors: [],
   onboardingComplete: false,
   checklist: [
@@ -281,6 +288,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           competitors: state.competitors,
           traction: state.traction,
           useOfFunds: state.useOfFunds,
+          solutionStatement: state.solutionStatement,
+          uniqueInsight: state.uniqueInsight,
+          founderBios: state.founderBios,
+          tam: state.tam,
+          sam: state.sam,
+          som: state.som,
+          revenueModel: state.revenueModel,
         };
         return {
           ...state,
@@ -319,6 +333,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           competitors: preset.competitors || '',
           traction: preset.traction || '',
           useOfFunds: preset.useOfFunds || '',
+          solutionStatement: preset.solutionStatement || '',
+          uniqueInsight: preset.uniqueInsight || '',
+          founderBios: preset.founderBios || '',
+          tam: preset.tam ?? defaults.tam,
+          sam: preset.sam ?? defaults.sam,
+          som: preset.som ?? defaults.som,
+          revenueModel: preset.revenueModel || 'SaaS',
         };
       }
       case 'DELETE_PRESET':
@@ -430,6 +451,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const setCompetitors = createSetter('competitors');
   const setTraction = createSetter('traction');
   const setUseOfFunds = createSetter('useOfFunds');
+  const setSolutionStatement = createSetter('solutionStatement');
+  const setUniqueInsight = createSetter('uniqueInsight');
+  const setFounderBios = createSetter('founderBios');
+  const setTam = createSetter('tam');
+  const setSam = createSetter('sam');
+  const setSom = createSetter('som');
+  const setRevenueModel = createSetter('revenueModel');
 
   const upsertInvestor = useCallback((inv: InvestorRecord) => dispatch({ type: 'UPSERT_INVESTOR', payload: inv }), []);
   const deleteInvestor = useCallback((id: string) => dispatch({ type: 'DELETE_INVESTOR', payload: id }), []);
@@ -498,6 +526,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     competitors: state.competitors, setCompetitors,
     traction: state.traction, setTraction,
     useOfFunds: state.useOfFunds, setUseOfFunds,
+    solutionStatement: state.solutionStatement, setSolutionStatement,
+    uniqueInsight: state.uniqueInsight, setUniqueInsight,
+    founderBios: state.founderBios, setFounderBios,
+    tam: state.tam, setTam,
+    sam: state.sam, setSam,
+    som: state.som, setSom,
+    revenueModel: state.revenueModel, setRevenueModel,
     onboardingComplete: state.onboardingComplete,
     checklist: state.checklist,
     timeline: state.timeline,

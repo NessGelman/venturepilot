@@ -35,13 +35,33 @@ const SECTIONS: Section[] = [
 export default function BusinessPlan() {
   const { state } = useApp() as any;
   const {
-    ideaName = 'Your Startup', stage = 'Seed', mrr = 0, arr = 0, burnRate = 0,
-    cashOnHand = 0, targetRaise = 0, ltv = 0, cac = 0, ndr = 100,
-    grossMargin = 70, monthlyGrowth = 0, teamSize = 3, runwayMonths = 0,
-    burnMultiple = 0, rule40 = 0, tam = 0, sam = 0, som = 0,
-    founderNames = '', founderBios = '', problemStatement = '',
-    solutionStatement = '', uniqueInsight = '', revenueModel = 'SaaS',
+    idea: ideaName = 'Your Startup',
+    stage = 'Seed',
+    revenue: mrr = 0,
+    burn: burnRate = 0,
+    capital: cashOnHand = 0,
+    targetRaise = 0,
+    cac = 0,
+    ndr = 100,
+    grossMargin = 70,
+    growth: monthlyGrowth = 0,
+    teamSize = 3,
+    tam = 0,
+    sam = 0,
+    som = 0,
+    founder: founderNames = '',
+    founderBios = '',
+    problem: problemStatement = '',
+    solutionStatement = '',
+    uniqueInsight = '',
+    revenueModel = 'SaaS',
   } = state || {};
+
+  const arr = mrr * 12;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
+  const runwayMonths = cashOnHand ? Math.round(cashOnHand / Math.max(burnRate - mrr, 1)) : 0;
+  const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(2)) : 0;
+  const rule40 = Number((monthlyGrowth + (mrr > 0 ? ((mrr - burnRate) / mrr) * 100 : 0)).toFixed(0));
 
   const [openSection, setOpenSection] = useState<string>('executive');
   const contentRef = useRef<HTMLDivElement>(null);
@@ -59,7 +79,7 @@ export default function BusinessPlan() {
 
   const useOfFundsData = [
     { name: 'Engineering & Product', value: 45, color: '#3b82f6' },
-    { name: 'Sales & Marketing', value: 30, color: '#3b82f6' },
+    { name: 'Sales & Marketing', value: 30, color: '#60a5fa' },
     { name: 'Operations & G&A', value: 15, color: '#14b8a6' },
     { name: 'R&D / Innovation', value: 10, color: '#f59e0b' },
   ];
@@ -76,7 +96,7 @@ export default function BusinessPlan() {
         <div className="p-5 rounded-[var(--radius-lg)] border border-[var(--accent)] border-opacity-30 bg-[var(--accent-dim)]">
           <h3 className="font-black text-base mb-2">Company Overview</h3>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            {ideaName} is a {stage}-stage {revenueModel} company solving {problemStatement || 'a significant market problem'}. {solutionStatement || 'Our solution delivers measurable ROI to customers through an innovative technology platform.'}
+            {ideaName} is a {stage}-stage {revenueModel} company{problemStatement ? ` solving ${problemStatement}` : ' tackling a significant market problem'}. {solutionStatement || 'Our product delivers clear, measurable value to customers.'}
           </p>
           {uniqueInsight && (
             <div className="mt-3 flex items-start gap-2">
@@ -131,8 +151,8 @@ export default function BusinessPlan() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { label: 'TAM', sublabel: 'Total Addressable Market', value: fmt(tam || 5e9), desc: 'The full global demand for the category of solution you\'re building.', color: '#3b82f6' },
-            { label: 'SAM', sublabel: 'Serviceable Addressable Market', value: fmt(sam || tam * 0.15 || 750e6), desc: 'The portion of TAM you can realistically reach with your current model.', color: '#3b82f6' },
-            { label: 'SOM', sublabel: 'Serviceable Obtainable Market', value: fmt(som || sam * 0.1 || 75e6), desc: 'Realistic 3-5 year market capture given GTM and competitive dynamics.', color: '#10b981' },
+            { label: 'SAM', sublabel: 'Serviceable Addressable Market', value: fmt(sam || (tam * 0.15) || 750e6), desc: 'The portion of TAM you can realistically reach with your current model.', color: '#60a5fa' },
+            { label: 'SOM', sublabel: 'Serviceable Obtainable Market', value: fmt(som || (sam * 0.1) || 75e6), desc: 'Realistic 3-5 year market capture given GTM and competitive dynamics.', color: '#10b981' },
           ].map(m => (
             <div key={m.label} className="p-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--bg-card)] space-y-2">
               <div className="font-black text-2xl" style={{ color: m.color }}>{m.value}</div>
@@ -299,7 +319,7 @@ export default function BusinessPlan() {
               {projectedArr.map((d, i) => {
                 const maxVal = Math.max(...projectedArr.map(p => p.arr), 1);
                 const barH = Math.max(8, (d.arr / maxVal) * 100);
-                const colors = ['#3b82f6', '#3b82f6', '#10b981'];
+                const colors = ['#3b82f6', '#60a5fa', '#10b981'];
                 return (
                   <div key={d.year} className="flex-1 flex flex-col items-center gap-1">
                     <div className="text-xs font-bold" style={{ color: colors[i] }}>{fmt(d.arr)}</div>

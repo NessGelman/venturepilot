@@ -5,7 +5,8 @@ import { InputField, GaugeMini, Divider } from './Shared';
 import {
   ChevronRight, ChevronLeft,
   Activity, BarChart2, Target, FileText, Github,
-  Save, Trash2, Undo2, Redo2, RefreshCcw, ChevronDown, ChevronUp, Pen
+  Save, Trash2, Undo2, Redo2, RefreshCcw, ChevronDown, ChevronUp,
+  Pen, Globe, TrendingUp
 } from 'lucide-react';
 
 const SIDEBAR_WIDTH = 320;
@@ -48,6 +49,13 @@ function Accordion({ title, icon: Icon, defaultOpen = true, badge, children }: a
   );
 }
 
+const fmtM = (n: number) => {
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
+  return `$${n}`;
+};
+
 export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (v: boolean) => void }) {
   const app = useApp();
   const [presetName, setPresetName] = useState('');
@@ -82,6 +90,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
 
   const { derived, runwayMonths, readinessScore, burnMultiple, ruleOf40, arr } = app;
   const netBurnNum = derived?.netBurn || app.burn - app.revenue;
+  const ltvCac = app.cac > 0 ? ((derived?.ltv ?? 0) / app.cac).toFixed(1) : '—';
 
   return (
     <>
@@ -106,16 +115,19 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
       >
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metrics Engine</p>
             {app.idea && <p className="text-sm font-bold text-[var(--text-primary)] truncate mt-0.5">{app.idea}</p>}
           </div>
-          <div className="shrink-0 text-[10px] font-bold text-[var(--text-muted)]">{app.stage}</div>
+          <div className="shrink-0 flex items-center gap-1.5">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent-light)]">{app.stage}</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-muted)]">{app.revenueModel}</span>
+          </div>
         </div>
 
         {/* Live metrics bar */}
-        <div className="px-4 py-3 border-b border-[var(--border)] bg-[rgba(255,255,255,0.01)]">
-          <div className="grid grid-cols-4 gap-2">
+        <div className="px-3 py-3 border-b border-[var(--border)] bg-[rgba(255,255,255,0.01)]">
+          <div className="grid grid-cols-5 gap-1.5 mb-2">
             <MetricPill
               label="Runway"
               value={`${runwayMonths ?? derived?.runwayMonths}m`}
@@ -126,23 +138,36 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               value={`${burnMultiple ?? derived?.burnMultiple}x`}
               color={(burnMultiple ?? derived?.burnMultiple) <= 1.5 ? 'var(--green)' : (burnMultiple ?? derived?.burnMultiple) <= 2.5 ? 'var(--amber)' : 'var(--red)'}
             />
-            <div className="flex flex-col items-center gap-1 p-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] relative">
-              <GaugeMini value={readinessScore ?? derived?.readinessScore ?? 0} size={36} color="var(--accent-light)" />
+            <div className="flex flex-col items-center gap-1 p-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)]">
+              <GaugeMini value={readinessScore ?? derived?.readinessScore ?? 0} size={34} color="var(--accent-light)" />
               <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-none">Score</span>
             </div>
             <MetricPill
-              label="Rule 40"
+              label="R40"
               value={`${ruleOf40 ?? derived?.ruleOf40}%`}
               color={(ruleOf40 ?? derived?.ruleOf40) >= 40 ? 'var(--green)' : (ruleOf40 ?? derived?.ruleOf40) >= 20 ? 'var(--amber)' : 'var(--red)'}
             />
+            <MetricPill
+              label="LTV:CAC"
+              value={`${ltvCac}×`}
+              color={parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)'}
+            />
           </div>
 
-          {/* ARR callout */}
-          <div className="mt-2.5 flex items-center justify-between px-3 py-2 rounded-[var(--radius-md)] bg-[var(--accent-dim)] border border-[var(--border-accent)]">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent-light)]">ARR</span>
-            <span className="text-sm font-black font-mono text-[var(--accent-light)]">
-              ${((arr ?? derived?.arr ?? 0) / 1000).toFixed(0)}k
-            </span>
+          {/* ARR + MRR callout */}
+          <div className="flex gap-1.5">
+            <div className="flex-1 flex items-center justify-between px-3 py-2 rounded-[var(--radius-md)] bg-[var(--accent-dim)] border border-[var(--border-accent)]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent-light)]">ARR</span>
+              <span className="text-sm font-black font-mono text-[var(--accent-light)]">
+                {fmtM(arr ?? derived?.arr ?? 0)}
+              </span>
+            </div>
+            <div className="flex-1 flex items-center justify-between px-3 py-2 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.03)] border border-[var(--border-subtle)]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Net Burn</span>
+              <span className="text-sm font-black font-mono text-[var(--amber)]">
+                {fmtM(Math.max(netBurnNum, 0))}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -154,7 +179,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               annotation={`Net: $${Math.max(netBurnNum, 0).toLocaleString()}/mo`}
               slider={{ min: 1000, max: 1000000, step: 1000 }} />
             <InputField label="MRR" value={app.revenue} onChange={app.setRevenue} prefix="$"
-              annotation={`ARR: $${((app.revenue * 12) / 1000).toFixed(0)}k`}
+              annotation={`ARR: ${fmtM(app.revenue * 12)}`}
               slider={{ min: 0, max: 1000000, step: 1000 }} />
             <InputField label="MoM Growth Rate" value={app.growth} onChange={app.setGrowth} suffix="%" slider={{ min: -20, max: 100, step: 1 }} />
             <InputField label="Gross Margin" value={app.grossMargin} onChange={app.setGrossMargin} suffix="%" slider={{ min: 10, max: 98, step: 1 }} />
@@ -180,9 +205,36 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
                 <p className="text-sm font-black font-mono text-[var(--text-primary)]">${(derived?.ltv ?? 0).toLocaleString()}</p>
               </div>
               <div className="p-2.5 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">LTV/CAC</p>
-                <p className="text-sm font-black font-mono text-[var(--text-primary)]">{((derived?.ltv ?? 0) / Math.max(app.cac, 1)).toFixed(1)}×</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">LTV:CAC</p>
+                <p className="text-sm font-black font-mono" style={{ color: parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)' }}>{ltvCac}×</p>
               </div>
+            </div>
+          </Accordion>
+
+          <Accordion title="Market" icon={Globe} defaultOpen={false}>
+            <InputField label="Revenue Model" value={app.revenueModel} onChange={app.setRevenueModel} type="select"
+              options={['SaaS', 'Usage-based', 'Marketplace', 'Transactional', 'Advertising', 'Hardware+SaaS', 'Open Core']} />
+            <Divider label="Market Sizing" />
+            <InputField label="TAM — Total Market" value={app.tam} onChange={app.setTam} prefix="$"
+              annotation={fmtM(app.tam)}
+              slider={{ min: 100000000, max: 500000000000, step: 100000000 }} />
+            <InputField label="SAM — Serviceable" value={app.sam} onChange={app.setSam} prefix="$"
+              annotation={fmtM(app.sam)}
+              slider={{ min: 10000000, max: 50000000000, step: 10000000 }} />
+            <InputField label="SOM — Obtainable" value={app.som} onChange={app.setSom} prefix="$"
+              annotation={fmtM(app.som)}
+              slider={{ min: 1000000, max: 5000000000, step: 1000000 }} />
+            {/* Quick ratio check */}
+            <div className="flex gap-1.5 mt-0.5">
+              {[
+                { label: 'SAM/TAM', value: app.tam > 0 ? `${((app.sam / app.tam) * 100).toFixed(1)}%` : '—' },
+                { label: 'SOM/SAM', value: app.sam > 0 ? `${((app.som / app.sam) * 100).toFixed(1)}%` : '—' },
+              ].map(m => (
+                <div key={m.label} className="flex-1 p-2 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">{m.label}</p>
+                  <p className="text-xs font-black font-mono text-[var(--text-primary)]">{m.value}</p>
+                </div>
+              ))}
             </div>
           </Accordion>
 
@@ -195,7 +247,8 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               <InputField label="Industry" value={app.industry} onChange={app.setIndustry} type="select"
                 options={['B2B SaaS', 'AI/ML', 'Fintech', 'Healthtech', 'Consumer', 'Deep Tech', 'Infrastructure', 'Other']} />
             </div>
-            <InputField label="Founder / Team" value={app.founder} onChange={app.setFounder} type="text" />
+            <InputField label="Founders" value={app.founder} onChange={app.setFounder} type="text" placeholder="e.g. Jane Smith, John Lee" />
+            <InputField label="Founder Bios" value={app.founderBios} onChange={app.setFounderBios} multiline placeholder="Short background for each founder, comma-separated" />
             <InputField label="Team Size" value={app.teamSize} onChange={app.setTeamSize} slider={{ min: 1, max: 200, step: 1 }} />
             <InputField label="Target Customer (ICP)" value={app.targetCustomer} onChange={app.setTargetCustomer} type="text" />
             <InputField label="Competitors" value={app.competitors} onChange={app.setCompetitors} type="text" annotation="Comma-separated" />
@@ -203,9 +256,11 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
           </Accordion>
 
           <Accordion title="Narrative" icon={Pen} defaultOpen={false}>
-            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline />
-            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline />
-            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline />
+            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline placeholder="The acute pain your customers experience today." />
+            <InputField label="Your Solution" value={app.solutionStatement} onChange={app.setSolutionStatement} multiline placeholder="How your product solves that problem." />
+            <InputField label="Unique Insight" value={app.uniqueInsight} onChange={app.setUniqueInsight} multiline placeholder="What do you know that others don't?" />
+            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline placeholder="Key wins, logos, growth signals." />
+            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline placeholder="Where does the raise go?" />
           </Accordion>
 
           <Accordion title="Dev Tools" icon={Github} defaultOpen={false}>

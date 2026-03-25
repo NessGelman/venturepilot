@@ -47,6 +47,15 @@ export interface AppState {
   competitors: string;
   traction: string;
   useOfFunds: string;
+  solutionStatement: string;
+  uniqueInsight: string;
+  founderBios: string;
+
+  // Market sizing
+  tam: number;
+  sam: number;
+  som: number;
+  revenueModel: string;
 
   // New CRM fields
   investors: InvestorRecord[];
@@ -106,6 +115,13 @@ export interface Preset {
   competitors: string;
   traction: string;
   useOfFunds: string;
+  solutionStatement: string;
+  uniqueInsight: string;
+  founderBios: string;
+  tam: number;
+  sam: number;
+  som: number;
+  revenueModel: string;
 }
 
 export interface DailySnapshot {
@@ -206,6 +222,20 @@ export interface UseAppReturn {
   setCompetitors: (v: string) => void;
   setTraction: (v: string) => void;
   setUseOfFunds: (v: string) => void;
+  solutionStatement: string;
+  setSolutionStatement: (v: string) => void;
+  uniqueInsight: string;
+  setUniqueInsight: (v: string) => void;
+  founderBios: string;
+  setFounderBios: (v: string) => void;
+  tam: number;
+  setTam: (v: number) => void;
+  sam: number;
+  setSam: (v: number) => void;
+  som: number;
+  setSom: (v: number) => void;
+  revenueModel: string;
+  setRevenueModel: (v: string) => void;
 
   netBurn: number;
   runwayMonths: number;
