@@ -203,25 +203,25 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
             <InputField label="Capital (Bank Balance)" value={app.capital} onChange={app.setCapital} prefix="$" slider={{ min: 0, max: 5000000, step: 10000 }} />
             <InputField label="Monthly Gross Burn" value={app.burn} onChange={app.setBurn} prefix="$"
               annotation={`Net: $${Math.max(netBurnNum, 0).toLocaleString()}/mo`}
-              slider={{ min: 1000, max: 1000000, step: 1000 }} />
+              slider={{ min: 0, max: 1000000, step: 100 }} />
             <InputField label="MRR" value={app.revenue} onChange={app.setRevenue} prefix="$"
               annotation={`ARR: ${fmtM(app.revenue * 12)}`}
               slider={{ min: 0, max: 1000000, step: 1000 }} />
             <InputField label="MoM Growth Rate" value={app.growth} onChange={app.setGrowth} suffix="%" slider={{ min: -20, max: 100, step: 1 }} />
-            <InputField label="Gross Margin" value={app.grossMargin} onChange={app.setGrossMargin} suffix="%" slider={{ min: 10, max: 98, step: 1 }} />
-            <InputField label="NDR" value={app.ndr} onChange={app.setNdr} suffix="%" annotation="Net Dollar Retention" slider={{ min: 60, max: 160, step: 1 }} />
+            <InputField label="Gross Margin" value={app.grossMargin} onChange={app.setGrossMargin} suffix="%" slider={{ min: 0, max: 100, step: 1 }} />
+            <InputField label="NDR" value={app.ndr} onChange={app.setNdr} suffix="%" annotation="Net Dollar Retention" slider={{ min: 0, max: 200, step: 1 }} />
             <InputField label="Active Pipeline" value={app.pipeline} onChange={app.setPipeline} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }} />
             <Divider label="Fundraise" />
             <InputField label="Target Raise" value={app.targetRaise} onChange={app.setTargetRaise} prefix="$" slider={{ min: 0, max: 10000000, step: 50000 }} />
-            <InputField label="Valuation Cap" value={app.valuation} onChange={app.setValuation} prefix="$" slider={{ min: 1000000, max: 50000000, step: 500000 }} />
-            <InputField label="Dilution" value={app.dilution} onChange={app.setDilution} suffix="%" slider={{ min: 5, max: 40, step: 1 }} />
+            <InputField label="Valuation Cap" value={app.valuation} onChange={app.setValuation} prefix="$" slider={{ min: 0, max: 50000000, step: 500000 }} />
+            <InputField label="Dilution" value={app.dilution} onChange={app.setDilution} suffix="%" slider={{ min: 0, max: 100, step: 1 }} />
           </Accordion>
 
           <Accordion title="Unit Economics" icon={BarChart2} defaultOpen>
             <InputField label="CAC" value={app.cac} onChange={app.setCac} prefix="$"
               annotation={`Payback: ${derived?.payback ?? 0}mo`}
               slider={{ min: 0, max: 10000, step: 10 }} />
-            <InputField label="ARPU / month" value={app.arpu} onChange={app.setArpu} prefix="$" slider={{ min: 5, max: 5000, step: 5 }} />
+            <InputField label="ARPU / month" value={app.arpu} onChange={app.setArpu} prefix="$" slider={{ min: 0, max: 5000, step: 5 }} />
             <InputField label="Monthly Churn" value={app.churn} onChange={app.setChurn} suffix="%"
               annotation={`Life: ${Math.round(100 / Math.max(app.churn, 0.1))}mo`}
               slider={{ min: 0, max: 20, step: 0.1 }} />
@@ -243,13 +243,13 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
             <Divider label="Market Sizing" />
             <InputField label="TAM — Total Market" value={app.tam} onChange={app.setTam} prefix="$"
               annotation={fmtM(app.tam)}
-              slider={{ min: 100000000, max: 500000000000, step: 100000000 }} />
+              slider={{ min: 0, max: 500000000000, step: 100000000 }} />
             <InputField label="SAM — Serviceable" value={app.sam} onChange={app.setSam} prefix="$"
               annotation={fmtM(app.sam)}
-              slider={{ min: 10000000, max: 50000000000, step: 10000000 }} />
+              slider={{ min: 0, max: 50000000000, step: 10000000 }} />
             <InputField label="SOM — Obtainable" value={app.som} onChange={app.setSom} prefix="$"
               annotation={fmtM(app.som)}
-              slider={{ min: 1000000, max: 5000000000, step: 1000000 }} />
+              slider={{ min: 0, max: 5000000000, step: 1000000 }} />
             {/* Quick ratio check */}
             <div className="flex gap-1.5 mt-0.5">
               {[
