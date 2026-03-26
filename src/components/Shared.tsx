@@ -293,10 +293,16 @@ interface HelpTipProps {
 }
 export const HelpTip = React.memo(function HelpTip({ content, title, className = '' }: HelpTipProps) {
   const [open, setOpen] = useState(false);
+  const [above, setAbove] = useState(true);
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // Flip direction based on available space above the trigger
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setAbove(rect.top > 160); // 160px threshold: enough room for the popover above
+    }
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
@@ -320,15 +326,19 @@ export const HelpTip = React.memo(function HelpTip({ content, title, className =
       </button>
       {open && (
         <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto"
+          className={`absolute left-1/2 -translate-x-1/2 w-56 p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto ${above ? 'bottom-full mb-2' : 'top-full mt-2'}`}
           onClick={e => e.stopPropagation()}
         >
           {title && <p className="text-[11px] font-black text-[var(--accent-light)] mb-1.5 leading-tight">{title}</p>}
           <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{content}</p>
-          <div
-            className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
-            style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }}
-          />
+          {/* Arrow pointing toward the trigger */}
+          {above ? (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
+              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
+          ) : (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0"
+              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
+          )}
         </div>
       )}
     </span>
@@ -587,6 +597,7 @@ export function CountUp({ value, prefix = '', suffix = '', decimals = 0, duratio
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [value, duration]);
 
+  if (!isFinite(display) || isNaN(display)) return <>{prefix}{'—'}{suffix}</>;
   const formatted = decimals > 0
     ? display.toFixed(decimals)
     : Math.round(display).toLocaleString();

@@ -50,7 +50,10 @@ function useSlides(state: any): SlideData[] {
   } = state || {};
 
   const arr = mrr * 12;
-  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.001)) : 0;
+  // churn=0 → infinite lifetime; use 0.001 floor consistent with AppContext
+  const ltv = state?.arpu > 0
+    ? (state.churn > 0 ? Math.round(state.arpu / (state.churn / 100)) : state.arpu * 1000)
+    : 0;
   const netBurnForRunway = Math.max(burnRate - mrr, 0);
   const runwayMonths = netBurnForRunway === 0 ? 999 : (state?.capital ? Math.round(state.capital / netBurnForRunway) : 0);
   const burnMultiple = arr > 0 ? Number(((Math.max(burnRate - mrr, 0) * 12) / arr).toFixed(1)) : (burnRate > mrr ? 99 : 0);
@@ -152,7 +155,10 @@ function SlideVisual({ slide, state, color }: { slide: SlideData; state: any; co
   } = state || {};
 
   const arr = mrr * 12;
-  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.001)) : 0;
+  // churn=0 → infinite lifetime; use 0.001 floor consistent with AppContext
+  const ltv = state?.arpu > 0
+    ? (state.churn > 0 ? Math.round(state.arpu / (state.churn / 100)) : state.arpu * 1000)
+    : 0;
   const netBurnSV = Math.max(burnRate - mrr, 0);
   const runwayMonths = netBurnSV === 0 ? 999 : (state?.capital ? Math.round(state.capital / netBurnSV) : 0);
   const burnMultiple = arr > 0 ? Number(((netBurnSV * 12) / arr).toFixed(1)) : (netBurnSV > 0 ? 99 : 0);

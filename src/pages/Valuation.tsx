@@ -39,11 +39,16 @@ const VALUATION_METHODS = [
 ];
 
 export default function Valuation() {
-  const { state } = useApp() as any;
-  const {
-    mrr = 0, arr = 0, monthlyGrowth = 10, grossMargin = 70, burnRate = 0,
-    ndr = 100, burnMultiple = 0, rule40 = 0, stage = 'Seed'
-  } = state || {};
+  const { state, derived } = useApp() as any;
+  // Correct field names from AppState / derived
+  const revenue      = state?.revenue      ?? 0;   // MRR
+  const arrDerived   = derived?.arr        ?? revenue * 12;
+  const growth       = state?.growth       ?? 10;  // MoM %
+  const grossMargin  = state?.grossMargin  ?? 70;
+  const ndr          = state?.ndr          ?? 100;
+  const burnMultiple = derived?.burnMultiple ?? 0;
+  const ruleOf40     = derived?.ruleOf40   ?? 0;
+  const stage        = state?.stage        ?? 'Seed';
 
   const [method, setMethod] = useState('arr');
   const [targetRaise, setTargetRaise] = useState(2000000);
@@ -60,7 +65,7 @@ export default function Valuation() {
 
   // Compute ARR multiple based on growth
   const impliedArrMultiple = useMemo(() => {
-    const g = monthlyGrowth * 12; // YoY growth approx
+    const g = growth * 12; // YoY growth approx
     if (g >= 100) return 25;
     if (g >= 80) return 20;
     if (g >= 60) return 16;
@@ -68,10 +73,10 @@ export default function Valuation() {
     if (g >= 20) return 8;
     if (g >= 10) return 5;
     return 3;
-  }, [monthlyGrowth]);
+  }, [growth]);
 
   const arrMultiple = arrMultipleOverride ?? impliedArrMultiple;
-  const currentArr = arr || mrr * 12;
+  const currentArr = arrDerived || revenue * 12;
 
   const valuations = useMemo(() => {
     const arrVal = currentArr * arrMultiple;
@@ -79,7 +84,7 @@ export default function Valuation() {
     // DCF simplified — compound annually (not monthly^12 which overstates growth)
     let dcfVal = 0;
     let rev = currentArr;
-    const annualGrowthRate = (1 + monthlyGrowth / 100) ** 12 - 1; // convert monthly to annual
+    const annualGrowthRate = (1 + growth / 100) ** 12 - 1; // convert monthly to annual
     const discountRate = 0.4; // 40% discount rate for early stage
     for (let i = 1; i <= 5; i++) {
       rev = rev * (1 + annualGrowthRate);
@@ -93,7 +98,7 @@ export default function Valuation() {
     const comparableVal = currentArr * (arrMultiple * 0.9); // slight discount to pure ARR method
 
     // VC Method
-    const projectedArr = currentArr * (1 + monthlyGrowth / 100) ** (exitYears * 12);
+    const projectedArr = currentArr * (1 + growth / 100) ** (exitYears * 12);
     const exitValuation = projectedArr * exitMultiple;
     const vcVal = exitValuation / targetMOIC;
 
@@ -112,12 +117,13 @@ export default function Valuation() {
   // SAFE dilution
   const totalSafeAmount = safes.reduce((s, n) => s + n.amount, 0);
   const safeShares = safes.map(safe => {
-    const capPrice = preMoneyVal > 0 ? safe.amount / (safe.valuationCap / preMoneyVal * safe.amount) : 0;
+    // cap price = preMoneyVal / valuationCap (simplified)
+    const capPrice = preMoneyVal > 0 && safe.valuationCap > 0 ? preMoneyVal / safe.valuationCap : 0;
     const discountedPrice = preMoneyVal > 0 ? (preMoneyVal / (preMoneyVal + targetRaise)) * (1 - safe.discount / 100) : 0;
-    const conversionOwnership = Math.min(
-      safe.amount / Math.max(safe.valuationCap, 1),
-      discountedPrice > 0 ? safe.amount / Math.max(preMoneyVal * discountedPrice, 1) : Infinity
-    ) * 100;
+    // ownership: min of cap-based and discount-based; clamp at 20%
+    const capOwnership = safe.valuationCap > 0 ? (safe.amount / safe.valuationCap) * 100 : 20;
+    const discountOwnership = discountedPrice > 0 ? (safe.amount / Math.max(preMoneyVal * discountedPrice, 1)) * 100 : capOwnership;
+    const conversionOwnership = Math.min(capOwnership, discountOwnership);
     return { ...safe, conversionPrice: capPrice, estimatedShares: Math.min(conversionOwnership, 20) };
   });
 
@@ -125,7 +131,7 @@ export default function Valuation() {
     { name: 'Founders', shares: 70 - dilution - optionPool, type: 'Common', color: '#3b82f6' },
     { name: 'New Investors', shares: dilution, type: 'Preferred', color: '#3b82f6' },
     { name: 'Option Pool (ESOP)', shares: optionPool, type: 'Options', color: '#10b981' },
-    { name: 'SAFE Holders', shares: Math.min(totalSafeAmount / preMoneyVal * 100, 15), type: 'SAFE', color: '#f59e0b' },
+    { name: 'SAFE Holders', shares: preMoneyVal > 0 ? Math.min(totalSafeAmount / preMoneyVal * 100, 15) : 0, type: 'SAFE', color: '#f59e0b' },
   ].filter(r => r.shares > 0);
 
   const totalShares = capTableData.reduce((s, r) => s + r.shares, 0);
@@ -393,7 +399,7 @@ export default function Valuation() {
             <div className="space-y-3">
               {[
                 { label: 'Burn Multiple', value: burnMultiple, fmt: (v: number) => `${v.toFixed(1)}×`, good: 1.5, bad: 3, higher: false, note: '< 1.5× is excellent' },
-                { label: 'Rule of 40', value: rule40, fmt: (v: number) => `${v.toFixed(0)}`, good: 40, bad: 20, higher: true, note: '40+ commands premium multiple' },
+                { label: 'Rule of 40', value: ruleOf40, fmt: (v: number) => `${v.toFixed(0)}`, good: 40, bad: 20, higher: true, note: '40+ commands premium multiple' },
                 { label: 'NDR', value: ndr, fmt: (v: number) => `${v.toFixed(0)}%`, good: 120, bad: 100, higher: true, note: '> 120% is top quartile' },
                 { label: 'Gross Margin', value: grossMargin, fmt: (v: number) => `${v.toFixed(0)}%`, good: 70, bad: 50, higher: true, note: '> 70% for premium SaaS multiple' },
               ].map(m => {
