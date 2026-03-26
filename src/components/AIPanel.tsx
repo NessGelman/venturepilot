@@ -35,12 +35,15 @@ export default function AIPanel() {
     setMessages(prev => [...prev, { role: 'user', content: text }]);
     setIsTyping(true);
 
-    if (!ai.isReady && ai.status.backend !== 'none') {
+    if (!ai.isReady) {
       await ai.initialize();
     }
 
+    // Use getSession() to avoid stale closure — ai.session captured at callback creation time
+    const session = ai.getSession();
+
     try {
-      if (ai.session) {
+      if (session) {
         // Build rich context
         const context = `
           Context:
@@ -72,9 +75,9 @@ export default function AIPanel() {
           Question: ${text}
         `;
 
-        if (ai.session.backend === 'chrome' && ai.session.promptStreaming) {
+        if (session.backend === 'chrome' && session.promptStreaming) {
           setMessages(prev => [...prev, { role: 'ai', content: '' }]);
-          await ai.session.promptStreaming(context, (partial) => {
+          await session.promptStreaming(context, (partial) => {
             setMessages(prev => {
               const newMsgs = [...prev];
               newMsgs[newMsgs.length - 1] = { role: 'ai', content: partial };
@@ -82,7 +85,7 @@ export default function AIPanel() {
             });
           });
         } else {
-          const reply = await ai.session.prompt(context);
+          const reply = await session.prompt(context);
           const finalReply = reply || "AI running in offline mode: Review your burn rate ($"+app.burn.toLocaleString()+") and ensure your LTV/CAC remains above 3.0x.";
           setMessages(prev => [...prev, { role: 'ai', content: finalReply }]);
         }

@@ -3,6 +3,7 @@ import { createAISession, AISession, AIStatus, detectBestBackend } from '../util
 
 export interface UseAIReturn {
   session: AISession | null;
+  getSession: () => AISession | null;
   status: AIStatus;
   initialize: () => Promise<void>;
   isReady: boolean;
@@ -67,6 +68,7 @@ export function useAI(): UseAIReturn {
 
   return {
     session: sessionRef.current,
+    getSession: () => sessionRef.current,
     status,
     initialize,
     isReady: status.ready,

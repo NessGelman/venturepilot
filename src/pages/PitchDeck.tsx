@@ -346,6 +346,7 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={Presentation}
         title="Pitch Deck"
         subtitle={`${slides.length} slides · Live from your data`}
         badge={<Badge color="var(--accent-light)" size="sm">{current + 1} / {slides.length}</Badge>}

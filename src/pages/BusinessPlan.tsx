@@ -2,13 +2,13 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Download, ChevronRight, Target,
-  DollarSign, Users, Rocket, BarChart2,
-  Globe, TrendingUp, Lightbulb, BookOpen,
+  FileText, Download, ChevronRight,
+  Users, Rocket, BarChart2,
+  Globe, Lightbulb, BookOpen,
   Sparkles, RefreshCcw, AlertCircle, Loader2
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { PageHeader, Card, Button, Badge, AlertBanner } from '../components/Shared';
+import { PageHeader, Card, Button, Badge } from '../components/Shared';
 
 const fmt = (n: number, prefix = '$') => {
   if (n >= 1e9) return `${prefix}${(n / 1e9).toFixed(1)}B`;
@@ -367,7 +367,7 @@ export default function BusinessPlan() {
 
       const doc = new Document({ sections: [{ children }] });
       const buffer = await Packer.toBuffer(doc);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = new Blob([buffer as unknown as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -430,7 +430,7 @@ export default function BusinessPlan() {
 
       const doc = new Document({ sections: [{ children }] });
       const buffer = await Packer.toBuffer(doc);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = new Blob([buffer as unknown as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -678,27 +678,28 @@ export default function BusinessPlan() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={BookOpen}
         title="Business Plan"
         subtitle={`${ideaName} · ${stage} · ${new Date().getFullYear()}`}
-        badge={{ label: revenueModel, variant: 'default' }}
-        action={
+        badge={<Badge color="var(--accent-light)" size="sm">{revenueModel}</Badge>}
+        actions={
           <div className="flex items-center gap-2 flex-wrap">
             {generatedCount > 0 && (
-              <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportHTML}>HTML</Button>
+              <Button variant="ghost" size="sm" icon={Download} onClick={exportHTML}>HTML</Button>
             )}
-            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportDocx}>
+            <Button variant="ghost" size="sm" icon={Download} onClick={exportDocx}>
               {generatedCount > 0 ? 'Download Plan (.docx)' : 'Export (.docx)'}
             </Button>
             <Button
               variant="ghost" size="sm"
-              icon={<FileText size={14} />}
+              icon={FileText}
               onClick={exportBriefing}
             >
               Briefing (.docx)
             </Button>
             <Button
               variant="primary" size="sm"
-              icon={generatingAll ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              icon={generatingAll ? Loader2 : Sparkles}
               onClick={generateAll}
               disabled={generatingAll}
             >
@@ -789,7 +790,7 @@ export default function BusinessPlan() {
                     <p className="text-xs text-[var(--text-muted)]">{ideaName} — {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                   </div>
                   {generatedContent[openSection] && (
-                    <Badge variant="default" size="sm">
+                    <Badge color="var(--accent-light)" size="sm">
                       <span className="flex items-center gap-1">
                         <Sparkles size={9} />AI
                       </span>

@@ -74,7 +74,7 @@ export const SectionHeader = React.memo(function SectionHeader({ icon: Icon, tit
 
 // ─── PageHeader ──────────────────────────────────────────────────────────────
 interface PageHeaderProps {
-  icon: React.ElementType;
+  icon?: React.ElementType;
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
@@ -84,9 +84,11 @@ export const PageHeader = React.memo(function PageHeader({ icon: Icon, title, su
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <div className="flex items-center gap-4">
-        <div className="w-11 h-11 rounded-[var(--radius-lg)] flex items-center justify-center bg-[var(--accent-dim)] border border-[var(--border-accent)] shrink-0">
-          <Icon size={22} className="text-[var(--accent-light)]" />
-        </div>
+        {Icon && (
+          <div className="w-11 h-11 rounded-[var(--radius-lg)] flex items-center justify-center bg-[var(--accent-dim)] border border-[var(--border-accent)] shrink-0">
+            <Icon size={22} className="text-[var(--accent-light)]" />
+          </div>
+        )}
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight leading-none">
@@ -182,14 +184,14 @@ interface ButtonProps {
   onClick?: () => void;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
-  icon?: React.ElementType;
+  icon?: React.ElementType | React.ReactNode;
   iconPosition?: 'left' | 'right';
   disabled?: boolean;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   loading?: boolean;
 }
-export const Button = React.memo(function Button({ children, onClick, variant = 'secondary', size = 'md', icon: Icon, iconPosition = 'left', disabled, className = '', type = 'button', loading }: ButtonProps) {
+export const Button = React.memo(function Button({ children, onClick, variant = 'secondary', size = 'md', icon, iconPosition = 'left', disabled, className = '', type = 'button', loading }: ButtonProps) {
   const base = 'inline-flex items-center gap-2 font-bold rounded-[var(--radius-md)] transition-all duration-150 cursor-pointer select-none btn-glow disabled:opacity-40 disabled:cursor-not-allowed';
   const sizeClasses = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-6 py-2.5 text-sm' };
   const variantClasses = {
@@ -197,6 +199,15 @@ export const Button = React.memo(function Button({ children, onClick, variant = 
     secondary: 'bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.08)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:-translate-y-0.5',
     ghost: 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)]',
     danger: 'bg-[var(--red-dim)] hover:bg-[rgba(239,68,68,0.2)] border border-[rgba(239,68,68,0.2)] text-[var(--red)] hover:-translate-y-0.5',
+  };
+
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (typeof icon === 'function') {
+      const IconComponent = icon as React.ElementType;
+      return <IconComponent size={size === 'sm' ? 12 : 14} />;
+    }
+    return icon as React.ReactNode;
   };
 
   return (
@@ -209,10 +220,10 @@ export const Button = React.memo(function Button({ children, onClick, variant = 
       {loading ? (
         <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
-        Icon && iconPosition === 'left' && <Icon size={size === 'sm' ? 12 : 14} />
+        icon && iconPosition === 'left' && renderIcon()
       )}
       {children}
-      {Icon && iconPosition === 'right' && !loading && <Icon size={size === 'sm' ? 12 : 14} />}
+      {icon && iconPosition === 'right' && !loading && renderIcon()}
     </button>
   );
 });

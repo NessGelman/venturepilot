@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, Info, TrendingUp, DollarSign, Percent, ChevronDown, ArrowRight, RefreshCw } from 'lucide-react';
-import { PageHeader, Card, Badge, Button, MetricTooltip } from '../components/Shared';
+import { motion } from 'framer-motion';
+import { Calculator, DollarSign } from 'lucide-react';
+import { PageHeader, Card, Badge, Button } from '../components/Shared';
 
 const fmt = (n: number) => {
   if (!isFinite(n) || n === 0) return '$0';
@@ -108,7 +108,7 @@ export default function Valuation() {
       comparable: comparableVal,
       vc: vcVal,
     };
-  }, [currentArr, arrMultiple, monthlyGrowth, grossMargin, exitMultiple, exitYears, targetMOIC]);
+  }, [currentArr, arrMultiple, growth, grossMargin, exitMultiple, exitYears, targetMOIC]);
 
   const preMoneyVal = valuations[method as keyof typeof valuations] || valuations.arr;
   const postMoneyVal = preMoneyVal + targetRaise;
@@ -127,12 +127,12 @@ export default function Valuation() {
     return { ...safe, conversionPrice: capPrice, estimatedShares: Math.min(conversionOwnership, 20) };
   });
 
-  const capTableData: CapTableRow[] = [
-    { name: 'Founders', shares: 70 - dilution - optionPool, type: 'Common', color: '#3b82f6' },
-    { name: 'New Investors', shares: dilution, type: 'Preferred', color: '#3b82f6' },
-    { name: 'Option Pool (ESOP)', shares: optionPool, type: 'Options', color: '#10b981' },
-    { name: 'SAFE Holders', shares: preMoneyVal > 0 ? Math.min(totalSafeAmount / preMoneyVal * 100, 15) : 0, type: 'SAFE', color: '#f59e0b' },
-  ].filter(r => r.shares > 0);
+  const capTableData: CapTableRow[] = ([
+    { name: 'Founders', shares: 70 - dilution - optionPool, type: 'Common' as const, color: '#3b82f6' },
+    { name: 'New Investors', shares: dilution, type: 'Preferred' as const, color: '#3b82f6' },
+    { name: 'Option Pool (ESOP)', shares: optionPool, type: 'Options' as const, color: '#10b981' },
+    { name: 'SAFE Holders', shares: preMoneyVal > 0 ? Math.min(totalSafeAmount / preMoneyVal * 100, 15) : 0, type: 'SAFE' as const, color: '#f59e0b' },
+  ] as CapTableRow[]).filter(r => r.shares > 0);
 
   const totalShares = capTableData.reduce((s, r) => s + r.shares, 0);
 
@@ -183,7 +183,7 @@ export default function Valuation() {
                   <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Current ARR</label>
                   <span className="text-sm font-bold text-[var(--text-primary)]">{fmt(currentArr)}</span>
                 </div>
-                <div className="text-xs text-[var(--text-muted)]">Auto-calculated from your MRR ({fmt(mrr)}/mo)</div>
+                <div className="text-xs text-[var(--text-muted)]">Auto-calculated from your MRR ({fmt(revenue)}/mo)</div>
               </div>
 
               {method === 'arr' && (

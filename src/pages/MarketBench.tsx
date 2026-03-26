@@ -176,6 +176,7 @@ export default function MarketBench() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={BarChart2}
         title="Benchmarks"
         subtitle="See where you stack up"
         badge={<Badge color={sector.color} size="sm">{sector.name}</Badge>}

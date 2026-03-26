@@ -308,10 +308,10 @@ ${founderNames ? `\n(reply directly to this email)` : ''}`;
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" icon={<Edit3 size={13} />} onClick={toggleEdit}>
+              <Button variant="ghost" size="sm" icon={Edit3} onClick={toggleEdit}>
                 {editMode ? 'Auto-generate' : 'Edit'}
               </Button>
-              <Button variant="ghost" size="sm" icon={<RefreshCw size={13} />} onClick={() => setEditMode(false)}>
+              <Button variant="ghost" size="sm" icon={RefreshCw} onClick={() => setEditMode(false)}>
                 Refresh
               </Button>
             </div>
@@ -335,10 +335,10 @@ ${founderNames ? `\n(reply directly to this email)` : ''}`;
           )}
 
           <div className="flex items-center gap-3 mt-4 pt-3 border-t border-[var(--border)]">
-            <Button variant="primary" icon={copied ? <Check size={14} /> : <Copy size={14} />} onClick={copy}>
+            <Button variant="primary" icon={copied ? Check : Copy} onClick={copy}>
               {copied ? 'Copied to clipboard!' : 'Copy Email'}
             </Button>
-            <Button variant="secondary" icon={<Download size={14} />} onClick={download}>Download .txt</Button>
+            <Button variant="secondary" icon={Download} onClick={download}>Download .txt</Button>
             <span className="text-xs text-[var(--text-muted)] ml-auto">{generateUpdate.split(/\s+/).length} words</span>
           </div>
         </Card>
