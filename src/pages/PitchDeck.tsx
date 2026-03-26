@@ -68,25 +68,25 @@ function useSlides(state: any): SlideData[] {
     {
       id: 2, type: 'problem',
       title: 'The Problem',
-      subtitle: problemStatement || 'Describe the acute pain your customers experience today.',
+      subtitle: problemStatement || 'Founders waste 40+ hours per fundraise on documents that are always out of date.',
       notes: `Most important slide in the deck. Make the pain visceral and quantifiable. Use the "before" state — what does life look like without your solution? Lead with a customer story or striking statistic. Investors need to believe this problem is urgent, large, and underserved.`,
     },
     {
       id: 3, type: 'solution',
       title: 'Our Solution',
-      subtitle: solutionStatement || 'A clear, differentiated answer to the problem above.',
-      notes: `Introduce ${ideaName} in one crisp sentence. Show the "after" state — what does the customer's world look like with your product? Highlight your unique insight: ${uniqueInsight || "what do you know that others don't?"}. Avoid feature lists — focus on the transformation you deliver.`,
+      subtitle: solutionStatement || `${ideaName} turns live metrics into investor-ready documents automatically — pitch decks, business plans, and investor updates in seconds.`,
+      notes: `Introduce ${ideaName} in one crisp sentence. Show the "after" state — what does the customer's world look like with your product? Highlight your unique insight: ${uniqueInsight || "founders need narrative, not dashboards — we're the bridge between numbers and decisions"}. Avoid feature lists — focus on the transformation you deliver.`,
     },
     {
       id: 4, type: 'market',
       title: 'Market Opportunity',
-      subtitle: tam ? `TAM: ${fmt(tam)} · SAM: ${fmt(sam)} · SOM: ${fmt(som)}` : 'Total addressable, serviceable, and obtainable market.',
+      subtitle: tam ? `TAM: ${fmt(tam)} · SAM: ${fmt(sam)} · SOM: ${fmt(som)}` : 'TAM: $15B founder tools market · SAM: $1.5B early-stage SaaS founders · SOM: $75M',
       notes: `Walk through the market sizing methodology — not just the numbers. TAM shows ambition, SAM shows focus, SOM shows realism. Use a bottom-up approach: # of target customers × ACV = SAM. Address why this market is growing and what's driving the tailwind.`,
     },
     {
       id: 5, type: 'product',
       title: 'Product',
-      subtitle: "What you've built, how it works, and why it's defensible.",
+      subtitle: "Enter your metrics once. Get your pitch deck, business plan, investor updates, and playbooks — live.",
       notes: `Demo or screenshots here. Walk through the core user journey in 60 seconds. Emphasize: (1) time-to-value, (2) stickiness mechanisms, (3) data / network effects. If you have a proprietary data moat or novel ML, highlight it here.`,
     },
     {
@@ -104,14 +104,14 @@ function useSlides(state: any): SlideData[] {
     {
       id: 8, type: 'competition',
       title: 'Competitive Landscape',
-      subtitle: "Why now, why us, and why incumbents can't copy us.",
+      subtitle: "Why now, why us, and why Notion & Slidebean can't just copy us.",
       notes: `Use a 2×2 matrix comparing key dimensions where ${ideaName} wins. Acknowledge competitors — investors know they exist. Explain your unfair advantage: proprietary data, founder expertise, distribution moat, or network effects. Answer: "Why can't [incumbent] just build this?"`,
     },
     {
       id: 9, type: 'team',
       title: 'Team',
-      subtitle: founderNames || `${teamSize}-person founding team`,
-      notes: `${founderBios || 'Highlight founder-market fit. Why is THIS team uniquely positioned to win this market?'} Cover: domain expertise, past exits, technical depth, and key advisors or investors already backing you. The team slide is often the deciding factor at early stages.`,
+      subtitle: founderNames || `${teamSize}-person founding team with direct founder-market fit`,
+      notes: `${founderBios || 'Highlight founder-market fit. Why is THIS team uniquely positioned to win this market? We lived this problem — spent weeks in spreadsheets prepping for a raise and decided to build the solution we wished existed.'} Cover: domain expertise, past exits, technical depth, and key advisors or investors already backing you. The team slide is often the deciding factor at early stages.`,
     },
     {
       id: 10, type: 'financials',

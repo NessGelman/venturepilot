@@ -10,49 +10,58 @@ interface AppProviderProps {
 }
 
 const defaults: Omit<AppState, 'history' | 'future' | 'lastSaved'> = {
+  // ── Financials ──────────────────────────────────────────────────────────────
   capital: 250000,
   burn: 15000,
   revenue: 5000,
   growth: 8,
-  headcount: 12,
+  headcount: 4,
   cac: 620,
   arpu: 240,
   churn: 2.4,
   pipeline: 185000,
-  companyName: '',
-  idea: 'AI startup helping founders choose the best capital sources',
-  industry: 'B2B SaaS',
-  problem: 'Founders lack a unified system to plan capital strategy with real-time data.',
-  stage: 'Seed',
-  founder: 'Founding Team',
-  northStar: 'Reach $100k MRR in 12 months',
-  repoUrl: '',
-  valuation: 3000000,
-  targetRaise: 750000,
-  dilution: 18,
-  grossMargin: 72,
+  grossMargin: 85,
   ndr: 108,
   magicNumber: 0.8,
-  teamSize: 12,
-  productDescription: '',
-  targetCustomer: 'B2B SaaS companies 10–200 employees',
-  competitors: '',
-  traction: '',
-  useOfFunds: '',
-  solutionStatement: '',
-  uniqueInsight: '',
-  founderBios: '',
-  tam: 5000000000,
-  sam: 750000000,
-  som: 75000000,
+  valuation: 4000000,
+  targetRaise: 750000,
+  dilution: 18,
+  repoUrl: '',
+
+  // ── Company identity ─────────────────────────────────────────────────────────
+  companyName: 'VenturePilot',
+  idea: 'The AI co-pilot that turns your startup metrics into investor-ready documents',
+  productDescription: 'Enter your numbers once — VenturePilot auto-generates pitch decks, business plans, investor updates, and strategic playbooks, live-updated as your metrics change.',
+  stage: 'Seed',
+  industry: 'B2B SaaS',
   revenueModel: 'SaaS',
+  teamSize: 4,
+  founder: 'Ness Gelman',
+  founderBios: 'Ness Gelman — founder & product lead. Built data tools for B2B companies, experienced the fundraising prep nightmare firsthand, and decided to fix it.',
+  targetCustomer: 'Early-stage founders (Pre-seed → Series A) at B2B SaaS startups preparing for their first institutional raise',
+  competitors: 'Notion, Visible.vc, Slidebean, Pitch.com, Cabal',
+  northStar: 'Reach $50K MRR in 12 months',
+
+  // ── Narrative ───────────────────────────────────────────────────────────────
+  problem: 'Founders spend 40+ hours prepping for each fundraise — stitching together outdated spreadsheets, Notion pages, and Google Slides that never reflect the live numbers. Board meetings take days of manual prep. Investor updates get skipped because writing them is too painful. The tools that exist are generic, disconnected, and built for accountants — not founders.',
+  solutionStatement: 'VenturePilot connects directly to your metrics and auto-generates every document investors ask for — pitch decks, business plans, monthly investor updates, and valuation models — in real time. One source of truth. Zero formatting time. Every document stays current because it\'s built from your live data, not a stale snapshot.',
+  uniqueInsight: 'Founders don\'t need more dashboards. They need their metrics automatically translated into the stories that drive decisions. The document IS the product — every pitch deck, board update, and investor memo is a moment where a founder either wins trust or loses it. Data doesn\'t close rounds; narrative does. We\'re the bridge.',
+  traction: '$5K MRR growing 8% MoM on word-of-mouth alone · 40+ active founders in beta · 200+ pitch decks generated · 180-person organic waitlist · 4.8/5 satisfaction from beta users · Zero paid acquisition',
+  useOfFunds: '50% product & engineering — AI doc generation, accounting integrations (QuickBooks, Stripe), mobile app · 30% growth & distribution — founder community partnerships, content marketing, PLG flywheel · 20% ops & infrastructure',
+
+  // ── Market ───────────────────────────────────────────────────────────────────
+  tam: 15000000000,   // $15B global founder tools + financial planning market
+  sam: 1500000000,    // $1.5B early-stage SaaS founders raising capital annually
+  som: 75000000,      // $75M near-term capture (10K founders × $600 ACV)
+
+  // ── App state ────────────────────────────────────────────────────────────────
   investors: [],
   onboardingComplete: false,
   checklist: [
-    { id: '1', label: 'Cut non-core spend by 8%', done: false },
-    { id: '2', label: 'Spin up outbound SDR pilot', done: false },
-    { id: '3', label: 'Ship self-serve onboarding', done: true },
-    { id: '4', label: 'Book 5 investor updates', done: false },
+    { id: '1', label: 'Complete product narrative in sidebar', done: false },
+    { id: '2', label: 'Generate and review pitch deck', done: false },
+    { id: '3', label: 'Run valuation model', done: false },
+    { id: '4', label: 'Send first investor update', done: false },
   ],
   timeline: [
     { id: '1', label: 'Prep materials', durationDays: 14, date: '', done: false },
