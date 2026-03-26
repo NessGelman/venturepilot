@@ -370,25 +370,27 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   // Note: intentionally not clearing on unmount so state persists across navigation
 
   const derived: DerivedMetrics = useMemo(() => {
-    const netBurn = Math.max(state.burn - state.revenue, 1);
-    const runwayMonths = Math.max(1, Math.round(state.capital / netBurn));
+    const netBurn = Math.max(state.burn - state.revenue, 0);
+    const runwayMonths = netBurn === 0 ? 999 : Math.max(1, Math.round(state.capital / netBurn));
+    const displayRunway = runwayMonths >= 999 ? 999 : runwayMonths;
     const readinessScore = Math.min(
       100,
-      Math.round((state.revenue * 0.6 + state.growth * 50 + runwayMonths * 5) / 10),
+      Math.max(0, Math.round((state.revenue * 0.6 + state.growth * 50 + Math.min(displayRunway, 36) * 5) / 10)),
     );
     const mrr = state.revenue;
     const arr = mrr * 12;
-    const ltv = Math.round(state.arpu / Math.max(state.churn / 100, 0.01));
-    const payback = Math.round((state.cac / Math.max(state.arpu, 1)) * 10) / 10;
-    const revenuePerEmployee = state.headcount ? Math.round(state.revenue / state.headcount) : state.revenue;
-    const pipelineCoverage = Math.round((state.pipeline / Math.max(arr, 1)) * 100);
-    
-    // New derived
-    const burnMultiple = arr > 0 ? (netBurn * 12) / arr : 0;
-    const ruleOf40 = state.growth + (state.revenue > 0 ? ((state.revenue - state.burn) / state.revenue) * 100 : 0);
-    const impliedValuation = arr * 8; // SaaS multiple ~8x
+    const ltv = state.arpu > 0 ? Math.round(state.arpu / Math.max(state.churn / 100, 0.001)) : 0;
+    const payback = state.arpu > 0 ? Math.round((state.cac / state.arpu) * 10) / 10 : 0;
+    const revenuePerEmployee = state.headcount > 0 ? Math.round(state.revenue / state.headcount) : 0;
+    const newArr = Math.max(arr - (arr / 1.1), 0); // approximate new ARR
+    const pipelineCoverage = arr > 0 ? Math.round((state.pipeline / arr) * 100) : 0;
+
+    // Derived metrics
+    const burnMultiple = newArr > 0 ? Number(((netBurn * 12) / newArr).toFixed(2)) : (netBurn > 0 ? 99 : 0);
+    const ruleOf40 = Number((state.growth + (state.revenue > 0 ? ((state.revenue - state.burn) / state.revenue) * 100 : -100)).toFixed(1));
+    const impliedValuation = arr > 0 ? arr * 8 : 0;
     const dilutedOwnership = Math.max(0, 100 - state.dilution);
-    const daysOfRunway = runwayMonths * 30;
+    const daysOfRunway = runwayMonths >= 999 ? 9999 : runwayMonths * 30;
 
     return {
       netBurn,

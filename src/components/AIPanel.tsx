@@ -63,7 +63,7 @@ export default function AIPanel() {
           Runway: ${app.derived.runwayMonths} months
           Burn Multiple: ${app.derived.burnMultiple}x
           Rule of 40: ${app.derived.ruleOf40}%
-          LTV/CAC: ${(app.derived.ltv / app.cac).toFixed(2)}x
+          LTV/CAC: ${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(2)}x
           
           Instructions:
           Be a senior venture capital advisor. Be concise. Use markdown.

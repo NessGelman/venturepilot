@@ -196,7 +196,7 @@ function ChecklistRow({ item, onToggle, onDelete, onEdit }: {
 
 export default function Strategy() {
   const { state } = useApp() as any;
-  const { burnRate = 0, mrr = 0, monthlyGrowth = 5, cashOnHand = 0 } = state || {};
+  const { burn: burnRate = 0, revenue: mrr = 0, growth: monthlyGrowth = 5, capital: cashOnHand = 0 } = state || {};
 
   const [activeScenario, setActiveScenario] = useState('default');
   const [checklist, setChecklist] = useState<ChecklistItem[]>(() => {
@@ -250,15 +250,16 @@ export default function Strategy() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={Target}
         title="Strategy"
         subtitle="Model scenarios. Track milestones."
-        badge={{ label: `${completionPct}% Complete`, variant: completionPct >= 75 ? 'success' : completionPct >= 40 ? 'warning' : 'default' }}
-        action={<Button variant="secondary" size="sm" icon={<BookOpen size={14} />} onClick={() => setShowPresets(true)}>Templates</Button>}
+        badge={<span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${completionPct >= 75 ? 'bg-[var(--green-dim)] text-[var(--green)]' : completionPct >= 40 ? 'bg-[var(--amber-dim)] text-[var(--amber)]' : 'bg-[rgba(255,255,255,0.06)] text-[var(--text-muted)]'}`}>{completionPct}% Complete</span>}
+        actions={<Button variant="secondary" size="sm" icon={BookOpen} onClick={() => setShowPresets(true)}>Templates</Button>}
       />
 
       {criticalPending > 0 && (
         <AlertBanner type="warning" title={`${criticalPending} critical milestone${criticalPending > 1 ? 's' : ''} pending`}
-          message="Address critical items before your next investor conversation." />
+          description="Address critical items before your next investor conversation." />
       )}
 
       {/* Scenario Selection */}

@@ -39,7 +39,8 @@ function buildDataContext(state: any, derived: any) {
   const name = state.companyName || state.idea || 'the company';
   const mrr = state.revenue || 0;
   const arr = mrr * 12;
-  const runwayMonths = state.capital ? Math.round(state.capital / Math.max(state.burn - mrr, 1)) : 0;
+  const netBurnCtx = Math.max(state.burn - mrr, 0);
+  const runwayMonths = netBurnCtx === 0 ? 999 : (state.capital ? Math.round(state.capital / netBurnCtx) : 0);
   const burnMultiple = arr > 0 ? ((state.burn * 12) / arr).toFixed(1) : 'N/A';
   const ltv = state.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
   const ltvCac = state.cac > 0 && ltv > 0 ? (ltv / state.cac).toFixed(1) : 'N/A';
@@ -154,8 +155,9 @@ export default function BusinessPlan() {
   const ideaName = companyName || ideaDesc || 'Your Startup';
 
   const arr = mrr * 12;
-  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
-  const runwayMonths = cashOnHand ? Math.round(cashOnHand / Math.max(burnRate - mrr, 1)) : 0;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 0) / 100, 0.001)) : 0;
+  const netBurnBP = Math.max(burnRate - mrr, 0);
+  const runwayMonths = netBurnBP === 0 ? 999 : (cashOnHand ? Math.round(cashOnHand / netBurnBP) : 0);
   const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(2)) : 0;
   const rule40 = Number((monthlyGrowth + (mrr > 0 ? ((mrr - burnRate) / mrr) * 100 : 0)).toFixed(0));
 
@@ -220,7 +222,7 @@ export default function BusinessPlan() {
 
       case 'financials':
         return [
-          `${name} is currently generating ${fmt(mrr)} MRR (${fmt(arr)} ARR) with ${fmtPct(grossMargin)} gross margins and ${fmtPct(ndr)} net dollar retention. Monthly burn is ${fmt(burnRate)}, net of revenue, providing ${runwayMonths} months of runway on current cash of ${fmt(cashOnHand)}.${burnMultiple > 0 ? ` Our burn multiple of ${burnMultiple}× is ${burnMultiple <= 1.5 ? 'best-in-class' : burnMultiple <= 2.5 ? 'healthy for our stage' : 'expected at this growth rate and will improve as revenue scales'}.` : ''}`,
+          `${name} is currently generating ${fmt(mrr)} MRR (${fmt(arr)} ARR) with ${fmtPct(grossMargin)} gross margins and ${fmtPct(ndr)} net dollar retention. Monthly burn is ${fmt(burnRate)}, net of revenue, ${runwayMonths >= 999 ? 'and the company is profitable with indefinite runway' : `providing ${runwayMonths} months of runway`} on current cash of ${fmt(cashOnHand)}.${burnMultiple > 0 ? ` Our burn multiple of ${burnMultiple}× is ${burnMultiple <= 1.5 ? 'best-in-class' : burnMultiple <= 2.5 ? 'healthy for our stage' : 'expected at this growth rate and will improve as revenue scales'}.` : ''}`,
           `Unit economics are strong and improving. LTV of ${fmt(ltv)} against a CAC of ${fmt(cac)} gives an LTV:CAC ratio of ${ltvCacStr}. At ${fmtPct(monthlyGrowth)} MoM growth, we project ARR to reach ${fmt(y2arr)} by end of Year 2 and ${fmt(y3arr)} by end of Year 3, assuming growth rates moderate as we scale.`,
           `The ${fmt(targetRaise)} raise will be deployed as follows: ${raiseUse}. This investment funds the growth milestones required to reach a Series ${stage === 'Seed' ? 'A' : stage === 'Series A' ? 'B' : 'C'}-ready profile, including demonstrating repeatable growth, improving unit economics, and expanding the team to support the next phase of scale.`,
           `Our path to profitability assumes a ${Math.round(24 + (burnRate / Math.max(mrr * monthlyGrowth / 100, 1)))} month horizon to cash flow breakeven, achieved by continuing to grow revenue faster than costs and driving gross margin expansion through scale and automation. Rule of 40 score is currently ${rule40}, with a target of 40+ within 18 months post-raise.`,

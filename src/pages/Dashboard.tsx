@@ -142,7 +142,7 @@ export default function Dashboard() {
       />
 
       {/* Alert: low runway */}
-      {runwayMonths < 6 && (
+      {runwayMonths < 6 && runwayMonths < 999 && (
         <AlertBanner
           type="error"
           icon={AlertTriangle}
@@ -150,7 +150,7 @@ export default function Dashboard() {
           description="Initiate fundraise immediately. Consider emergency burn reduction scenarios in Strategy."
         />
       )}
-      {runwayMonths >= 6 && runwayMonths < 9 && (
+      {runwayMonths >= 6 && runwayMonths < 9 && runwayMonths < 999 && (
         <AlertBanner
           type="warning"
           icon={AlertTriangle}
@@ -317,7 +317,12 @@ export default function Dashboard() {
         <MetricTile label="ARR" value={`$${(app.derived.arr / 1000).toFixed(0)}k`} sub={`MRR: $${app.revenue.toLocaleString()}`} color="var(--accent-light)" />
         <MetricTile label="LTV / CAC" value={`${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(1)}×`} sub={`LTV $${app.derived.ltv.toLocaleString()} · CAC $${app.cac.toLocaleString()}`} color="var(--teal)" />
         <MetricTile label="Implied Valuation" value={`$${(app.derived.impliedValuation / 1000000).toFixed(1)}M`} sub="8× ARR multiple" color="var(--green)" />
-        <MetricTile label="Days of Runway" value={app.derived.daysOfRunway} sub={`${app.derived.runwayMonths} months`} color={app.derived.runwayMonths >= 12 ? 'var(--green)' : 'var(--red)'} />
+        <MetricTile
+          label="Days of Runway"
+          value={app.derived.runwayMonths >= 999 ? '∞' : app.derived.daysOfRunway}
+          sub={app.derived.runwayMonths >= 999 ? 'Profitable — infinite runway' : `${app.derived.runwayMonths} months`}
+          color="var(--green)"
+        />
       </div>
 
       {/* Fundraising Timeline */}

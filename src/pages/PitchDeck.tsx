@@ -50,9 +50,10 @@ function useSlides(state: any): SlideData[] {
   } = state || {};
 
   const arr = mrr * 12;
-  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
-  const runwayMonths = state?.capital ? Math.round(state.capital / Math.max(burnRate - mrr, 1)) : 0;
-  const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(1)) : 0;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.001)) : 0;
+  const netBurnForRunway = Math.max(burnRate - mrr, 0);
+  const runwayMonths = netBurnForRunway === 0 ? 999 : (state?.capital ? Math.round(state.capital / netBurnForRunway) : 0);
+  const burnMultiple = arr > 0 ? Number(((Math.max(burnRate - mrr, 0) * 12) / arr).toFixed(1)) : (burnRate > mrr ? 99 : 0);
   const rule40 = Number((monthlyGrowth + (mrr > 0 ? ((mrr - burnRate) / mrr) * 100 : 0)).toFixed(0));
 
   return [
@@ -112,8 +113,8 @@ function useSlides(state: any): SlideData[] {
     {
       id: 10, type: 'financials',
       title: 'Financials',
-      subtitle: `${runwayMonths}mo runway · ${fmt(burnRate)}/mo burn · Rule of 40: ${rule40}`,
-      notes: `Show the last 12 months of actuals and 24-month forecast. Key metrics: burn rate ${fmt(burnRate)}/month, runway ${runwayMonths} months. Burn Multiple is ${burnMultiple}x — ${burnMultiple <= 1 ? 'excellent capital efficiency.' : burnMultiple <= 2 ? 'reasonable, with room to improve.' : 'high; show the path to < 1.5×.'} Demonstrate you understand the business and can manage capital.`,
+      subtitle: `${runwayMonths >= 999 ? '∞ runway (profitable)' : `${runwayMonths}mo runway`} · ${fmt(burnRate)}/mo burn · Rule of 40: ${rule40}`,
+      notes: `Show the last 12 months of actuals and 24-month forecast. Key metrics: burn rate ${fmt(burnRate)}/month, runway ${runwayMonths >= 999 ? 'indefinite (profitable)' : `${runwayMonths} months`}. Burn Multiple is ${burnMultiple === 99 ? 'N/A' : `${burnMultiple}x`} — ${burnMultiple <= 1 ? 'excellent capital efficiency.' : burnMultiple <= 2 ? 'reasonable, with room to improve.' : burnMultiple === 99 ? 'not applicable (no revenue yet).' : 'high; show the path to < 1.5×.'} Demonstrate you understand the business and can manage capital.`,
     },
     {
       id: 11, type: 'ask',
@@ -151,9 +152,10 @@ function SlideVisual({ slide, state, color }: { slide: SlideData; state: any; co
   } = state || {};
 
   const arr = mrr * 12;
-  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.01)) : 0;
-  const runwayMonths = state?.capital ? Math.round(state.capital / Math.max(burnRate - mrr, 1)) : 0;
-  const burnMultiple = arr > 0 ? Number(((burnRate * 12) / arr).toFixed(1)) : 0;
+  const ltv = state?.arpu ? Math.round(state.arpu / Math.max((state.churn || 1) / 100, 0.001)) : 0;
+  const netBurnSV = Math.max(burnRate - mrr, 0);
+  const runwayMonths = netBurnSV === 0 ? 999 : (state?.capital ? Math.round(state.capital / netBurnSV) : 0);
+  const burnMultiple = arr > 0 ? Number(((netBurnSV * 12) / arr).toFixed(1)) : (netBurnSV > 0 ? 99 : 0);
 
   if (slide.type === 'cover') {
     return (
@@ -217,9 +219,9 @@ function SlideVisual({ slide, state, color }: { slide: SlideData; state: any; co
 
   if (slide.type === 'financials') {
     const metrics = [
-      { label: 'Runway', value: `${runwayMonths}mo`, color: runwayMonths >= 18 ? '#10b981' : runwayMonths >= 9 ? '#f59e0b' : '#ef4444' },
+      { label: 'Runway', value: runwayMonths >= 999 ? '∞' : `${runwayMonths}mo`, color: runwayMonths >= 18 ? '#10b981' : runwayMonths >= 9 ? '#f59e0b' : '#ef4444' },
       { label: 'Burn/mo', value: fmt(burnRate), color: '#f97316' },
-      { label: 'Burn×', value: `${burnMultiple}×`, color: burnMultiple <= 1.5 ? '#10b981' : burnMultiple <= 2.5 ? '#f59e0b' : '#ef4444' },
+      { label: 'Burn×', value: burnMultiple === 99 ? 'N/A' : `${burnMultiple}×`, color: burnMultiple <= 1.5 ? '#10b981' : burnMultiple <= 2.5 ? '#f59e0b' : '#ef4444' },
       { label: 'ARR', value: fmt(arr), color: '#3b82f6' },
     ];
     return (
@@ -340,12 +342,12 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
       <PageHeader
         title="Pitch Deck"
         subtitle={`${slides.length} slides · Live from your data`}
-        badge={{ label: `${current + 1} / ${slides.length}`, variant: 'default' }}
-        action={
+        badge={<Badge color="var(--accent-light)" size="sm">{current + 1} / {slides.length}</Badge>}
+        actions={
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportMD}>MD</Button>
-            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportHTML}>HTML</Button>
-            <Button variant="secondary" size="sm" icon={fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />} onClick={() => setFullscreen(v => !v)}>
+            <Button variant="ghost" size="sm" icon={Download} onClick={exportMD}>MD</Button>
+            <Button variant="ghost" size="sm" icon={Download} onClick={exportHTML}>HTML</Button>
+            <Button variant="secondary" size="sm" icon={fullscreen ? Minimize2 : Maximize2} onClick={() => setFullscreen(v => !v)}>
               {fullscreen ? 'Exit' : 'Present'}
             </Button>
           </div>
@@ -446,7 +448,7 @@ ${slides.map(s => `<div class="slide"><div class="meta">Slide ${s.id} · ${s.typ
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Speaker Notes</span>
-                  <Badge variant="default" size="sm">Slide {current + 1}</Badge>
+                  <Badge color="var(--accent-light)" size="sm">Slide {current + 1}</Badge>
                 </div>
                 <button onClick={copyNotes} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                   {copied ? <Check size={13} style={{ color: 'var(--green)' }} /> : <Copy size={13} />}

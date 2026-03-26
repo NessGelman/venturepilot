@@ -76,17 +76,17 @@ export default function Valuation() {
   const valuations = useMemo(() => {
     const arrVal = currentArr * arrMultiple;
 
-    // DCF simplified
+    // DCF simplified — compound annually (not monthly^12 which overstates growth)
     let dcfVal = 0;
     let rev = currentArr;
-    const growthRate = monthlyGrowth / 100;
+    const annualGrowthRate = (1 + monthlyGrowth / 100) ** 12 - 1; // convert monthly to annual
     const discountRate = 0.4; // 40% discount rate for early stage
     for (let i = 1; i <= 5; i++) {
-      rev = rev * (1 + monthlyGrowth / 100) ** 12;
+      rev = rev * (1 + annualGrowthRate);
       const fcf = rev * (grossMargin / 100) * 0.25; // simplified FCF
       dcfVal += fcf / (1 + discountRate) ** i;
     }
-    const terminalValue = (currentArr * arrMultiple * 3) / (1 + discountRate) ** 5;
+    const terminalValue = (rev * arrMultiple * 0.5) / (1 + discountRate) ** 5;
     dcfVal += terminalValue;
 
     // Comparable
@@ -112,8 +112,13 @@ export default function Valuation() {
   // SAFE dilution
   const totalSafeAmount = safes.reduce((s, n) => s + n.amount, 0);
   const safeShares = safes.map(safe => {
-    const conversionPrice = Math.min(safe.valuationCap / 1e6, preMoneyVal / 1e6) * (1 - safe.discount / 100);
-    return { ...safe, conversionPrice, estimatedShares: safe.amount / (conversionPrice * 1000) };
+    const capPrice = preMoneyVal > 0 ? safe.amount / (safe.valuationCap / preMoneyVal * safe.amount) : 0;
+    const discountedPrice = preMoneyVal > 0 ? (preMoneyVal / (preMoneyVal + targetRaise)) * (1 - safe.discount / 100) : 0;
+    const conversionOwnership = Math.min(
+      safe.amount / Math.max(safe.valuationCap, 1),
+      discountedPrice > 0 ? safe.amount / Math.max(preMoneyVal * discountedPrice, 1) : Infinity
+    ) * 100;
+    return { ...safe, conversionPrice: capPrice, estimatedShares: Math.min(conversionOwnership, 20) };
   });
 
   const capTableData: CapTableRow[] = [
@@ -137,9 +142,10 @@ export default function Valuation() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={Calculator}
         title="Valuation"
         subtitle="Run the numbers on your raise"
-        badge={{ label: fmt(preMoneyVal) + ' pre-money', variant: 'success' }}
+        badge={<Badge color="var(--green)" size="sm">{fmt(preMoneyVal)} pre-money</Badge>}
       />
 
       {/* Valuation method selector */}
@@ -162,7 +168,7 @@ export default function Valuation() {
             <div className="flex items-center gap-2 mb-4">
               <Calculator size={15} style={{ color: 'var(--accent)' }} />
               <span className="font-bold text-sm">Valuation Inputs</span>
-              <Badge variant="default" size="sm">{VALUATION_METHODS.find(m2 => m2.id === method)?.label}</Badge>
+              <Badge color="var(--accent-light)" size="sm">{VALUATION_METHODS.find(m2 => m2.id === method)?.label}</Badge>
             </div>
 
             <div className="space-y-4">

@@ -116,8 +116,20 @@ function CompareBar({ value, benchmark, format, higherBetter }: { value: number;
 }
 
 export default function MarketBench() {
-  const { state } = useApp() as any;
-  const { mrr = 0, arr = 0, monthlyGrowth = 0, grossMargin = 70, ndr = 100, ltv = 0, cac = 0, burnMultiple = 0, rule40 = 0 } = state || {};
+  const { state, derived } = useApp() as any;
+  // Use correct field names from state and derived metrics
+  const revenue = state?.revenue ?? 0;
+  const growth = state?.growth ?? 0;
+  const grossMargin = state?.grossMargin ?? 70;
+  const ndr = state?.ndr ?? 100;
+  const cac = state?.cac ?? 0;
+  const arr = derived?.arr ?? (revenue * 12);
+  const ltv = derived?.ltv ?? 0;
+  const burnMultiple = derived?.burnMultiple ?? 0;
+  const ruleOf40 = derived?.ruleOf40 ?? 0;
+  const payback = derived?.payback ?? 0;
+  // Convert monthly growth to annual YoY% for comparison with annual benchmarks
+  const annualGrowth = Number(((Math.pow(1 + growth / 100, 12) - 1) * 100).toFixed(1));
 
   const [selectedSector, setSelectedSector] = useState('b2b-saas');
   const [modalSector, setModalSector] = useState<string | null>(null);
@@ -127,16 +139,16 @@ export default function MarketBench() {
   const modalData = SECTORS.find(s => s.id === modalSector);
 
   const userMetrics = {
-    medianArr: arr || mrr * 12,
-    medianGrowth: monthlyGrowth * 12,
+    medianArr: arr,
+    medianGrowth: annualGrowth,
     medianGrossMargin: grossMargin,
     medianNDR: ndr,
-    medianLTVCAC: cac > 0 ? ltv / cac : 0,
+    medianLTVCAC: cac > 0 && ltv > 0 ? ltv / cac : 0,
     medianBurnMultiple: burnMultiple,
-    medianRule40: rule40,
-    medianPayback: 0,
+    medianRule40: ruleOf40,
+    medianPayback: payback,
     medianCAC: cac,
-    medianMagicNumber: 0,
+    medianMagicNumber: state?.magicNumber ?? 0,
   };
 
   const comparisonData = METRIC_KEYS.map(m => ({
@@ -166,7 +178,7 @@ export default function MarketBench() {
       <PageHeader
         title="Benchmarks"
         subtitle="See where you stack up"
-        badge={{ label: sector.name, variant: 'default' }}
+        badge={<Badge color={sector.color} size="sm">{sector.name}</Badge>}
       />
 
       {/* Sector selector */}
@@ -206,7 +218,7 @@ export default function MarketBench() {
                     <h3 className="font-black text-base">{sector.name} Benchmarks</h3>
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">Median metrics at Series A/B stage</p>
                   </div>
-                  <Badge variant="default" size="sm">{sector.companies.split(',').length} companies</Badge>
+                  <Badge color="var(--accent-light)" size="sm">{sector.companies.split(',').length} companies</Badge>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {METRIC_KEYS.slice(0, 8).map(m => (

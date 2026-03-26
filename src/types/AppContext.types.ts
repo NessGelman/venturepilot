@@ -206,7 +206,6 @@ export interface UseAppReturn {
   setArpu: (v: number) => void;
   setChurn: (v: number) => void;
   setPipeline: (v: number) => void;
-  companyName: string;
   setCompanyName: (v: string) => void;
   setIdea: (v: string) => void;
   setIndustry: (v: string) => void;

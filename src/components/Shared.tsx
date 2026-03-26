@@ -238,9 +238,10 @@ export const AIButton = React.memo(function AIButton({ onClick, children = 'AI I
 // ─── MetricTooltip ───────────────────────────────────────────────────────────
 interface MetricTooltipProps {
   term: string;
+  definition?: string;
   children?: React.ReactNode;
 }
-export const MetricTooltip = React.memo(function MetricTooltip({ term, children }: MetricTooltipProps) {
+export const MetricTooltip = React.memo(function MetricTooltip({ term, definition, children }: MetricTooltipProps) {
   const [show, setShow] = useState(false);
 
   const dict: Record<string, { full: string; form: string; range: string; why: string }> = {
@@ -256,6 +257,7 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, children 
   };
 
   const info = dict[term];
+  const hasTooltip = !!info || !!definition;
 
   return (
     <span
@@ -264,17 +266,19 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, children 
       onMouseLeave={() => setShow(false)}
     >
       <span className="border-b border-dashed border-[var(--text-muted)] opacity-70">{children || term}</span>
-      {info && show && (
+      {hasTooltip && show && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] pointer-events-none text-left">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[var(--accent-light)] font-black text-sm">{term}</span>
-            <span className="text-[var(--text-muted)] font-medium text-xs">— {info.full}</span>
+            {info && <span className="text-[var(--text-muted)] font-medium text-xs">— {info.full}</span>}
           </div>
-          <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">{info.why}</p>
-          <div className="space-y-1.5 border-t border-[var(--border-subtle)] pt-2.5">
-            <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--text-secondary)]">Formula:</span> {info.form}</p>
-            <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--green)]">Healthy:</span> {info.range}</p>
-          </div>
+          <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">{definition || info?.why}</p>
+          {info && (
+            <div className="space-y-1.5 border-t border-[var(--border-subtle)] pt-2.5">
+              <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--text-secondary)]">Formula:</span> {info.form}</p>
+              <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--green)]">Healthy:</span> {info.range}</p>
+            </div>
+          )}
         </div>
       )}
     </span>
