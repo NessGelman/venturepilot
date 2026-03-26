@@ -203,7 +203,8 @@ export const Button = React.memo(function Button({ children, onClick, variant = 
 
   const renderIcon = () => {
     if (!icon) return null;
-    if (typeof icon === 'function') {
+    // Handle both regular functions AND forwardRef objects (lucide icons are forwardRef, typeof === 'object')
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in (icon as object))) {
       const IconComponent = icon as React.ElementType;
       return <IconComponent size={size === 'sm' ? 12 : 14} />;
     }
