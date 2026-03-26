@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Card, PageHeader, StatCard, SectionHeader, Badge, Button, AlertBanner, AIButton, MetricTooltip, CountUp
+  Card, PageHeader, StatCard, SectionHeader, Badge, Button, AlertBanner, AIButton, MetricTooltip, CountUp, HelpTip
 } from '../components/Shared';
 import {
   Activity, Download, Zap, BarChart2, TrendingUp, ShieldCheck, PieChart,
@@ -189,7 +189,7 @@ export default function Dashboard() {
         />
         <StatCard
           icon={ShieldCheck}
-          label="Readiness Score"
+          label={<span className="flex items-center gap-1.5">Readiness Score <HelpTip content="A composite score (0–100) measuring how investor-ready your startup is, based on financial health, unit economics quality, and narrative completeness. 70+ signals you're ready to pitch." /></span>}
           value={<CountUp value={readinessScore} suffix="/100" />}
           sub={readinessScore >= 70 ? '✓ Ready to pitch' : readinessScore >= 50 ? 'Getting there' : 'Needs work'}
           color={readinessScore >= 70 ? 'var(--green)' : readinessScore >= 50 ? 'var(--amber)' : 'var(--red)'}
@@ -273,7 +273,10 @@ export default function Dashboard() {
         {/* Right column: radar + monte carlo */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <Card padding="1.25rem">
-            <SectionHeader icon={Layers} title="Health Radar" />
+            <div className="flex items-center gap-2 mb-5">
+              <SectionHeader icon={Layers} title="Health Radar" className="mb-0 flex-1" />
+              <HelpTip content="A spider chart scoring your startup across 6 dimensions: Growth (MoM rate), Margin (gross %), Efficiency (inverse of burn multiple), Runway (months of cash), Retention (NDR), and Pipeline coverage. Bigger = healthier." />
+            </div>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
@@ -287,7 +290,10 @@ export default function Dashboard() {
 
           <Card padding="1.25rem" className="flex-1">
             <div className="flex items-start justify-between mb-3">
-              <SectionHeader icon={Flame} title="Monte Carlo" subtitle="2,500 simulations" className="mb-0" />
+              <div className="flex items-center gap-2">
+                <SectionHeader icon={Flame} title="Monte Carlo" subtitle="2,500 simulations" className="mb-0" />
+                <HelpTip content="Runs 2,500 random scenarios that vary your burn and growth rates by ±10–15% each month. Shows how likely you are to stay solvent for 24 months given real-world uncertainty. Higher % = safer." />
+              </div>
               <Badge color={riskBadge.color} dot>{riskBadge.label}</Badge>
             </div>
             <div className="flex items-baseline gap-2 mb-1">
@@ -314,14 +320,18 @@ export default function Dashboard() {
 
       {/* Key metrics row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MetricTile label="ARR" value={`$${(app.derived.arr / 1000).toFixed(0)}k`} sub={`MRR: $${app.revenue.toLocaleString()}`} color="var(--accent-light)" />
-        <MetricTile label="LTV / CAC" value={`${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(1)}×`} sub={`LTV $${app.derived.ltv.toLocaleString()} · CAC $${app.cac.toLocaleString()}`} color="var(--teal)" />
-        <MetricTile label="Implied Valuation" value={`$${(app.derived.impliedValuation / 1000000).toFixed(1)}M`} sub="8× ARR multiple" color="var(--green)" />
+        <MetricTile label="ARR" value={`$${(app.derived.arr / 1000).toFixed(0)}k`} sub={`MRR: $${app.revenue.toLocaleString()}`} color="var(--accent-light)"
+          help="Annual Recurring Revenue — your MRR × 12. The standard way to measure subscription business scale. Investors use it to compare companies regardless of billing frequency." />
+        <MetricTile label="LTV / CAC" value={`${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(1)}×`} sub={`LTV $${app.derived.ltv.toLocaleString()} · CAC $${app.cac.toLocaleString()}`} color="var(--teal)"
+          help="Lifetime Value ÷ Customer Acquisition Cost. The core unit economics test. Above 3× is healthy — each customer earns back their cost 3× over. Below 1× means you lose money acquiring customers." />
+        <MetricTile label="Implied Valuation" value={`$${(app.derived.impliedValuation / 1000000).toFixed(1)}M`} sub="8× ARR multiple" color="var(--green)"
+          help="A rough valuation estimate using an 8× ARR revenue multiple — a common early-stage benchmark. Actual valuations depend heavily on growth rate, margins, team, and market conditions." />
         <MetricTile
           label="Days of Runway"
           value={app.derived.runwayMonths >= 999 ? '∞' : app.derived.daysOfRunway}
           sub={app.derived.runwayMonths >= 999 ? 'Profitable — infinite runway' : `${app.derived.runwayMonths} months`}
           color="var(--green)"
+          help="How long until you run out of cash at your current net burn rate. Rule of thumb: start your next fundraise when you have 6–9 months left, since raising takes 3–6 months on average."
         />
       </div>
 
@@ -390,10 +400,13 @@ export default function Dashboard() {
   );
 }
 
-function MetricTile({ label, value, sub, color }: { label: string; value: any; sub?: string; color: string }) {
+function MetricTile({ label, value, sub, color, help }: { label: string; value: any; sub?: string; color: string; help?: string }) {
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-4">
-      <p className="metric-label mb-2">{label}</p>
+      <div className="flex items-center gap-1.5 mb-2">
+        <p className="metric-label">{label}</p>
+        {help && <HelpTip content={help} />}
+      </div>
       <p className="text-xl font-black font-mono leading-none" style={{ color }}>{value}</p>
       {sub && <p className="text-[11px] text-[var(--text-muted)] font-medium mt-1.5">{sub}</p>}
     </div>

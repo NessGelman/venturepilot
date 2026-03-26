@@ -285,6 +285,56 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
   );
 });
 
+// ─── HelpTip ─────────────────────────────────────────────────────────────────
+interface HelpTipProps {
+  content: string;
+  title?: string;
+  className?: string;
+}
+export const HelpTip = React.memo(function HelpTip({ content, title, className = '' }: HelpTipProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <span ref={ref} className={`relative inline-flex items-center shrink-0 ${className}`} style={{ verticalAlign: 'middle' }}>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className={`w-[15px] h-[15px] rounded-full border flex items-center justify-center text-[9px] font-black leading-none transition-all select-none
+          ${open
+            ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_6px_var(--accent)]'
+            : 'bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.15)] text-[var(--text-muted)] hover:border-[var(--accent-light)] hover:text-[var(--accent-light)] hover:bg-[rgba(167,139,250,0.1)]'
+          }`}
+        aria-label="What is this?"
+      >
+        ?
+      </button>
+      {open && (
+        <div
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto"
+          onClick={e => e.stopPropagation()}
+        >
+          {title && <p className="text-[11px] font-black text-[var(--accent-light)] mb-1.5 leading-tight">{title}</p>}
+          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{content}</p>
+          <div
+            className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
+            style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }}
+          />
+        </div>
+      )}
+    </span>
+  );
+});
+
 // ─── InputField ──────────────────────────────────────────────────────────────
 interface InputFieldProps {
   label: string;
@@ -298,8 +348,9 @@ interface InputFieldProps {
   slider?: { min: number; max: number; step?: number };
   options?: string[];
   placeholder?: string;
+  help?: string;
 }
-export const InputField = React.memo(function InputField({ label, value, onChange, prefix, suffix, multiline, type = 'number', annotation, slider, options, placeholder }: InputFieldProps) {
+export const InputField = React.memo(function InputField({ label, value, onChange, prefix, suffix, multiline, type = 'number', annotation, slider, options, placeholder, help }: InputFieldProps) {
   const displayValue = type === 'number' && prefix === '$'
     ? Number(value || 0).toLocaleString()
     : value;
@@ -309,7 +360,10 @@ export const InputField = React.memo(function InputField({ label, value, onChang
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="flex justify-between items-end">
-        <span className="metric-label">{label}</span>
+        <span className="metric-label flex items-center gap-1.5">
+          {label}
+          {help && <HelpTip content={help} />}
+        </span>
         {annotation && <span className="text-[10px] font-mono font-bold text-[var(--accent-light)] normal-case">{annotation}</span>}
       </label>
       <div className="relative">

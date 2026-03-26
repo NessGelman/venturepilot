@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { InputField, GaugeMini, Divider } from './Shared';
+import { InputField, GaugeMini, Divider, HelpTip } from './Shared';
 import {
   ChevronRight, ChevronLeft,
   Activity, BarChart2, Target, FileText, Github,
@@ -175,63 +175,97 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
         <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
           <Accordion title="Company" icon={Target} defaultOpen>
             <InputField label="Company Name" value={app.companyName} onChange={app.setCompanyName} type="text" placeholder="e.g. VenturePilot, Acme Corp" />
-            <InputField label="One-line Pitch / Concept" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI that helps founders choose the best capital source" />
-            <InputField label="Product Description" value={app.productDescription} onChange={app.setProductDescription} type="text" />
+            <InputField label="One-line Pitch / Concept" value={app.idea} onChange={app.setIdea} type="text" placeholder="e.g. AI that helps founders choose the best capital source"
+              help="Your elevator pitch in a single sentence. Used across pitch decks, investor updates, and AI analysis." />
+            <InputField label="Product Description" value={app.productDescription} onChange={app.setProductDescription} type="text"
+              help="A slightly longer description of what your product does and who it's for." />
             <div className="grid grid-cols-2 gap-2">
               <InputField label="Stage" value={app.stage} onChange={app.setStage} type="select"
-                options={['Pre-seed', 'Seed', 'Series A', 'Series B', 'Growth']} />
+                options={['Pre-seed', 'Seed', 'Series A', 'Series B', 'Growth']}
+                help="Your current fundraising stage. This affects benchmark comparisons and investor matching." />
               <InputField label="Industry" value={app.industry} onChange={app.setIndustry} type="select"
-                options={['B2B SaaS', 'AI/ML', 'Fintech', 'Healthtech', 'Consumer', 'Deep Tech', 'Infrastructure', 'Other']} />
+                options={['B2B SaaS', 'AI/ML', 'Fintech', 'Healthtech', 'Consumer', 'Deep Tech', 'Infrastructure', 'Other']}
+                help="Your primary industry vertical. Used to benchmark your metrics against sector averages." />
             </div>
-            <InputField label="Founders" value={app.founder} onChange={app.setFounder} type="text" placeholder="e.g. Jane Smith, John Lee" />
-            <InputField label="Founder Bios" value={app.founderBios} onChange={app.setFounderBios} multiline placeholder="Short background for each founder, comma-separated" />
-            <InputField label="Team Size" value={app.teamSize} onChange={app.setTeamSize} slider={{ min: 1, max: 200, step: 1 }} />
-            <InputField label="Target Customer (ICP)" value={app.targetCustomer} onChange={app.setTargetCustomer} type="text" />
-            <InputField label="Competitors" value={app.competitors} onChange={app.setCompetitors} type="text" annotation="Comma-separated" />
-            <InputField label="North Star Goal" value={app.northStar} onChange={app.setNorthStar} type="text" />
+            <InputField label="Founders" value={app.founder} onChange={app.setFounder} type="text" placeholder="e.g. Jane Smith, John Lee"
+              help="Founder names, comma-separated. Appears in pitch decks and investor updates." />
+            <InputField label="Founder Bios" value={app.founderBios} onChange={app.setFounderBios} multiline placeholder="Short background for each founder, comma-separated"
+              help="Brief backgrounds for each founder. Investors look for relevant domain experience and prior exits." />
+            <InputField label="Team Size" value={app.teamSize} onChange={app.setTeamSize} slider={{ min: 1, max: 200, step: 1 }}
+              help="Total number of full-time employees. Used in revenue-per-employee and efficiency calculations." />
+            <InputField label="Target Customer (ICP)" value={app.targetCustomer} onChange={app.setTargetCustomer} type="text"
+              help="Your Ideal Customer Profile — the specific type of person or company who gets the most value from your product." />
+            <InputField label="Competitors" value={app.competitors} onChange={app.setCompetitors} type="text" annotation="Comma-separated"
+              help="Your main competitors. Knowing your competitive landscape helps investors understand your differentiation." />
+            <InputField label="North Star Goal" value={app.northStar} onChange={app.setNorthStar} type="text"
+              help="The single most important metric or milestone your company is optimizing for right now." />
           </Accordion>
 
           <Accordion title="Narrative" icon={Pen} defaultOpen={false}>
-            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline placeholder="The acute pain your customers experience today." />
-            <InputField label="Your Solution" value={app.solutionStatement} onChange={app.setSolutionStatement} multiline placeholder="How your product solves that problem." />
-            <InputField label="Unique Insight" value={app.uniqueInsight} onChange={app.setUniqueInsight} multiline placeholder="What do you know that others don't?" />
-            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline placeholder="Key wins, logos, growth signals." />
-            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline placeholder="Where does the raise go?" />
+            <InputField label="Problem You Solve" value={app.problem} onChange={app.setProblem} multiline placeholder="The acute pain your customers experience today."
+              help="Describe the painful problem your customers face today. The sharper and more specific, the better." />
+            <InputField label="Your Solution" value={app.solutionStatement} onChange={app.setSolutionStatement} multiline placeholder="How your product solves that problem."
+              help="How your product uniquely solves the problem. Focus on what makes your approach different." />
+            <InputField label="Unique Insight" value={app.uniqueInsight} onChange={app.setUniqueInsight} multiline placeholder="What do you know that others don't?"
+              help="The non-obvious insight or 'secret' that gives your company an unfair advantage. This is what makes investors believe you'll win." />
+            <InputField label="Traction Highlights" value={app.traction} onChange={app.setTraction} multiline placeholder="Key wins, logos, growth signals."
+              help="Your best proof points: revenue milestones, customer logos, growth rates, waitlists, or pilot results." />
+            <InputField label="Use of Funds" value={app.useOfFunds} onChange={app.setUseOfFunds} multiline placeholder="Where does the raise go?"
+              help="How you'll spend the money you raise. Investors want to see it tied to specific milestones (e.g. hire 3 engineers, reach $500k ARR)." />
           </Accordion>
 
           <Accordion title="Financials" icon={Activity} defaultOpen={false}>
-            <InputField label="Capital (Bank Balance)" value={app.capital} onChange={app.setCapital} prefix="$" slider={{ min: 0, max: 5000000, step: 10000 }} />
+            <InputField label="Capital (Bank Balance)" value={app.capital} onChange={app.setCapital} prefix="$" slider={{ min: 0, max: 5000000, step: 10000 }}
+              help="Your current total cash in the bank. This is used to calculate your runway — how many months you can operate before running out of money." />
             <InputField label="Monthly Gross Burn" value={app.burn} onChange={app.setBurn} prefix="$"
               annotation={`Net: $${Math.max(netBurnNum, 0).toLocaleString()}/mo`}
-              slider={{ min: 0, max: 1000000, step: 100 }} />
+              slider={{ min: 0, max: 1000000, step: 100 }}
+              help="Total money spent each month (salaries, rent, servers, etc.), before subtracting revenue. Net burn = Gross Burn minus MRR." />
             <InputField label="MRR" value={app.revenue} onChange={app.setRevenue} prefix="$"
               annotation={`ARR: ${fmtM(app.revenue * 12)}`}
-              slider={{ min: 0, max: 1000000, step: 1000 }} />
-            <InputField label="MoM Growth Rate" value={app.growth} onChange={app.setGrowth} suffix="%" slider={{ min: -20, max: 100, step: 1 }} />
-            <InputField label="Gross Margin" value={app.grossMargin} onChange={app.setGrossMargin} suffix="%" slider={{ min: 0, max: 100, step: 1 }} />
-            <InputField label="NDR" value={app.ndr} onChange={app.setNdr} suffix="%" annotation="Net Dollar Retention" slider={{ min: 0, max: 200, step: 1 }} />
-            <InputField label="Active Pipeline" value={app.pipeline} onChange={app.setPipeline} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }} />
+              slider={{ min: 0, max: 1000000, step: 1000 }}
+              help="Monthly Recurring Revenue — the predictable subscription revenue you earn every month. The heartbeat metric for SaaS businesses." />
+            <InputField label="MoM Growth Rate" value={app.growth} onChange={app.setGrowth} suffix="%" slider={{ min: -20, max: 100, step: 1 }}
+              help="Month-over-Month growth — how much your MRR increases each month as a percentage. 8–15% is typical at Seed; 20%+ is exceptional." />
+            <InputField label="Gross Margin" value={app.grossMargin} onChange={app.setGrossMargin} suffix="%" slider={{ min: 0, max: 100, step: 1 }}
+              help="Revenue minus the direct cost of delivering your product, as a % of revenue. SaaS target is 70–80%+. Low margins can hurt valuation." />
+            <InputField label="NDR" value={app.ndr} onChange={app.setNdr} suffix="%" annotation="Net Dollar Retention" slider={{ min: 0, max: 200, step: 1 }}
+              help="Net Dollar Retention — how much revenue you keep and grow from existing customers. Above 100% means customers spend more over time (expansions outpace cancellations). World-class is 120%+." />
+            <InputField label="Active Pipeline" value={app.pipeline} onChange={app.setPipeline} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }}
+              help="The total dollar value of deals in your sales pipeline that could realistically close. Used to calculate pipeline coverage ratio." />
             <Divider label="Fundraise" />
-            <InputField label="Target Raise" value={app.targetRaise} onChange={app.setTargetRaise} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }} />
-            <InputField label="Valuation Cap" value={app.valuation} onChange={app.setValuation} prefix="$" slider={{ min: 0, max: 50000000, step: 500000 }} />
-            <InputField label="Dilution" value={app.dilution} onChange={app.setDilution} suffix="%" slider={{ min: 0, max: 100, step: 1 }} />
+            <InputField label="Target Raise" value={app.targetRaise} onChange={app.setTargetRaise} prefix="$" slider={{ min: 0, max: 10000000, step: 10000 }}
+              help="How much capital you're trying to raise in your next funding round. Drives the fundraise timeline and dilution calculations." />
+            <InputField label="Valuation Cap" value={app.valuation} onChange={app.setValuation} prefix="$" slider={{ min: 0, max: 50000000, step: 500000 }}
+              help="For SAFEs and convertible notes — the maximum valuation at which your note converts into equity. Protects early investors if the company's valuation rises quickly." />
+            <InputField label="Dilution" value={app.dilution} onChange={app.setDilution} suffix="%" slider={{ min: 0, max: 100, step: 1 }}
+              help="The percentage of company ownership you're giving to investors in this round. Typical Seed rounds are 15–25%. Higher dilution leaves less for founders and future rounds." />
           </Accordion>
 
           <Accordion title="Unit Economics" icon={BarChart2} defaultOpen>
             <InputField label="CAC" value={app.cac} onChange={app.setCac} prefix="$"
               annotation={`Payback: ${derived?.payback ?? 0}mo`}
-              slider={{ min: 0, max: 10000, step: 10 }} />
-            <InputField label="ARPU / month" value={app.arpu} onChange={app.setArpu} prefix="$" slider={{ min: 0, max: 5000, step: 5 }} />
+              slider={{ min: 0, max: 10000, step: 10 }}
+              help="Customer Acquisition Cost — the average amount you spend to acquire one new paying customer (marketing + sales costs ÷ new customers). Lower is better." />
+            <InputField label="ARPU / month" value={app.arpu} onChange={app.setArpu} prefix="$" slider={{ min: 0, max: 5000, step: 5 }}
+              help="Average Revenue Per User per month — how much the typical customer pays you each month. Used to calculate LTV." />
             <InputField label="Monthly Churn" value={app.churn} onChange={app.setChurn} suffix="%"
               annotation={app.churn > 0 ? `Life: ${Math.round(100 / app.churn)}mo` : 'Life: ∞ (0% churn)'}
-              slider={{ min: 0, max: 20, step: 0.1 }} />
+              slider={{ min: 0, max: 20, step: 0.1 }}
+              help="The percentage of customers who cancel their subscription each month. 1–2% is typical for B2B SaaS; anything above 5% is a serious problem." />
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="p-2.5 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">LTV</p>
+                <div className="flex items-center gap-1 mb-0.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)]">LTV</p>
+                  <HelpTip content="Lifetime Value — the total revenue expected from one customer over their entire relationship with you. Calculated as ARPU ÷ Monthly Churn Rate. Healthy LTV is at least 3× your CAC." />
+                </div>
                 <p className="text-sm font-black font-mono text-[var(--text-primary)]">${(derived?.ltv ?? 0).toLocaleString()}</p>
               </div>
               <div className="p-2.5 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">LTV:CAC</p>
+                <div className="flex items-center gap-1 mb-0.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)]">LTV:CAC</p>
+                  <HelpTip content="The ratio of Lifetime Value to Customer Acquisition Cost. Above 3× is healthy — it means each customer earns back their acquisition cost 3 times over. Below 1× means you're losing money on every customer." />
+                </div>
                 <p className="text-sm font-black font-mono" style={{ color: ltvCac === '—' ? 'var(--text-muted)' : parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)' }}>{ltvCac === '—' ? '—' : `${ltvCac}×`}</p>
               </div>
             </div>
@@ -239,17 +273,21 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
 
           <Accordion title="Market" icon={Globe} defaultOpen={false}>
             <InputField label="Revenue Model" value={app.revenueModel} onChange={app.setRevenueModel} type="select"
-              options={['SaaS', 'Usage-based', 'Marketplace', 'Transactional', 'Advertising', 'Hardware+SaaS', 'Open Core']} />
+              options={['SaaS', 'Usage-based', 'Marketplace', 'Transactional', 'Advertising', 'Hardware+SaaS', 'Open Core']}
+              help="How your business makes money. This affects which benchmarks and metrics are most relevant to your company." />
             <Divider label="Market Sizing" />
             <InputField label="TAM — Total Market" value={app.tam} onChange={app.setTam} prefix="$"
               annotation={fmtM(app.tam)}
-              slider={{ min: 0, max: 500000000000, step: 100000000 }} />
+              slider={{ min: 0, max: 500000000000, step: 100000000 }}
+              help="Total Addressable Market — the entire potential market if every possible customer used a solution like yours. Investors want to see TAM > $1B for venture-scale businesses." />
             <InputField label="SAM — Serviceable" value={app.sam} onChange={app.setSam} prefix="$"
               annotation={fmtM(app.sam)}
-              slider={{ min: 0, max: 50000000000, step: 10000000 }} />
+              slider={{ min: 0, max: 50000000000, step: 10000000 }}
+              help="Serviceable Addressable Market — the portion of TAM you can realistically reach with your current product, distribution, and geography. Usually 10–30% of TAM." />
             <InputField label="SOM — Obtainable" value={app.som} onChange={app.setSom} prefix="$"
               annotation={fmtM(app.som)}
-              slider={{ min: 0, max: 5000000000, step: 1000000 }} />
+              slider={{ min: 0, max: 5000000000, step: 1000000 }}
+              help="Serviceable Obtainable Market — the realistic slice of SAM you can capture in the next 3–5 years. This is what you're actually pitching investors on." />
             {/* Quick ratio check */}
             <div className="flex gap-1.5 mt-0.5">
               {[
@@ -378,10 +416,21 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
   );
 }
 
+const PILL_HELP: Record<string, string> = {
+  'Runway': 'How many months until you run out of cash, based on your current net burn rate. Green = 12+ months, amber = 6–12, red = under 6.',
+  'Burn×': 'Burn Multiple — how much you spend for every $1 of new ARR added. Under 1.5× is excellent; above 2.5× means you\'re spending too much to grow.',
+  'Score': 'Investor Readiness Score (0–100) — a composite of your financial health, unit economics, and narrative completeness. 70+ is investor-ready.',
+  'R40': 'Rule of 40 — Growth % + Profit Margin %. A score above 40% signals a healthy balance between growth and efficiency. Key SaaS health metric.',
+  'LTV:CAC': 'Ratio of customer Lifetime Value to Customer Acquisition Cost. Above 3× is healthy — it means each customer earns back their acquisition cost 3 times over.',
+};
+
 function MetricPill({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="flex flex-col items-center gap-1 p-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)]">
-      <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-none">{label}</span>
+      <div className="flex items-center gap-0.5">
+        <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-none">{label}</span>
+        {PILL_HELP[label] && <HelpTip content={PILL_HELP[label]} />}
+      </div>
       <span className="text-xs font-black font-mono leading-none" style={{ color }}>{value}</span>
     </div>
   );
