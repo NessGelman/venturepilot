@@ -234,7 +234,7 @@ export default function Strategy() {
 
   const projData = (() => {
     const data: { month: string; cash: number }[] = [];
-    let cash = cashOnHand || (burnRate * 12);
+    let cash = cashOnHand;
     let rev = mrr;
     for (let i = 0; i <= 12; i++) {
       if (scenario.raiseAmount && i === scenario.raiseMonth) cash += scenario.raiseAmount;
@@ -320,8 +320,18 @@ export default function Strategy() {
                     insight: burnRate > mrr * 3 ? `Burn Multiple is high. Every $1 of new ARR costs $${(burnRate / Math.max(mrr * 0.1, 1)).toFixed(1)} to acquire. Reduce headcount or increase prices.` : burnRate > mrr * 1.5 ? `Burn Multiple is reasonable. Keep CAC payback < 18 months and watch gross margins.` : `Excellent burn efficiency. You're building a capital-efficient machine — VCs love this.`,
                     action: burnRate > mrr * 3 ? 'Cut Burn 20%' : burnRate > mrr * 1.5 ? 'Monitor Weekly' : 'Maintain Discipline' },
                   { icon: <Users size={16} />, title: 'Fundraising Timing', color: 'var(--blue)',
-                    insight: (cashOnHand / Math.max(burnRate, 1)) >= 12 ? `12+ months runway — ideal negotiating position. Start outreach now from a position of strength.` : (cashOnHand / Math.max(burnRate, 1)) >= 6 ? `6-12 months runway. Begin fundraising immediately — typical close timeline is 4-6 months.` : `< 6 months runway is dangerous. Either cut burn or start emergency fundraising today.`,
-                    action: (cashOnHand / Math.max(burnRate, 1)) >= 12 ? 'Start Outreach' : (cashOnHand / Math.max(burnRate, 1)) >= 6 ? 'Fundraise Now' : 'Bridge or Cut' },
+                    insight: (() => {
+                      const netBurnSt = Math.max(burnRate - mrr, 0);
+                      if (netBurnSt === 0) return `Profitable — raise from a position of strength. Investors love capital-efficient companies.`;
+                      const rwMonths = cashOnHand > 0 ? Math.round(cashOnHand / netBurnSt) : 0;
+                      return rwMonths >= 12 ? `12+ months runway — ideal negotiating position. Start outreach now from a position of strength.` : rwMonths >= 6 ? `6-12 months runway. Begin fundraising immediately — typical close timeline is 4-6 months.` : `< 6 months runway is dangerous. Either cut burn or start emergency fundraising today.`;
+                    })(),
+                    action: (() => {
+                      const netBurnSt = Math.max(burnRate - mrr, 0);
+                      if (netBurnSt === 0) return 'Raise Strategically';
+                      const rwMonths = cashOnHand > 0 ? Math.round(cashOnHand / netBurnSt) : 0;
+                      return rwMonths >= 12 ? 'Start Outreach' : rwMonths >= 6 ? 'Fundraise Now' : 'Bridge or Cut';
+                    })() },
                 ].map((card, i) => (
                   <div key={i} className="p-4 rounded-[var(--radius-lg)] border border-[var(--border)] space-y-2">
                     <div className="flex items-center gap-2">
@@ -353,7 +363,7 @@ export default function Strategy() {
               </div>
               <span className="text-[11px] font-bold text-[var(--text-muted)]">{completionPct}%</span>
             </div>
-            <Button variant="ghost" size="sm" icon={<BookOpen size={13} />} onClick={() => setShowPresets(true)}>Templates</Button>
+            <Button variant="ghost" size="sm" icon={BookOpen} onClick={() => setShowPresets(true)}>Templates</Button>
           </div>
         </div>
 
@@ -411,7 +421,7 @@ export default function Strategy() {
             <option value="medium">Medium</option>
             <option value="low">Low</option>
           </select>
-          <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={addItem}>Add</Button>
+          <Button variant="primary" size="sm" icon={Plus} onClick={addItem}>Add</Button>
         </div>
       </Card>
 
@@ -443,7 +453,7 @@ export default function Strategy() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-sm">{preset.name}</span>
-                          <Badge variant="default" size="sm">{preset.tag}</Badge>
+                          <Badge color="var(--accent-light)" size="sm">{preset.tag}</Badge>
                         </div>
                         <p className="text-xs text-[var(--text-muted)] mt-0.5">{preset.description} — {preset.checklist.length} items</p>
                       </div>

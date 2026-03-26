@@ -130,7 +130,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
           <div className="grid grid-cols-5 gap-1.5 mb-2">
             <MetricPill
               label="Runway"
-              value={`${runwayMonths ?? derived?.runwayMonths}m`}
+              value={(runwayMonths ?? derived?.runwayMonths) >= 999 ? '∞' : `${runwayMonths ?? derived?.runwayMonths}m`}
               color={(runwayMonths ?? derived?.runwayMonths) >= 12 ? 'var(--green)' : (runwayMonths ?? derived?.runwayMonths) >= 6 ? 'var(--amber)' : 'var(--red)'}
             />
             <MetricPill
@@ -149,8 +149,8 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
             />
             <MetricPill
               label="LTV:CAC"
-              value={`${ltvCac}×`}
-              color={parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)'}
+              value={ltvCac === '—' ? '—' : `${ltvCac}×`}
+              color={ltvCac === '—' ? 'var(--text-muted)' : parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)'}
             />
           </div>
 
@@ -223,7 +223,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               slider={{ min: 0, max: 10000, step: 10 }} />
             <InputField label="ARPU / month" value={app.arpu} onChange={app.setArpu} prefix="$" slider={{ min: 0, max: 5000, step: 5 }} />
             <InputField label="Monthly Churn" value={app.churn} onChange={app.setChurn} suffix="%"
-              annotation={`Life: ${Math.round(100 / Math.max(app.churn, 0.1))}mo`}
+              annotation={app.churn > 0 ? `Life: ${Math.round(100 / app.churn)}mo` : 'Life: ∞ (0% churn)'}
               slider={{ min: 0, max: 20, step: 0.1 }} />
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="p-2.5 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
@@ -232,7 +232,7 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               </div>
               <div className="p-2.5 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
                 <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-light)] mb-0.5">LTV:CAC</p>
-                <p className="text-sm font-black font-mono" style={{ color: parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)' }}>{ltvCac}×</p>
+                <p className="text-sm font-black font-mono" style={{ color: ltvCac === '—' ? 'var(--text-muted)' : parseFloat(ltvCac) >= 3 ? 'var(--green)' : parseFloat(ltvCac) >= 2 ? 'var(--amber)' : 'var(--red)' }}>{ltvCac === '—' ? '—' : `${ltvCac}×`}</p>
               </div>
             </div>
           </Accordion>

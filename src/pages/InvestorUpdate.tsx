@@ -28,13 +28,20 @@ interface UpdateItem {
 }
 
 export default function InvestorUpdate() {
-  const { state } = useApp() as any;
-  const {
-    ideaName = 'Your Startup', mrr = 0, arr = 0, burnRate = 0,
-    monthlyGrowth = 0, cashOnHand = 0, runwayMonths = 0,
-    ndr = 100, grossMargin = 70, teamSize = 3, founderNames = '',
-    targetRaise = 0, stage = 'Seed',
-  } = state || {};
+  const { state, derived } = useApp() as any;
+  // Correct field names from AppState
+  const ideaName = state?.companyName || state?.idea || 'Your Startup';
+  const mrr = state?.revenue ?? 0;
+  const arr = derived?.arr ?? mrr * 12;
+  const burnRate = state?.burn ?? 0;
+  const monthlyGrowth = state?.growth ?? 0;
+  const runwayMonths = derived?.runwayMonths ?? 0;
+  const ndr = state?.ndr ?? 100;
+  const grossMargin = state?.grossMargin ?? 70;
+  const teamSize = state?.teamSize ?? 3;
+  const founderNames = state?.founder ?? '';
+  const targetRaise = state?.targetRaise ?? 0;
+  const stage = state?.stage ?? 'Seed';
 
   const [tone, setTone] = useState<Tone>('founder');
   const [frequency, setFrequency] = useState<Frequency>('monthly');
@@ -69,7 +76,7 @@ export default function InvestorUpdate() {
       { label: 'MRR', value: fmt(mrr), trend: monthlyGrowth > 0 ? 'up' : 'flat' },
       { label: 'ARR', value: fmt(currentArr), trend: 'up' },
       { label: 'MoM Growth', value: `${monthlyGrowth.toFixed(1)}%`, trend: monthlyGrowth >= 10 ? 'up' : 'flat' },
-      { label: 'Runway', value: `${runwayMonths}mo`, trend: runwayMonths >= 12 ? 'up' : 'down' },
+      { label: 'Runway', value: runwayMonths >= 999 ? '∞ (profitable)' : `${runwayMonths}mo`, trend: runwayMonths >= 12 ? 'up' : 'down' },
       { label: 'Burn/mo', value: fmt(burnRate), trend: 'flat' },
       { label: 'NDR', value: `${ndr.toFixed(0)}%`, trend: ndr >= 100 ? 'up' : 'down' },
     ];
@@ -135,7 +142,7 @@ ${greeting}
 
 ${month} update — here's where we are.
 
-The headline: we're ${monthlyGrowth >= 10 ? `growing at ${monthlyGrowth.toFixed(1)}% MoM and` : ''} at ${fmt(mrr)} MRR. ${runwayMonths >= 12 ? `With ${runwayMonths} months of runway, we have time to execute.` : runwayMonths >= 6 ? `Runway is ${runwayMonths} months — we're actively fundraising.` : `Runway is ${runwayMonths} months — this is urgent and we're moving fast.`}
+The headline: we're ${monthlyGrowth >= 10 ? `growing at ${monthlyGrowth.toFixed(1)}% MoM and` : ''} at ${fmt(mrr)} MRR. ${runwayMonths >= 999 ? `We're profitable — no runway concerns.` : runwayMonths >= 12 ? `With ${runwayMonths} months of runway, we have time to execute.` : runwayMonths >= 6 ? `Runway is ${runwayMonths} months — we're actively fundraising.` : `Runway is ${runwayMonths} months — this is urgent and we're moving fast.`}
 
 THE NUMBERS
 
@@ -195,13 +202,14 @@ ${founderNames ? `\n(reply directly to this email)` : ''}`;
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={Mail}
         title="Investor Update"
         subtitle="Draft your investor update in seconds"
-        badge={{ label: month, variant: 'default' }}
-        action={
+        badge={<Badge color="var(--accent-light)" size="sm">{month}</Badge>}
+        actions={
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={download}>Download</Button>
-            <Button variant="secondary" size="sm" icon={copied ? <Check size={14} /> : <Copy size={14} />} onClick={copy}>
+            <Button variant="ghost" size="sm" icon={Download} onClick={download}>Download</Button>
+            <Button variant="secondary" size="sm" icon={copied ? Check : Copy} onClick={copy}>
               {copied ? 'Copied!' : 'Copy Email'}
             </Button>
           </div>

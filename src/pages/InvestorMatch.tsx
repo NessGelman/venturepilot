@@ -216,13 +216,14 @@ export default function InvestorMatch() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
+        icon={Users}
         title="Investor CRM"
         subtitle="Your fundraise pipeline. Move deals forward."
-        badge={{ label: `${stats.active} active`, variant: stats.active > 0 ? 'success' : 'default' }}
-        action={
+        badge={<Badge color={stats.active > 0 ? 'var(--amber)' : 'var(--text-muted)'} size="sm">{stats.active} active</Badge>}
+        actions={
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={exportCSV}>Export</Button>
-            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={openAdd}>Add Investor</Button>
+            <Button variant="ghost" size="sm" icon={Download} onClick={exportCSV}>Export</Button>
+            <Button variant="primary" size="sm" icon={Plus} onClick={openAdd}>Add Investor</Button>
           </div>
         }
       />
