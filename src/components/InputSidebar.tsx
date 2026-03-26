@@ -4,9 +4,9 @@ import { useApp } from '../context/AppContext';
 import { InputField, GaugeMini, Divider, HelpTip } from './Shared';
 import {
   ChevronRight, ChevronLeft,
-  Activity, BarChart2, Target, FileText, Github,
+  Activity, BarChart2, Target, Github,
   Save, Trash2, Undo2, Redo2, RefreshCcw, ChevronDown, ChevronUp,
-  Pen, Globe, TrendingUp
+  Pen, Globe
 } from 'lucide-react';
 
 const SIDEBAR_WIDTH = 320;

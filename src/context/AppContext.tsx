@@ -134,7 +134,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     try {
-      return secureStorage.getItem('vp-theme') !== 'light';
+      return secureStorage.getItem('theme') !== 'light';
     } catch {
       return true;
     }
@@ -144,10 +144,10 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     if (typeof window !== 'undefined') {
       if (isDark) {
         document.documentElement.classList.add('dark');
-        secureStorage.setItem('vp-theme', 'dark');
+        secureStorage.setItem('theme', 'dark');
       } else {
         document.documentElement.classList.remove('dark');
-        secureStorage.setItem('vp-theme', 'light');
+        secureStorage.setItem('theme', 'light');
       }
     }
   }, [isDark]);
@@ -156,7 +156,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   const getStoredState = useCallback((): Partial<AppState> => {
     try {
-      const raw = secureStorage.getItem('persist');
+      const raw = secureStorage.getItem('state');
       if (!raw) return {};
       return raw;
     } catch {
@@ -367,7 +367,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   useEffect(() => {
     try {
       const { investors, ...restState } = state;
-      secureStorage.setItem('persist', {
+      secureStorage.setItem('state', {
         ...restState,
         history: state.history.slice(-20),
         future: [],

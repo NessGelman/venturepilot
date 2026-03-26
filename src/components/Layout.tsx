@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Target, Presentation, FileText, Database, Users,
-  Sparkles, CheckCircle, AlertCircle, Info, X,
+  Sparkles, CheckCircle, AlertCircle, Info,
   Command, Moon, Sun, TrendingUp, Calculator
 } from 'lucide-react';
 import InputSidebar from './InputSidebar';
@@ -25,7 +25,7 @@ const nav = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { isDark, toggleTheme, toasts, ai, derived, investors, runwayMonths, readinessScore } = useApp() as any;
+  const { isDark, toggleTheme, toasts, ai, investors, runwayMonths } = useApp() as any;
   const location = useLocation();
 
   const activeInvestors = investors?.filter((i: any) => i.contact === 'Active' || i.contact === 'Interested').length || 0;
@@ -97,7 +97,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   `nav-link shrink-0 ${isActive ? 'active' : ''}`
                 }
               >
-                {({ isActive }) => (
+                {() => (
                   <>
                     <n.icon size={13} />
                     {n.label}

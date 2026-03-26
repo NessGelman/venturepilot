@@ -13,7 +13,13 @@ export const secureStorage = {
     if (typeof window === 'undefined') return null;
     try {
       const raw = localStorage.getItem(`${STORAGE_KEY}-${key}`);
-      return raw ? JSON.parse(atob(raw)) : null;
+      if (!raw) return null;
+      // Try base64 first (current format), fall back to plain JSON (legacy)
+      try {
+        return JSON.parse(atob(raw));
+      } catch {
+        return JSON.parse(raw);
+      }
     } catch {
       return null;
     }

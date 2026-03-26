@@ -57,7 +57,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 Reload App
               </button>
             </div>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {(import.meta as any).env?.DEV && this.state.error && (
               <details className="mt-8 p-4 bg-[rgba(255,255,255,0.03)] rounded-xl border border-[rgba(255,255,255,0.05)]">
                 <summary className="cursor-pointer font-semibold mb-2 text-[var(--text-secondary)]">Error Details</summary>
                 <pre className="text-xs text-[var(--text-muted)] overflow-auto max-h-40 bg-[rgba(0,0,0,0.3)] p-3 rounded-xl">

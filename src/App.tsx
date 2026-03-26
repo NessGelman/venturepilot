@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
@@ -22,7 +22,9 @@ const Loader = PageLoader;
 function AppContent() {
   const location = useLocation();
   const app = useApp();
-  if (!app.onboardingComplete) {
+  // Skip onboarding if already completed OR if there's meaningful saved data
+  const hasExistingData = (app.capital > 0 || app.revenue > 0 || app.burn > 0);
+  if (!app.onboardingComplete && !hasExistingData) {
     return <Onboarding />;
   }
 
@@ -46,6 +48,7 @@ function AppContent() {
             <Route path="/investors" element={<InvestorMatch />} />
             <Route path="/valuation" element={<Valuation />} />
             <Route path="/update" element={<InvestorUpdate />} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="*" element={<div className="p-12 text-center flex flex-col items-center justify-center h-full"><h1 className="text-4xl font-black mb-4">404</h1><p className="text-[var(--text-muted)]">Page not found</p></div>} />
           </Routes>
         </Suspense>

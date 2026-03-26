@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Plus, Search, Star, Edit2, Trash2, Download,
-  LayoutGrid, List, Mail, Phone, Globe, ExternalLink,
-  ChevronDown, ArrowUpDown, Filter, CheckCircle2, Clock, X
+  LayoutGrid, List, ExternalLink,
+  ChevronDown, ArrowUpDown
 } from 'lucide-react';
-import { PageHeader, Card, Badge, Button, AlertBanner } from '../components/Shared';
+import { PageHeader, Card, Badge, Button } from '../components/Shared';
 
 interface Investor {
   id: string;
@@ -139,7 +139,7 @@ function InvestorCard({ investor, onEdit, onDelete, onStatusChange, compact }: {
 const EMPTY_FORM = { name: '', firm: '', tier: 'Tier 2' as Investor['tier'], focus: '', checkSize: '', contact: 'Not Contacted' as Investor['contact'], matchScore: 70, notes: '', email: '', linkedin: '' };
 
 export default function InvestorMatch() {
-  const { state, dispatch } = useApp() as any;
+  useApp(); // context used for state persistence
 
   const [investors, setInvestors] = useState<Investor[]>(() => {
     try { return JSON.parse(localStorage.getItem('vp_investors') || 'null') || DEFAULT_INVESTORS; } catch { return DEFAULT_INVESTORS; }

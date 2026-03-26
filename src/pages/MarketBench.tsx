@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Filter, X, TrendingUp, Info, ChevronDown, BarChart2, Target, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
+import { BarChart2, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, CartesianGrid
 } from 'recharts';
-import { PageHeader, Card, Badge, Button, MetricTooltip } from '../components/Shared';
+import { PageHeader, Card, Badge, MetricTooltip } from '../components/Shared';
 
 interface BenchmarkSector {
   id: string;
@@ -157,13 +157,6 @@ export default function MarketBench() {
     benchmark: sector.metrics[m.key],
   }));
 
-  // Radar comparison data
-  const radarCompare = sector.radarData.map(d => ({
-    metric: d.metric,
-    Benchmark: d.median,
-    'P75 Top': d.p75,
-    'P25 Bottom': d.p25,
-  }));
 
   const allSectorsBar = SECTORS.map(s => ({
     name: s.name.replace(' / ', '/'),

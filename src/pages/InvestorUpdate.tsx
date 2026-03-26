@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Copy, Check, Download, RefreshCw, Mail, Edit3, Sparkles, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Copy, Check, Download, RefreshCw, Mail, Edit3 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button } from '../components/Shared';
 
 const fmt = (n: number, prefix = '$') => {
@@ -61,7 +61,6 @@ export default function InvestorUpdate() {
   const [newItemCat, setNewItemCat] = useState<UpdateItem['category']>('wins');
 
   const month = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-  const prevMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toLocaleString('default', { month: 'long' });
 
   const wins = items.filter(i => i.category === 'wins');
   const challenges = items.filter(i => i.category === 'challenges');

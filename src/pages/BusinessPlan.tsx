@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
 ];
 
 // Build a rich data snapshot string for prompts
-function buildDataContext(state: any, derived: any) {
+function buildDataContext(state: any, _derived?: any) {
   const name = state.companyName || state.idea || 'the company';
   const mrr = state.revenue || 0;
   const arr = mrr * 12;

@@ -36,7 +36,7 @@ export async function detectBestBackend(): Promise<AIBackend> {
       // ignore
     }
   }
-  if ('gpu' in navigator) {
+  if ('gpu' in (navigator as any)) {
     return 'webllm';
   }
   return 'none';

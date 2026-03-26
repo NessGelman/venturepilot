@@ -12,7 +12,6 @@ const fmt = (n: number) => {
   return `$${n.toFixed(0)}`;
 };
 
-const fmtX = (n: number) => `${n.toFixed(1)}×`;
 
 interface SAFENote {
   id: string;
@@ -48,7 +47,7 @@ export default function Valuation() {
   const ndr          = state?.ndr          ?? 100;
   const burnMultiple = derived?.burnMultiple ?? 0;
   const ruleOf40     = derived?.ruleOf40   ?? 0;
-  const stage        = state?.stage        ?? 'Seed';
+  const monthlyGrowth = growth; // MoM growth % (same as growth field)
 
   const [method, setMethod] = useState('arr');
   const [targetRaise, setTargetRaise] = useState(2000000);
@@ -116,16 +115,6 @@ export default function Valuation() {
 
   // SAFE dilution
   const totalSafeAmount = safes.reduce((s, n) => s + n.amount, 0);
-  const safeShares = safes.map(safe => {
-    // cap price = preMoneyVal / valuationCap (simplified)
-    const capPrice = preMoneyVal > 0 && safe.valuationCap > 0 ? preMoneyVal / safe.valuationCap : 0;
-    const discountedPrice = preMoneyVal > 0 ? (preMoneyVal / (preMoneyVal + targetRaise)) * (1 - safe.discount / 100) : 0;
-    // ownership: min of cap-based and discount-based; clamp at 20%
-    const capOwnership = safe.valuationCap > 0 ? (safe.amount / safe.valuationCap) * 100 : 20;
-    const discountOwnership = discountedPrice > 0 ? (safe.amount / Math.max(preMoneyVal * discountedPrice, 1)) * 100 : capOwnership;
-    const conversionOwnership = Math.min(capOwnership, discountOwnership);
-    return { ...safe, conversionPrice: capPrice, estimatedShares: Math.min(conversionOwnership, 20) };
-  });
 
   const capTableData: CapTableRow[] = ([
     { name: 'Founders', shares: 70 - dilution - optionPool, type: 'Common' as const, color: '#3b82f6' },

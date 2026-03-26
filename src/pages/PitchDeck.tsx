@@ -298,7 +298,7 @@ export default function PitchDeck() {
   const [current, setCurrent] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showNotes, setShowNotes] = useState(true);
+  const [showNotes] = useState(true);
 
   const slide = slides[current];
   const color = SLIDE_COLORS[slide.type] || '#3b82f6';
