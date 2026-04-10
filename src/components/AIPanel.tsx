@@ -125,9 +125,11 @@ export default function AIPanel() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? 'Close AI advisor' : 'Open AI advisor'}
+        aria-expanded={isOpen}
         className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--accent)] text-white font-bold shadow-glow hover:shadow-[0_0_25px_var(--accent-glow)] transition-all card-hover hover:-translate-y-1"
       >
-        <Sparkles size={18} /> Ask AI
+        <Sparkles size={18} aria-hidden="true" /> Ask AI
       </button>
 
       <AnimatePresence>
@@ -148,8 +150,8 @@ export default function AIPanel() {
                   {ai.status.modelName || 'Connecting'}
                 </span>
               </div>
-              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg text-[var(--text-muted)] transition-colors">
-                <ChevronDown size={18} />
+              <button onClick={() => setIsOpen(false)} aria-label="Close AI advisor" className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg text-[var(--text-muted)] transition-colors">
+                <ChevronDown size={18} aria-hidden="true" />
               </button>
             </div>
 
@@ -204,12 +206,13 @@ export default function AIPanel() {
                   placeholder="Ask for strategic advice..."
                   className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-full px-4 py-2.5 text-[13px] focus:outline-none focus:border-[var(--border-accent)] pr-10"
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!input.trim() || isTyping}
+                  aria-label="Send message"
                   className="absolute right-1 text-[var(--accent-light)] p-2 hover:bg-[rgba(255,255,255,0.05)] rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={16} />
+                  <Send size={16} aria-hidden="true" />
                 </button>
               </form>
               <p className="text-[9px] text-center text-[var(--text-muted)] font-medium mt-2">

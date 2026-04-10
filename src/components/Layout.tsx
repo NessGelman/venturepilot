@@ -25,10 +25,10 @@ const nav = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { isDark, toggleTheme, toasts, ai, investors, runwayMonths } = useApp() as any;
+  const { isDark, toggleTheme, toasts, ai, investors, runwayMonths } = useApp();
   const location = useLocation();
 
-  const activeInvestors = investors?.filter((i: any) => i.contact === 'Active' || i.contact === 'Interested').length || 0;
+  const activeInvestors = investors?.filter((i) => i.contact === 'Active' || i.contact === 'Interested').length || 0;
   const runwayAlert = runwayMonths < 6;
   const isGoodRunway = runwayMonths >= 12;
 
@@ -149,6 +149,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               onClick={toggleTheme}
               className="w-8 h-8 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
               title="Toggle theme"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
@@ -158,8 +159,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               onClick={() => setCmdOpen(true)}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.03)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-colors text-xs font-medium"
               title="Command palette (⌘K)"
+              aria-label="Open command palette"
+              aria-keyshortcuts="Control+k Meta+k"
             >
-              <Command size={12} />
+              <Command size={12} aria-hidden="true" />
               <span className="text-[10px] font-mono">⌘K</span>
             </button>
           </div>
@@ -185,22 +188,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* AI Panel */}
       <AIPanel />
 
-      {/* Toast container */}
-      <div className="fixed bottom-5 right-5 z-[1000] flex flex-col gap-2 w-80 pointer-events-none">
+      {/* Toast container — aria-live so screen readers announce new messages */}
+      <div
+        role="region"
+        aria-live="polite"
+        aria-label="Notifications"
+        className="fixed bottom-5 right-5 z-[1000] flex flex-col gap-2 w-80 pointer-events-none"
+      >
         <AnimatePresence>
-          {[...(toasts || [])].reverse().map((t: any) => {
+          {[...(toasts || [])].reverse().map((t) => {
             const Icon = toastIcons[t.type as keyof typeof toastIcons] || Info;
             const color = toastColors[t.type as keyof typeof toastColors] || 'var(--blue)';
             return (
               <motion.div
                 key={t.id}
+                role="alert"
                 initial={{ opacity: 0, x: 24, scale: 0.95 }}
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 24, scale: 0.95 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 350 }}
                 className="pointer-events-auto bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] px-4 py-3 shadow-[var(--shadow-elevated)] flex items-start gap-3 relative overflow-hidden"
               >
-                <Icon size={15} style={{ color, flexShrink: 0, marginTop: 1 }} />
+                <Icon size={15} style={{ color, flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
                 <p className="text-sm font-medium text-[var(--text-primary)] flex-1 leading-snug">{t.message}</p>
                 {/* Progress bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--border-subtle)]">

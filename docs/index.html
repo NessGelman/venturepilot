@@ -3,8 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self' blob:;">
+    <!-- CSP: unsafe-eval kept for WebLLM/WASM; connect-src includes GitHub raw for repo analysis -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co blob:; manifest-src 'self'; worker-src 'self' blob:;">
     <title>VenturePilot | AI-Powered Startup Financing Strategy</title>
+    <meta name="description" content="VenturePilot is an AI-powered founder OS that turns your startup metrics into investor-ready pitch decks, business plans, and strategic playbooks — in real time." />
+    <meta name="author" content="Ness Gelman" />
+    <link rel="canonical" href="https://nessgelman.github.io/venturepilot/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nessgelman.github.io/venturepilot/" />
+    <meta property="og:title" content="VenturePilot | AI-Powered Startup Financing Strategy" />
+    <meta property="og:description" content="Turn your startup metrics into investor-ready documents instantly. Pitch decks, business plans, valuation models — all AI-generated from your live data." />
+    <meta property="og:site_name" content="VenturePilot" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VenturePilot | AI-Powered Startup Financing Strategy" />
+    <meta name="twitter:description" content="Turn your startup metrics into investor-ready documents instantly. Pitch decks, business plans, valuation models — all AI-generated from your live data." />
     <script>
       // Unregister any old service workers so stale caches never block updates
       if ('serviceWorker' in navigator) {
@@ -37,11 +53,14 @@
         }
       })(window.location);
     </script>
-    <script type="module" crossorigin src="/venturepilot/assets/index-v3fdj-bg.js"></script>
-    <link rel="modulepreload" crossorigin href="/venturepilot/assets/chunk-BEqpzyXh.js">
-    <link rel="modulepreload" crossorigin href="/venturepilot/assets/Shared-e3bLhpnE.js">
-    <link rel="modulepreload" crossorigin href="/venturepilot/assets/proxy-DQXlqmRH.js">
-    <link rel="stylesheet" crossorigin href="/venturepilot/assets/index-BXksI_Zd.css">
+    <script type="module" crossorigin src="/venturepilot/assets/index-Ci6nhb8m.js"></script>
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/rolldown-runtime-COnpUsM8.js">
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/vendor-charts-DuGN5xnF.js">
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/vendor-shared-CAWJcXA3.js">
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/vendor-motion-B3-90CFt.js">
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/Shared-7GXJWgk7.js">
+    <link rel="modulepreload" crossorigin href="/venturepilot/assets/vendor-react-BWszPZPx.js">
+    <link rel="stylesheet" crossorigin href="/venturepilot/assets/index-DnRq9Mc2.css">
   </head>
   <body>
     <div id="root"></div>
