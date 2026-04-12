@@ -1,16 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion } from 'framer-motion';
-import { Copy, Check, Download, RefreshCw, Mail, Edit3 } from 'lucide-react';
+import { Copy, Check, Download, RefreshCw, Mail, Edit3, History, ChevronDown } from 'lucide-react';
 import { PageHeader, Card, Badge, Button } from '../components/Shared';
+import { fmt } from '../utils/format';
 
-const fmt = (n: number, prefix = '$') => {
-  if (!isFinite(n) || n === 0) return `${prefix}0`;
-  if (n >= 1e9) return `${prefix}${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${prefix}${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${prefix}${(n / 1e3).toFixed(0)}K`;
-  return `${prefix}${Math.round(n)}`;
-};
+const DRAFT_HISTORY_KEY = 'vp_investor_update_history';
+
+interface DraftEntry {
+  id: string;
+  text: string;
+  timestamp: number;
+}
 
 type Tone = 'professional' | 'founder' | 'concise';
 type Frequency = 'monthly' | 'quarterly';
@@ -28,7 +29,7 @@ interface UpdateItem {
 }
 
 export default function InvestorUpdate() {
-  const { state, derived } = useApp() as any;
+  const { state, derived, addToast } = useApp();
   // Correct field names from AppState
   const ideaName = state?.companyName || state?.idea || 'Your Startup';
   const mrr = state?.revenue ?? 0;
@@ -48,6 +49,9 @@ export default function InvestorUpdate() {
   const [copied, setCopied] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [customContent, setCustomContent] = useState('');
+  const [draftHistory, setDraftHistory] = useState<DraftEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [items, setItems] = useState<UpdateItem[]>([
     { id: 'w1', category: 'wins', text: 'Closed 3 new enterprise contracts (+$12K MRR)' },
     { id: 'w2', category: 'wins', text: 'Shipped v2.0 with 40% faster onboarding' },
@@ -61,6 +65,23 @@ export default function InvestorUpdate() {
   const [newItemCat, setNewItemCat] = useState<UpdateItem['category']>('wins');
 
   const month = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  // Restore most recent draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_HISTORY_KEY);
+      if (raw) {
+        const history: DraftEntry[] = JSON.parse(raw);
+        if (history.length > 0) {
+          setDraftHistory(history);
+          setCustomContent(history[0].text);
+          setEditMode(true);
+          addToast('Draft restored', 'info');
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const wins = items.filter(i => i.category === 'wins');
   const challenges = items.filter(i => i.category === 'challenges');
@@ -168,6 +189,29 @@ ${founderNames ? `\n(reply directly to this email)` : ''}`;
   }, [mrr, arr, burnRate, monthlyGrowth, runwayMonths, ndr, grossMargin, teamSize, founderNames, ideaName, targetRaise, stage, tone, frequency, month, wins, challenges, asks]);
 
   const content = editMode ? customContent : generateUpdate;
+
+  // Debounced auto-save to localStorage history
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      if (!content.trim()) return;
+      const entry: DraftEntry = { id: Date.now().toString(), text: content, timestamp: Date.now() };
+      setDraftHistory(prev => {
+        const filtered = prev.filter(d => d.text !== content);
+        const updated = [entry, ...filtered].slice(0, 3);
+        try { localStorage.setItem(DRAFT_HISTORY_KEY, JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+    }, 1000);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [content]);
+
+  const restoreDraft = useCallback((draft: DraftEntry) => {
+    setCustomContent(draft.text);
+    setEditMode(true);
+    setHistoryOpen(false);
+    addToast('Draft restored', 'info');
+  }, [addToast]);
 
   const copy = () => {
     navigator.clipboard.writeText(content);
@@ -313,6 +357,37 @@ ${founderNames ? `\n(reply directly to this email)` : ''}`;
               <Button variant="ghost" size="sm" icon={RefreshCw} onClick={() => setEditMode(false)}>
                 Refresh
               </Button>
+              {draftHistory.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setHistoryOpen(o => !o)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors border border-[var(--border)]"
+                    title="Draft history"
+                  >
+                    <History size={12} />
+                    <ChevronDown size={10} style={{ transform: historyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  </button>
+                  {historyOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-72 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-[var(--border)] text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                        Saved Drafts
+                      </div>
+                      {draftHistory.map(draft => (
+                        <button
+                          key={draft.id}
+                          onClick={() => restoreDraft(draft)}
+                          className="w-full text-left px-3 py-2.5 hover:bg-[rgba(255,255,255,0.04)] transition-colors border-b border-[var(--border-subtle)] last:border-0"
+                        >
+                          <div className="text-xs font-medium text-[var(--text-primary)] truncate">{draft.text.slice(0, 60)}…</div>
+                          <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                            {new Date(draft.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

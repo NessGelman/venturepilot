@@ -25,6 +25,17 @@ const nav = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cmdOpen, setCmdOpen] = useState(false);
+  // Only push content on sm+ screens; on mobile the sidebar overlays
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    setIsMobile(mq.matches);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const { isDark, toggleTheme, toasts, ai, investors, runwayMonths } = useApp();
   const location = useLocation();
 
@@ -70,10 +81,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Command Palette */}
       <CommandPalette isOpen={cmdOpen} setIsOpen={setCmdOpen} />
 
-      {/* Main content area */}
+      {/* Mobile backdrop — only shown below sm when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="sm:hidden fixed inset-0 z-[199] bg-black/50 backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Main content area — only push on sm+; mobile sidebar overlays */}
       <div
         className="flex-1 flex flex-col h-screen overflow-hidden"
-        style={{ marginLeft: sidebarOpen ? 'var(--sidebar-width)' : '0', transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
+        style={{
+          marginLeft: (!isMobile && sidebarOpen) ? 'var(--sidebar-width)' : '0',
+          transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
       >
         {/* Top bar */}
         <header className="h-[60px] bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center px-5 gap-4 shrink-0 z-40 sticky top-0">

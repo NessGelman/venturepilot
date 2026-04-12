@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Plus, Search, Star, Edit2, Trash2, Download,
   LayoutGrid, List, ExternalLink,
-  ChevronDown, ArrowUpDown
+  ChevronDown, ArrowUpDown, CheckSquare, Square, CheckCheck, X
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button } from '../components/Shared';
 
@@ -50,17 +50,30 @@ const TIER_COLORS: Record<string, string> = {
 
 const CONTACT_STAGES: Investor['contact'][] = ['Not Contacted', 'Contacted', 'Active', 'Interested', 'Passed', 'Committed'];
 
-function InvestorCard({ investor, onEdit, onDelete, onStatusChange, compact }: {
+function InvestorCard({ investor, onEdit, onDelete, onStatusChange, compact, selected, onSelect }: {
   investor: Investor; onEdit: () => void; onDelete: () => void;
   onStatusChange: (status: Investor['contact']) => void; compact?: boolean;
+  selected?: boolean; onSelect?: (id: string) => void;
 }) {
   const cfg = CONTACT_CONFIG[investor.contact];
   const [showStages, setShowStages] = useState(false);
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 hover:border-[var(--accent)] transition-all group relative"
+      className={`bg-[var(--bg-card)] border rounded-[var(--radius-lg)] p-4 hover:border-[var(--accent)] transition-all group relative ${selected ? 'border-[var(--accent)] bg-[var(--accent-dim)]' : 'border-[var(--border)]'}`}
     >
+      {/* Checkbox — always visible on mobile, hover on desktop */}
+      {onSelect && (
+        <button
+          onClick={() => onSelect(investor.id)}
+          className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity z-10"
+          aria-label={selected ? 'Deselect' : 'Select'}
+        >
+          {selected
+            ? <CheckSquare size={14} style={{ color: 'var(--accent)' }} />
+            : <Square size={14} className="text-[var(--text-muted)]" />}
+        </button>
+      )}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shrink-0"
@@ -158,6 +171,36 @@ export default function InvestorMatch() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => setSelectedIds(new Set(filtered.map(i => i.id)));
+  const deselectAll = () => setSelectedIds(new Set());
+
+  const bulkMarkContacted = () => {
+    save(investors.map(i => selectedIds.has(i.id) ? { ...i, contact: 'Contacted' as Investor['contact'] } : i));
+    setSelectedIds(new Set());
+  };
+  const bulkMarkPassed = () => {
+    save(investors.map(i => selectedIds.has(i.id) ? { ...i, contact: 'Passed' as Investor['contact'] } : i));
+    setSelectedIds(new Set());
+  };
+  const bulkExportCSV = () => {
+    const selected = investors.filter(i => selectedIds.has(i.id));
+    const header = 'Name,Firm,Tier,Focus,Check Size,Status,Match Score,Notes';
+    const rows = selected.map(i => `"${i.name}","${i.firm}","${i.tier}","${i.focus.join('; ')}","${i.checkSize}","${i.contact}","${i.matchScore}","${i.notes}"`);
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'selected-investors.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const filtered = useMemo(() => {
     let list = investors;
@@ -243,6 +286,18 @@ export default function InvestorMatch() {
         ))}
       </div>
 
+      {/* Select All / Deselect All */}
+      <div className="flex items-center gap-2">
+        <button onClick={selectAll} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+          <CheckCheck size={13} /> Select All
+        </button>
+        {selectedIds.size > 0 && (
+          <button onClick={deselectAll} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            <X size={12} /> Clear ({selectedIds.size})
+          </button>
+        )}
+      </div>
+
       {/* Filters + view toggle */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-[200px] relative">
@@ -285,6 +340,8 @@ export default function InvestorMatch() {
               <InvestorCard key={inv.id} investor={inv} onEdit={() => openEdit(inv)}
                 onDelete={() => save(investors.filter(i => i.id !== inv.id))}
                 onStatusChange={status => save(investors.map(i => i.id === inv.id ? { ...i, contact: status } : i))}
+                selected={selectedIds.has(inv.id)}
+                onSelect={toggleSelect}
               />
             ))}
           </AnimatePresence>
@@ -423,6 +480,27 @@ export default function InvestorMatch() {
                 <Button variant="primary" className="flex-1" onClick={submitForm}>{editingId ? 'Save Changes' : 'Add Investor'}</Button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating bulk action bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--bg-card)] border border-[var(--border)] shadow-[var(--shadow-elevated)]"
+          >
+            <span className="text-xs font-bold text-[var(--text-muted)] mr-1">{selectedIds.size} selected</span>
+            <Button size="sm" variant="secondary" onClick={bulkMarkContacted}>Mark Contacted</Button>
+            <Button size="sm" variant="secondary" onClick={bulkMarkPassed}>Mark Passed</Button>
+            <Button size="sm" variant="primary" icon={Download} onClick={bulkExportCSV}>Export CSV</Button>
+            <button onClick={deselectAll} className="ml-1 p-1.5 rounded-full hover:bg-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors">
+              <X size={14} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

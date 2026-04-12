@@ -5,13 +5,19 @@ import {
 } from '../components/Shared';
 import {
   Activity, Download, Zap, BarChart2, TrendingUp, ShieldCheck, PieChart,
-  CalendarDays, AlertTriangle, Layers, Flame
+  CalendarDays, AlertTriangle, Layers, Flame, PlusCircle, Github, Star, GitFork, Clock, BarChart
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, BarChart, Bar, ReferenceLine
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, BarChart as RechartsBarChart, Bar, ReferenceLine,
+  LineChart, Line, Legend
 } from 'recharts';
-import type { TimelineMilestone } from '../types/AppContext.types';
+import type { TimelineMilestone, DailySnapshot } from '../types/AppContext.types';
+import { useGitHubStats } from '../hooks/useGitHubStats';
+import {
+  MONTE_CARLO_TRIALS, MONTE_CARLO_SURVIVAL_MONTHS, MONTE_CARLO_MAX_MONTHS,
+  RUNWAY_CRITICAL, RUNWAY_WARNING, PROJECTION_MONTHS
+} from '../constants/metrics';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -28,10 +34,30 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+function EmptyMetricCard({ label, prompt }: { label: string; prompt: string }) {
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-4 flex flex-col gap-2">
+      <p className="metric-label text-[var(--text-muted)]">{label}</p>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.04)] flex items-center justify-center">
+          <BarChart size={14} className="text-[var(--text-muted)]" />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold text-[var(--text-muted)]">No revenue yet</p>
+          <p className="text-[10px] text-[var(--text-muted)] opacity-60">{prompt}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const app = useApp();
   const [showRaise, setShowRaise] = useState(false);
   const [raiseAmt, setRaiseAmt] = useState(app.targetRaise || 750000);
+  const githubStats = useGitHubStats(app.repoUrl);
+
+  const hasRevenue = app.revenue > 0;
 
   // Radar data
   const radarData = useMemo(() => [
@@ -41,37 +67,36 @@ export default function Dashboard() {
     { subject: 'Runway', A: Math.min(app.derived.runwayMonths * 5, 100) },
     { subject: 'Retention', A: Math.min(app.ndr, 150) / 1.5 },
     { subject: 'Pipeline', A: Math.min(app.derived.pipelineCoverage, 300) / 3 },
-  ], [app]);
+  ], [app.growth, app.grossMargin, app.derived.burnMultiple, app.derived.runwayMonths, app.ndr, app.derived.pipelineCoverage]);
 
-  // Projection data
+  // Projection data — explicit deps
   const projectionData = useMemo(() => {
     const data = [];
     let cash = app.capital + (showRaise ? raiseAmt : 0);
     let rev = app.revenue;
-    for (let m = 0; m <= 18; m++) {
+    for (let m = 0; m <= PROJECTION_MONTHS; m++) {
       if (m > 0) { cash -= Math.max(app.burn - rev, 0); rev *= (1 + app.growth / 100); }
       data.push({ month: `M${m}`, cash: Math.max(cash, 0), revenue: Math.round(rev), burn: app.burn });
     }
     return data;
-  }, [app, showRaise, raiseAmt]);
+  }, [app.capital, app.revenue, app.burn, app.growth, showRaise, raiseAmt]);
 
-  // Monte Carlo
+  // Monte Carlo — explicit deps, isolated useMemo
   const { histogram, riskBadge, survivalRate } = useMemo(() => {
-    const TRIALS = 2500;
     const results: number[] = [];
     let survived = 0;
-    for (let i = 0; i < TRIALS; i++) {
+    for (let i = 0; i < MONTE_CARLO_TRIALS; i++) {
       let cash = app.capital, rev = app.revenue;
       let months = 0;
-      while (cash > 0 && months < 36) {
+      while (cash > 0 && months < MONTE_CARLO_MAX_MONTHS) {
         cash -= Math.max((app.burn * (1 + (Math.random() * 0.2 - 0.1))) - rev, 0);
         rev *= (1 + (app.growth / 100) * (1 + (Math.random() * 0.3 - 0.15)));
         months++;
       }
       results.push(months);
-      if (months >= 24) survived++;
+      if (months >= MONTE_CARLO_SURVIVAL_MONTHS) survived++;
     }
-    const sr = Math.round((survived / TRIALS) * 100);
+    const sr = Math.round((survived / MONTE_CARLO_TRIALS) * 100);
     const bins = [0, 0, 0, 0, 0, 0];
     results.forEach(m => {
       if (m < 6) bins[0]++;
@@ -95,7 +120,17 @@ export default function Dashboard() {
       ? { label: 'Caution', color: 'var(--amber)' }
       : { label: 'High Risk', color: 'var(--red)' };
     return { histogram, riskBadge, survivalRate: sr };
-  }, [app]);
+  }, [app.capital, app.revenue, app.burn, app.growth]);
+
+  // Snapshot chart data
+  const snapshotChartData = useMemo(() =>
+    app.dailySnapshots.map((s: DailySnapshot) => ({
+      date: s.date.slice(0, 10),
+      runway: s.runwayMonths >= 999 ? null : s.runwayMonths,
+      mrr: s.revenue,
+      burn: s.burn,
+    })),
+  [app.dailySnapshots]);
 
   const exportCSV = () => {
     const rows = [
@@ -122,6 +157,23 @@ export default function Dashboard() {
     a.click();
   };
 
+  const logTodaySnapshot = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const existing = app.dailySnapshots.find((s: DailySnapshot) => s.date.startsWith(today));
+    if (existing) {
+      app.addToast("Today's snapshot already logged.", 'info');
+      return;
+    }
+    app.logSnapshot({
+      date: new Date().toISOString(),
+      runwayMonths: app.derived.runwayMonths,
+      revenue: app.revenue,
+      burn: app.burn,
+      growth: app.growth,
+    });
+    app.addToast("Today's metrics snapshot saved!", 'success');
+  };
+
   const sendToAI = (prompt: string) => window.dispatchEvent(new CustomEvent('open-ai-panel', { detail: { prompt } }));
 
   const { runwayMonths, burnMultiple, ruleOf40, readinessScore } = app.derived;
@@ -142,7 +194,7 @@ export default function Dashboard() {
       />
 
       {/* Alert: low runway */}
-      {runwayMonths < 6 && runwayMonths < 999 && (
+      {runwayMonths < RUNWAY_CRITICAL && runwayMonths < 999 && (
         <AlertBanner
           type="error"
           icon={AlertTriangle}
@@ -150,7 +202,7 @@ export default function Dashboard() {
           description="Initiate fundraise immediately. Consider emergency burn reduction scenarios in Strategy."
         />
       )}
-      {runwayMonths >= 6 && runwayMonths < 9 && runwayMonths < 999 && (
+      {runwayMonths >= RUNWAY_CRITICAL && runwayMonths < RUNWAY_WARNING && runwayMonths < 999 && (
         <AlertBanner
           type="warning"
           icon={AlertTriangle}
@@ -164,12 +216,12 @@ export default function Dashboard() {
         <StatCard
           icon={TrendingUp}
           label={<MetricTooltip term="Rule of 40">Rule of 40</MetricTooltip>}
-          value={<CountUp value={ruleOf40} suffix="%" decimals={1} />}
-          sub={ruleOf40 >= 40 ? '✓ Investable threshold' : `Need ${(40 - ruleOf40).toFixed(0)} more points`}
-          color={ruleOf40 >= 40 ? 'var(--green)' : ruleOf40 >= 20 ? 'var(--amber)' : 'var(--red)'}
-          trend={ruleOf40 >= 40 ? 'up' : 'down'}
-          trendValue={`${ruleOf40 >= 40 ? '+' : '-'}${Math.abs(ruleOf40 - 40).toFixed(0)}pts`}
-          className={`border-l-4 ${ruleOf40 >= 40 ? 'border-l-[var(--green)]' : ruleOf40 >= 20 ? 'border-l-[var(--amber)]' : 'border-l-[var(--red)]'}`}
+          value={hasRevenue ? <CountUp value={ruleOf40} suffix="%" decimals={1} /> : <span className="text-[var(--text-muted)] text-sm">No revenue</span>}
+          sub={hasRevenue ? (ruleOf40 >= 40 ? '✓ Investable threshold' : `Need ${(40 - ruleOf40).toFixed(0)} more points`) : 'Add MRR in sidebar'}
+          color={hasRevenue ? (ruleOf40 >= 40 ? 'var(--green)' : ruleOf40 >= 20 ? 'var(--amber)' : 'var(--red)') : 'var(--text-muted)'}
+          trend={hasRevenue && ruleOf40 >= 40 ? 'up' : 'down'}
+          trendValue={hasRevenue ? `${ruleOf40 >= 40 ? '+' : '-'}${Math.abs(ruleOf40 - 40).toFixed(0)}pts` : undefined}
+          className={`border-l-4 ${hasRevenue ? (ruleOf40 >= 40 ? 'border-l-[var(--green)]' : ruleOf40 >= 20 ? 'border-l-[var(--amber)]' : 'border-l-[var(--red)]') : 'border-l-[var(--border)]'}`}
         />
         <StatCard
           icon={Zap}
@@ -291,8 +343,8 @@ export default function Dashboard() {
           <Card padding="1.25rem" className="flex-1">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                <SectionHeader icon={Flame} title="Monte Carlo" subtitle="2,500 simulations" className="mb-0" />
-                <HelpTip content="Runs 2,500 random scenarios that vary your burn and growth rates by ±10–15% each month. Shows how likely you are to stay solvent for 24 months given real-world uncertainty. Higher % = safer." />
+                <SectionHeader icon={Flame} title="Monte Carlo" subtitle={`${MONTE_CARLO_TRIALS.toLocaleString()} simulations`} className="mb-0" />
+                <HelpTip content={`Runs ${MONTE_CARLO_TRIALS.toLocaleString()} random scenarios that vary your burn and growth rates by ±10–15% each month. Shows how likely you are to stay solvent for 24 months given real-world uncertainty. Higher % = safer.`} />
               </div>
               <Badge color={riskBadge.color} dot>{riskBadge.label}</Badge>
             </div>
@@ -302,7 +354,7 @@ export default function Dashboard() {
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">chance of surviving 24 months</p>
             <div className="h-[100px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={histogram} barSize={24}>
+                <RechartsBarChart data={histogram} barSize={24}>
                   <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', borderRadius: 8, fontSize: 11 }}
@@ -311,7 +363,7 @@ export default function Dashboard() {
                   {histogram.map((entry, idx) => (
                     <Bar key={idx} dataKey="count" fill={entry.fill} radius={[3, 3, 0, 0]} />
                   ))}
-                </BarChart>
+                </RechartsBarChart>
               </ResponsiveContainer>
             </div>
           </Card>
@@ -322,10 +374,18 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <MetricTile label="ARR" value={`$${(app.derived.arr / 1000).toFixed(0)}k`} sub={`MRR: $${app.revenue.toLocaleString()}`} color="var(--accent-light)"
           help="Annual Recurring Revenue — your MRR × 12. The standard way to measure subscription business scale. Investors use it to compare companies regardless of billing frequency." />
-        <MetricTile label="LTV / CAC" value={`${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(1)}×`} sub={`LTV $${app.derived.ltv.toLocaleString()} · CAC $${app.cac.toLocaleString()}`} color="var(--teal)"
-          help="Lifetime Value ÷ Customer Acquisition Cost. The core unit economics test. Above 3× is healthy — each customer earns back their cost 3× over. Below 1× means you lose money acquiring customers." />
-        <MetricTile label="Implied Valuation" value={`$${(app.derived.impliedValuation / 1000000).toFixed(1)}M`} sub="8× ARR multiple" color="var(--green)"
-          help="A rough valuation estimate using an 8× ARR revenue multiple — a common early-stage benchmark. Actual valuations depend heavily on growth rate, margins, team, and market conditions." />
+        {hasRevenue ? (
+          <MetricTile label="LTV / CAC" value={`${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(1)}×`} sub={`LTV $${app.derived.ltv.toLocaleString()} · CAC $${app.cac.toLocaleString()}`} color="var(--teal)"
+            help="Lifetime Value ÷ Customer Acquisition Cost. The core unit economics test. Above 3× is healthy — each customer earns back their cost 3× over. Below 1× means you lose money acquiring customers." />
+        ) : (
+          <EmptyMetricCard label="LTV / CAC" prompt="Add your MRR in the sidebar to see this metric" />
+        )}
+        {hasRevenue ? (
+          <MetricTile label="Implied Valuation" value={`$${(app.derived.impliedValuation / 1000000).toFixed(1)}M`} sub="8× ARR multiple" color="var(--green)"
+            help="A rough valuation estimate using an 8× ARR revenue multiple — a common early-stage benchmark. Actual valuations depend heavily on growth rate, margins, team, and market conditions." />
+        ) : (
+          <EmptyMetricCard label="Implied Valuation" prompt="Available once you have ARR" />
+        )}
         <MetricTile
           label="Days of Runway"
           value={app.derived.runwayMonths >= 999 ? '∞' : app.derived.daysOfRunway}
@@ -335,8 +395,45 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* GitHub Stats card */}
+      {githubStats && (
+        <Card className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Github size={14} style={{ color: 'var(--accent)' }} />
+            <span className="font-bold text-sm">GitHub Stats</span>
+            <Badge color="var(--text-muted)" size="sm">{githubStats.language}</Badge>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--amber)]">
+                <Star size={14} /> {githubStats.stars.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Stars</div>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--teal)]">
+                <GitFork size={14} /> {githubStats.forks.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Forks</div>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--accent-light)]">
+                <Activity size={14} /> {githubStats.openIssues}
+              </div>
+              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Open Issues</div>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-muted)]">
+                <Clock size={12} /> {githubStats.lastPushedAt ? new Date(githubStats.lastPushedAt).toLocaleDateString() : '—'}
+              </div>
+              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Last Push</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Fundraising Timeline */}
-      <Card>
+      <Card className="mb-6">
         <div className="flex items-center justify-between mb-5">
           <SectionHeader icon={CalendarDays} title="Fundraising Timeline" className="mb-0" />
           <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">
@@ -395,6 +492,42 @@ export default function Dashboard() {
             })}
           </div>
         </div>
+      </Card>
+
+      {/* Metrics History (Daily Snapshots) */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader icon={TrendingUp} title="Metrics History" className="mb-0" />
+          <Button icon={PlusCircle} size="sm" variant="secondary" onClick={logTodaySnapshot}>
+            Log today's snapshot
+          </Button>
+        </div>
+
+        {snapshotChartData.length < 2 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
+            <div className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.04)] flex items-center justify-center mb-2">
+              <BarChart2 size={22} className="text-[var(--text-muted)]" />
+            </div>
+            <p className="text-sm font-bold text-[var(--text-muted)]">Your metric history will appear here as you update your numbers over time.</p>
+            <p className="text-xs text-[var(--text-muted)] opacity-60">Click "Log today's snapshot" to begin tracking trends.</p>
+          </div>
+        ) : (
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={snapshotChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}mo`} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', borderRadius: 8, fontSize: 11 }} />
+                <Legend iconSize={10} wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }} />
+                <Line yAxisId="left" type="monotone" dataKey="mrr" stroke="#10b981" strokeWidth={2} dot={false} name="MRR ($)" />
+                <Line yAxisId="left" type="monotone" dataKey="burn" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Burn ($)" />
+                <Line yAxisId="right" type="monotone" dataKey="runway" stroke="#93c5fd" strokeWidth={2} dot={false} name="Runway (mo)" connectNulls />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </Card>
     </div>
   );

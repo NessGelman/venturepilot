@@ -1,0 +1,1 @@
+var e=(e,t=`$`)=>!isFinite(e)||isNaN(e)?`${t}0`:e>=1e9?`${t}${(e/1e9).toFixed(1)}B`:e>=1e6?`${t}${(e/1e6).toFixed(1)}M`:e>=1e3?`${t}${(e/1e3).toFixed(0)}K`:`${t}${Math.round(e)}`,t=e=>`${e.toFixed(1)}%`;export{t as n,e as t};

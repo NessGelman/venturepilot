@@ -6,8 +6,9 @@ import {
   ChevronRight, ChevronLeft,
   Activity, BarChart2, Target, Github,
   Save, Trash2, Undo2, Redo2, RefreshCcw, ChevronDown, ChevronUp,
-  Pen, Globe
+  Pen, Globe, BookOpen
 } from 'lucide-react';
+import { BUILT_IN_PRESETS } from '../constants/presets';
 
 const SIDEBAR_WIDTH = 320;
 
@@ -315,7 +316,29 @@ export default function InputSidebar({ isOpen, setIsOpen }: { isOpen: boolean; s
               </button>
             </div>
 
-            {/* Presets */}
+            {/* Built-in starter presets */}
+            <div className="p-3 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
+              <div className="flex items-center gap-1.5 mb-2">
+                <BookOpen size={10} className="text-[var(--accent-light)]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Starter Templates</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {BUILT_IN_PRESETS.map(preset => (
+                  <button
+                    key={preset.name}
+                    onClick={() => {
+                      app.dispatch({ type: 'LOAD_BUILTIN_PRESET', preset });
+                      app.addToast(`Loaded "${preset.name}"`, 'success');
+                    }}
+                    className="text-left px-2.5 py-2 rounded-[var(--radius-md)] bg-[rgba(255,255,255,0.02)] hover:bg-[var(--accent-dim)] border border-transparent hover:border-[var(--border-accent)] transition-all text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--accent-light)]"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Saved Presets */}
             <div className="p-3 bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)]">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Saved Presets</span>

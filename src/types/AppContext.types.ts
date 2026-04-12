@@ -124,6 +124,10 @@ export interface Preset {
   sam: number;
   som: number;
   revenueModel: string;
+  // Extended fields (checklist + timeline for comprehensive presets)
+  checklist?: ChecklistItem[];
+  timeline?: TimelineMilestone[];
+  repoUrl?: string;
 }
 
 export interface DailySnapshot {
@@ -134,7 +138,7 @@ export interface DailySnapshot {
   growth: number;
 }
 
-export type AppAction = 
+export type AppAction =
   | { type: 'SET_FIELD'; field: keyof Omit<AppState, 'history' | 'future' | 'lastSaved' | 'presets' | 'dailySnapshots' | 'investors'>; value: any }
   | { type: 'BULK_SET'; payload: Partial<AppState> }
   | { type: 'UPSERT_INVESTOR'; payload: InvestorRecord }
@@ -144,7 +148,9 @@ export type AppAction =
   | { type: 'RESET_DEFAULTS' }
   | { type: 'SAVE_PRESET'; name: string }
   | { type: 'LOAD_PRESET'; name: string }
-  | { type: 'DELETE_PRESET'; name: string };
+  | { type: 'LOAD_BUILTIN_PRESET'; preset: Preset }
+  | { type: 'DELETE_PRESET'; name: string }
+  | { type: 'LOG_SNAPSHOT'; snapshot: DailySnapshot };
 
 export interface UseAppReturn {
   state: AppState;
@@ -260,7 +266,9 @@ export interface UseAppReturn {
   presets: Preset[];
   dailySnapshots: DailySnapshot[];
   investors: InvestorRecord[];
-  
+
+  logSnapshot: (snapshot: DailySnapshot) => void;
+
   ai: UseAIReturn;
 }
 

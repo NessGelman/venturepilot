@@ -5,18 +5,11 @@ import {
   FileText, Download, ChevronRight,
   Users, Rocket, BarChart2,
   Globe, Lightbulb, BookOpen,
-  Sparkles, RefreshCcw, AlertCircle, Loader2
+  Sparkles, RefreshCcw, AlertCircle, Loader2, Copy, Check
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PageHeader, Card, Button, Badge } from '../components/Shared';
-
-const fmt = (n: number, prefix = '$') => {
-  if (n >= 1e9) return `${prefix}${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${prefix}${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${prefix}${(n / 1e3).toFixed(0)}K`;
-  return `${prefix}${Math.round(n)}`;
-};
-function fmtPct(n: number) { return `${n.toFixed(1)}%`; }
+import { fmt, fmtPct } from '../utils/format';
 
 interface Section {
   id: string;
@@ -126,7 +119,7 @@ ${ctx}`,
 };
 
 export default function BusinessPlan() {
-  const { state, derived, ai, addToast } = useApp() as any;
+  const { state, derived, ai, addToast } = useApp();
   const {
     companyName = '',
     idea: ideaDesc = 'Your Startup',
@@ -165,6 +158,7 @@ export default function BusinessPlan() {
   const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState<Record<string, boolean>>({});
   const [generatingAll, setGeneratingAll] = useState(false);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const hasData = !!(problemStatement || solutionStatement || ideaDesc || mrr > 0);
@@ -293,6 +287,15 @@ export default function BusinessPlan() {
     setGeneratingAll(false);
     addToast('Business plan generated.', 'success');
   }, [ai, state, derived, addToast, buildTemplateProse]);
+
+  const copySection = (sectionId: string) => {
+    const text = generatedContent[sectionId];
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedSection(sectionId);
+    addToast('Copied to clipboard!', 'success');
+    setTimeout(() => setCopiedSection(null), 2000);
+  };
 
   const exportHTML = () => {
     const allGenerated = SECTIONS.every(s => !!generatedContent[s.id]);
@@ -790,11 +793,23 @@ export default function BusinessPlan() {
                     <p className="text-xs text-[var(--text-muted)]">{ideaName} — {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                   </div>
                   {generatedContent[openSection] && (
-                    <Badge color="var(--accent-light)" size="sm">
-                      <span className="flex items-center gap-1">
-                        <Sparkles size={9} />AI
-                      </span>
-                    </Badge>
+                    <>
+                      <Badge color="var(--accent-light)" size="sm">
+                        <span className="flex items-center gap-1">
+                          <Sparkles size={9} />AI
+                        </span>
+                      </Badge>
+                      <button
+                        onClick={() => copySection(openSection)}
+                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                        title="Copy to clipboard"
+                        aria-label="Copy section to clipboard"
+                      >
+                        {copiedSection === openSection
+                          ? <Check size={13} style={{ color: 'var(--green)' }} />
+                          : <Copy size={13} />}
+                      </button>
+                    </>
                   )}
                 </div>
 

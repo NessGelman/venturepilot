@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, ChevronDown } from 'lucide-react';
+import { Sparkles, Send, ChevronDown, Copy, Check, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateSystemPrompt } from '../utils/ai';
 
 interface Message {
   role: 'user' | 'ai';
@@ -10,13 +11,15 @@ interface Message {
 
 export default function AIPanel() {
   const app = useApp();
-  const { ai } = app;
+  const { ai, addToast } = app;
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: 'Hi! I am your AI advisor. How can I help you improve your metrics today?' }
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [contextRefreshed, setContextRefreshed] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,9 +30,17 @@ export default function AIPanel() {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const copyMessage = useCallback((content: string, idx: number) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+      addToast('Copied to clipboard!', 'success');
+    });
+  }, [addToast]);
+
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || isTyping) return;
-    
+
     setInput('');
     setIsOpen(true);
     setMessages(prev => [...prev, { role: 'user', content: text }]);
@@ -39,65 +50,75 @@ export default function AIPanel() {
       await ai.initialize();
     }
 
-    // Use getSession() to avoid stale closure — ai.session captured at callback creation time
     const session = ai.getSession();
 
-    try {
-      if (session) {
-        // Build rich context
-        const context = `
-          Context:
-          Startup Idea: ${app.idea}
-          Industry: ${app.industry}
-          Stage: ${app.stage}
-          Founder: ${app.founder}
-          Product: ${app.productDescription}
-          Target Customer: ${app.targetCustomer}
-          
-          Financials:
-          ARR: $${(app.revenue * 12).toLocaleString()}
-          Burn: $${app.burn.toLocaleString()} / mo
-          Gross Margin: ${app.grossMargin}%
-          NDR: ${app.ndr}%
-          Cash: $${app.capital.toLocaleString()}
-          Target Raise: $${app.targetRaise.toLocaleString()}
-          
-          Metrics:
-          Runway: ${app.derived.runwayMonths} months
-          Burn Multiple: ${app.derived.burnMultiple}x
-          Rule of 40: ${app.derived.ruleOf40}%
-          LTV/CAC: ${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(2)}x
-          
-          Instructions:
-          Be a senior venture capital advisor. Be concise. Use markdown.
-          If the user's metrics are poor, be direct but constructive.
-          
-          Question: ${text}
-        `;
+    // Build rich context snapshot fresh on every send
+    const freshContext = `
+Context:
+Startup: ${app.idea}
+Company: ${app.companyName}
+Industry: ${app.industry}
+Stage: ${app.stage}
+Founder: ${app.founder}
+Product: ${app.productDescription}
+Target Customer: ${app.targetCustomer}
 
-        if (session.backend === 'chrome' && session.promptStreaming) {
-          setMessages(prev => [...prev, { role: 'ai', content: '' }]);
-          await session.promptStreaming(context, (partial) => {
-            setMessages(prev => {
-              const newMsgs = [...prev];
-              newMsgs[newMsgs.length - 1] = { role: 'ai', content: partial };
-              return newMsgs;
-            });
+Financials:
+ARR: $${(app.revenue * 12).toLocaleString()}
+MRR: $${app.revenue.toLocaleString()}
+MoM Growth: ${app.growth}%
+Burn: $${app.burn.toLocaleString()} / mo
+Gross Margin: ${app.grossMargin}%
+NDR: ${app.ndr}%
+Cash on Hand: $${app.capital.toLocaleString()}
+Target Raise: $${app.targetRaise.toLocaleString()}
+
+Key Metrics:
+Runway: ${app.derived.runwayMonths >= 999 ? '∞ (profitable)' : `${app.derived.runwayMonths} months`}
+Burn Multiple: ${app.derived.burnMultiple}×
+Rule of 40: ${app.derived.ruleOf40}%
+LTV/CAC: ${(app.derived.ltv / Math.max(app.cac, 1)).toFixed(2)}×
+Implied Valuation: $${(app.derived.impliedValuation / 1e6).toFixed(1)}M`;
+
+    // Include last 3 conversation turns for follow-up context
+    const recentHistory = messages.slice(-6); // last 3 user+ai pairs
+    const historyText = recentHistory.length > 1
+      ? '\n\nRecent conversation:\n' + recentHistory.map(m =>
+          `${m.role === 'user' ? 'Founder' : 'Advisor'}: ${m.content.slice(0, 300)}`
+        ).join('\n')
+      : '';
+
+    const fullPrompt = `${freshContext}${historyText}\n\nFounder question: ${text}`;
+    const systemPrompt = generateSystemPrompt(app.state, app.derived);
+
+    // Show context refreshed badge briefly
+    setContextRefreshed(true);
+    setTimeout(() => setContextRefreshed(false), 2000);
+
+    try {
+      if (session && (session.promptStreaming)) {
+        // Use streaming for both Chrome and WebLLM
+        setMessages(prev => [...prev, { role: 'ai', content: '' }]);
+        await session.promptStreaming(fullPrompt, (partial) => {
+          setMessages(prev => {
+            const newMsgs = [...prev];
+            newMsgs[newMsgs.length - 1] = { role: 'ai', content: partial };
+            return newMsgs;
           });
-        } else {
-          const reply = await session.prompt(context);
-          const finalReply = reply || "AI running in offline mode: Review your burn rate ($"+app.burn.toLocaleString()+") and ensure your LTV/CAC remains above 3.0x.";
-          setMessages(prev => [...prev, { role: 'ai', content: finalReply }]);
-        }
+        }, systemPrompt);
+      } else if (session) {
+        const reply = await session.prompt(fullPrompt, systemPrompt);
+        const finalReply = reply || `Based on your metrics: runway is ${app.derived.runwayMonths >= 999 ? 'infinite (profitable)' : `${app.derived.runwayMonths} months`}, burn multiple is ${app.derived.burnMultiple}×. Focus on extending runway and improving unit economics.`;
+        setMessages(prev => [...prev, { role: 'ai', content: finalReply }]);
       } else {
-        setMessages(prev => [...prev, { role: 'ai', content: "AI is currently running in template mode. Review your dashboards for dynamic metrics." }]);
+        setMessages(prev => [...prev, { role: 'ai', content: "AI is currently offline. Review your dashboard metrics for guidance." }]);
       }
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'ai', content: `Sorry, an error occurred: ${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
-  }, [ai, isTyping, app]);
+  }, [ai, isTyping, app, messages]);
 
   useEffect(() => {
     const fn = (e: any) => {
@@ -114,8 +135,9 @@ export default function AIPanel() {
     const lines = text.split('\n');
     return lines.map((line, i) => {
       let html = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      if (html.startsWith('- ')) {
-        return <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: html.substring(2) }} />;
+      if (html.startsWith('- ') || html.startsWith('→ ') || html.startsWith('• ')) {
+        const content = html.replace(/^[-→•]\s/, '');
+        return <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: content }} />;
       }
       return <p key={i} className="mb-2 last:mb-0 min-h-[1em]" dangerouslySetInnerHTML={{ __html: html }} />;
     });
@@ -149,6 +171,19 @@ export default function AIPanel() {
                 <span className="px-2 py-0.5 rounded-full bg-[var(--green-dim)] text-[var(--green)] text-[10px] font-bold uppercase whitespace-nowrap">
                   {ai.status.modelName || 'Connecting'}
                 </span>
+                <AnimatePresence>
+                  {contextRefreshed && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.12)] text-[var(--green)] text-[9px] font-bold"
+                    >
+                      <RefreshCw size={9} />
+                      Context refreshed
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </div>
               <button onClick={() => setIsOpen(false)} aria-label="Close AI advisor" className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg text-[var(--text-muted)] transition-colors">
                 <ChevronDown size={18} aria-hidden="true" />
@@ -172,12 +207,30 @@ export default function AIPanel() {
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed relative ${
-                    msg.role === 'user' 
-                      ? 'bg-[var(--accent)] text-white rounded-br-sm' 
+                  <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed relative group ${
+                    msg.role === 'user'
+                      ? 'bg-[var(--accent)] text-white rounded-br-sm'
                       : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-primary)] rounded-bl-sm'
                   }`}>
                     {msg.role === 'ai' ? renderMarkdownText(msg.content) : msg.content}
+                    {/* Copy button — always visible on mobile, hover on desktop */}
+                    {msg.content && (
+                      <button
+                        onClick={() => copyMessage(msg.content, idx)}
+                        className={`absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center rounded-full border shadow-sm transition-all
+                          sm:opacity-0 sm:group-hover:opacity-100
+                          ${msg.role === 'user'
+                            ? 'bg-[var(--accent)] border-[rgba(255,255,255,0.3)] text-white'
+                            : 'bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-muted)]'
+                          }`}
+                        aria-label="Copy message"
+                      >
+                        {copiedIdx === idx
+                          ? <Check size={10} style={{ color: 'var(--green)' }} />
+                          : <Copy size={10} />
+                        }
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -195,7 +248,7 @@ export default function AIPanel() {
 
             {/* Input area */}
             <div className="p-3 border-t border-[var(--border)] bg-[rgba(0,0,0,0.1)]">
-              <form 
+              <form
                 onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
                 className="flex items-center gap-2 relative"
               >

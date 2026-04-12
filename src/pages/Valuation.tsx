@@ -38,7 +38,7 @@ const VALUATION_METHODS = [
 ];
 
 export default function Valuation() {
-  const { state, derived } = useApp() as any;
+  const { state, derived } = useApp();
   // Correct field names from AppState / derived
   const revenue      = state?.revenue      ?? 0;   // MRR
   const arrDerived   = derived?.arr        ?? revenue * 12;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo, useCa
 import { secureStorage } from '../utils/storage';
 import { useAI } from '../hooks/useAI';
 import type { AppState, AppAction, DerivedMetrics, UseAppReturn, Preset, DailySnapshot, Toast, InvestorRecord } from '../types/AppContext.types';
+import { MAX_DAILY_SNAPSHOTS } from '../constants/metrics';
 
 const AppContext = createContext<UseAppReturn | null>(null);
 
@@ -306,17 +307,24 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           sam: state.sam,
           som: state.som,
           revenueModel: state.revenueModel,
+          // Extended: full state snapshot
+          checklist: state.checklist,
+          timeline: state.timeline,
+          repoUrl: state.repoUrl,
         };
         return {
           ...state,
           presets: [...state.presets.filter(p => p.name !== action.name), preset],
         };
       }
-      case 'LOAD_PRESET': {
-        const preset = state.presets.find(p => p.name === action.name);
+      case 'LOAD_PRESET':
+      case 'LOAD_BUILTIN_PRESET': {
+        const preset = action.type === 'LOAD_BUILTIN_PRESET'
+          ? action.preset
+          : state.presets.find(p => p.name === action.name);
         if (!preset) return state;
-        return { 
-          ...state, 
+        return {
+          ...state,
           capital: preset.capital,
           burn: preset.burn,
           revenue: preset.revenue,
@@ -352,6 +360,10 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           sam: preset.sam ?? defaults.sam,
           som: preset.som ?? defaults.som,
           revenueModel: preset.revenueModel || 'SaaS',
+          // Restore extended fields if present
+          ...(preset.checklist ? { checklist: preset.checklist } : {}),
+          ...(preset.timeline ? { timeline: preset.timeline } : {}),
+          ...(preset.repoUrl !== undefined ? { repoUrl: preset.repoUrl } : {}),
         };
       }
       case 'DELETE_PRESET':
@@ -359,6 +371,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           ...state,
           presets: state.presets.filter(p => p.name !== action.name),
         };
+      case 'LOG_SNAPSHOT': {
+        const snapshots = [...state.dailySnapshots, action.snapshot];
+        return {
+          ...state,
+          dailySnapshots: snapshots.slice(-MAX_DAILY_SNAPSHOTS),
+        };
+      }
       default:
         return state;
     }
@@ -418,7 +437,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       daysOfRunway,
       aiReady: true, // we check status from hook separately, default true makes types happier
     };
-  }, [state]);
+  // Only recalculate when the specific financial/unit-econ inputs change, not on every state mutation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    state.burn, state.revenue, state.capital, state.growth,
+    state.arpu, state.churn, state.cac, state.headcount,
+    state.pipeline, state.dilution,
+  ]);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -483,6 +508,10 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     return true;
   }, [dispatch]);
   const deletePreset = useCallback((name: string) => dispatch({ type: 'DELETE_PRESET', name }), [dispatch]);
+
+  const logSnapshot = useCallback((snapshot: DailySnapshot) => {
+    dispatch({ type: 'LOG_SNAPSHOT', snapshot });
+  }, [dispatch]);
 
   const clearData = useCallback(() => {
     secureStorage.clearSensitiveData();
@@ -568,6 +597,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     presets: state.presets,
     dailySnapshots: state.dailySnapshots,
     investors: state.investors,
+    logSnapshot,
     ai,
   };
 

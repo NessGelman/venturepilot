@@ -116,7 +116,7 @@ function CompareBar({ value, benchmark, format, higherBetter }: { value: number;
 }
 
 export default function MarketBench() {
-  const { state, derived } = useApp() as any;
+  const { state, derived } = useApp();
   // Use correct field names from state and derived metrics
   const revenue = state?.revenue ?? 0;
   const growth = state?.growth ?? 0;

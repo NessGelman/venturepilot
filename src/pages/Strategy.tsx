@@ -195,7 +195,7 @@ function ChecklistRow({ item, onToggle, onDelete, onEdit }: {
 }
 
 export default function Strategy() {
-  const { state } = useApp() as any;
+  const { state } = useApp();
   const { burn: burnRate = 0, revenue: mrr = 0, growth: monthlyGrowth = 5, capital: cashOnHand = 0 } = state || {};
 
   const [activeScenario, setActiveScenario] = useState('default');
