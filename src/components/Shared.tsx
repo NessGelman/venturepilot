@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 // ─── Card ────────────────────────────────────────────────────────────────────
@@ -256,6 +257,7 @@ interface MetricTooltipProps {
 export const MetricTooltip = React.memo(function MetricTooltip({ term, definition, children }: MetricTooltipProps) {
   const [open, setOpen] = useState(false);
   const [above, setAbove] = useState(true);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number; arrowLeft: string } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
 
   const dict: Record<string, { full: string; form: string; range: string; why: string }> = {
@@ -276,8 +278,17 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
   useEffect(() => {
     if (!open) return;
     if (ref.current) {
+      const W = 288; // w-72 = 18rem = 288px
+      const GAP = 8;
       const rect = ref.current.getBoundingClientRect();
-      setAbove(rect.top > 200);
+      const placeAbove = rect.top > 200;
+      setAbove(placeAbove);
+      const btnCX = rect.left + rect.width / 2;
+      const rawLeft = btnCX - W / 2;
+      const left = Math.max(GAP, Math.min(rawLeft, window.innerWidth - W - GAP));
+      const top = placeAbove ? rect.top - GAP : rect.bottom + GAP;
+      const arrowLeft = `${btnCX - left - 5}px`;
+      setPopupPos({ top, left, arrowLeft });
     }
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -303,9 +314,16 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
           ?
         </button>
       )}
-      {hasTooltip && open && (
+      {hasTooltip && open && popupPos && createPortal(
         <div
-          className={`absolute left-1/2 -translate-x-1/2 w-72 p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto ${above ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+          style={{
+            position: 'fixed',
+            top: popupPos.top,
+            left: popupPos.left,
+            transform: above ? 'translateY(-100%)' : 'translateY(0)',
+            zIndex: 99999,
+          }}
+          className="w-72 p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] text-left pointer-events-auto"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center gap-2 mb-2">
@@ -319,14 +337,14 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
               <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--green)]">Healthy:</span> {info.range}</p>
             </div>
           )}
-          {above ? (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
-              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
-          ) : (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0"
-              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
-          )}
-        </div>
+          <div className="absolute w-0 h-0" style={{ ...(above ? { top: '100%' } : { bottom: '100%' }), left: popupPos.arrowLeft }}>
+            {above
+              ? <div style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
+              : <div style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
+            }
+          </div>
+        </div>,
+        document.body
       )}
     </span>
   );
@@ -341,14 +359,23 @@ interface HelpTipProps {
 export const HelpTip = React.memo(function HelpTip({ content, title, className = '' }: HelpTipProps) {
   const [open, setOpen] = useState(false);
   const [above, setAbove] = useState(true);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number; arrowLeft: string } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    // Flip direction based on available space above the trigger
     if (ref.current) {
+      const W = 224; // w-56 = 14rem = 224px
+      const GAP = 8;
       const rect = ref.current.getBoundingClientRect();
-      setAbove(rect.top > 160); // 160px threshold: enough room for the popover above
+      const placeAbove = rect.top > 160;
+      setAbove(placeAbove);
+      const btnCX = rect.left + rect.width / 2;
+      const rawLeft = btnCX - W / 2;
+      const left = Math.max(GAP, Math.min(rawLeft, window.innerWidth - W - GAP));
+      const top = placeAbove ? rect.top - GAP : rect.bottom + GAP;
+      const arrowLeft = `${btnCX - left - 5}px`;
+      setPopupPos({ top, left, arrowLeft });
     }
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -371,22 +398,28 @@ export const HelpTip = React.memo(function HelpTip({ content, title, className =
       >
         ?
       </button>
-      {open && (
+      {open && popupPos && createPortal(
         <div
-          className={`absolute left-1/2 -translate-x-1/2 w-56 p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto ${above ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+          style={{
+            position: 'fixed',
+            top: popupPos.top,
+            left: popupPos.left,
+            transform: above ? 'translateY(-100%)' : 'translateY(0)',
+            zIndex: 99999,
+          }}
+          className="w-56 p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] text-left pointer-events-auto"
           onClick={e => e.stopPropagation()}
         >
           {title && <p className="text-[11px] font-black text-[var(--accent-light)] mb-1.5 leading-tight">{title}</p>}
           <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{content}</p>
-          {/* Arrow pointing toward the trigger */}
-          {above ? (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
-              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
-          ) : (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0"
-              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
-          )}
-        </div>
+          <div className="absolute w-0 h-0" style={{ ...(above ? { top: '100%' } : { bottom: '100%' }), left: popupPos.arrowLeft }}>
+            {above
+              ? <div style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
+              : <div style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
+            }
+          </div>
+        </div>,
+        document.body
       )}
     </span>
   );
