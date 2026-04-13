@@ -254,7 +254,9 @@ interface MetricTooltipProps {
   children?: React.ReactNode;
 }
 export const MetricTooltip = React.memo(function MetricTooltip({ term, definition, children }: MetricTooltipProps) {
-  const [show, setShow] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [above, setAbove] = useState(true);
+  const ref = useRef<HTMLSpanElement>(null);
 
   const dict: Record<string, { full: string; form: string; range: string; why: string }> = {
     'LTV': { full: 'Lifetime Value', form: 'ARPU ÷ Churn Rate', range: '> 3× CAC', why: 'Measures the total revenue expected from a single customer.' },
@@ -271,15 +273,41 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
   const info = dict[term];
   const hasTooltip = !!info || !!definition;
 
+  useEffect(() => {
+    if (!open) return;
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setAbove(rect.top > 200);
+    }
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
-    <span
-      className="relative inline-flex items-center cursor-help"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      <span className="border-b border-dashed border-[var(--text-muted)] opacity-70">{children || term}</span>
-      {hasTooltip && show && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] pointer-events-none text-left">
+    <span ref={ref} className="relative inline-flex items-center gap-1">
+      <span>{children || term}</span>
+      {hasTooltip && (
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+          className={`w-[14px] h-[14px] rounded-full border flex items-center justify-center text-[9px] font-black leading-none transition-all select-none shrink-0
+            ${open
+              ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_6px_var(--accent)]'
+              : 'bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.15)] text-[var(--text-muted)] hover:border-[var(--accent-light)] hover:text-[var(--accent-light)] hover:bg-[rgba(167,139,250,0.1)]'
+            }`}
+          aria-label={`What is ${term}?`}
+        >
+          ?
+        </button>
+      )}
+      {hasTooltip && open && (
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 w-72 p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevated)] z-[9999] text-left pointer-events-auto ${above ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+          onClick={e => e.stopPropagation()}
+        >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[var(--accent-light)] font-black text-sm">{term}</span>
             {info && <span className="text-[var(--text-muted)] font-medium text-xs">— {info.full}</span>}
@@ -290,6 +318,13 @@ export const MetricTooltip = React.memo(function MetricTooltip({ term, definitio
               <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--text-secondary)]">Formula:</span> {info.form}</p>
               <p className="text-[10px] text-[var(--text-muted)]"><span className="font-bold text-[var(--green)]">Healthy:</span> {info.range}</p>
             </div>
+          )}
+          {above ? (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
+              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid var(--border)' }} />
+          ) : (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0"
+              style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid var(--border)' }} />
           )}
         </div>
       )}

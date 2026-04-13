@@ -247,8 +247,9 @@ export default function BusinessPlan() {
       const session = ai?.session;
       if (session) {
         const ctx = buildDataContext(state, derived);
-        const prompt = SECTION_PROMPTS[sectionId](ctx);
-        const result = await session.prompt(prompt);
+        const result = await session.chat([
+          { role: 'user', content: SECTION_PROMPTS[sectionId](ctx) },
+        ]);
         setGeneratedContent(prev => ({ ...prev, [sectionId]: result }));
       } else {
         // Use smart data-driven template — no AI needed
@@ -272,7 +273,9 @@ export default function BusinessPlan() {
         const session = ai?.session;
         if (session) {
           const ctx = buildDataContext(state, derived);
-          const result = await session.prompt(SECTION_PROMPTS[section.id](ctx));
+          const result = await session.chat([
+            { role: 'user', content: SECTION_PROMPTS[section.id](ctx) },
+          ]);
           setGeneratedContent(prev => ({ ...prev, [section.id]: result }));
         } else {
           await new Promise(r => setTimeout(r, 300));
@@ -393,12 +396,9 @@ export default function BusinessPlan() {
 
       if (session) {
         addToast('Generating briefing...', 'info');
-        briefingText = await session.prompt(
-          `Write a one-page investor briefing document for this startup.
-          Cover: company overview, problem & solution, traction, market opportunity, team, and fundraise ask.
-          Format as clear paragraphs with bold headers. Be specific with numbers. Professional VC-ready tone.
-          ${ctx}`
-        );
+        briefingText = await session.chat([
+          { role: 'user', content: `Write a one-page investor briefing document for this startup.\nCover: company overview, problem & solution, traction, market opportunity, team, and fundraise ask.\nFormat as clear paragraphs with bold headers. Be specific with numbers. Professional VC-ready tone.\n${ctx}` },
+        ]);
       }
 
       const children: any[] = [

@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- CSP: unsafe-eval kept for WebLLM/WASM; connect-src includes GitHub raw for repo analysis -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co blob:; manifest-src 'self'; worker-src 'self' blob:;">
+    <!-- CSP: connect-src includes Pollinations AI (free LLM API), GitHub raw (repo analysis) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://text.pollinations.ai https://raw.githubusercontent.com https://huggingface.co blob:; manifest-src 'self'; worker-src 'self' blob:;">
     <title>VenturePilot | AI-Powered Startup Financing Strategy</title>
     <meta name="description" content="VenturePilot is an AI-powered founder OS that turns your startup metrics into investor-ready pitch decks, business plans, and strategic playbooks — in real time." />
     <meta name="author" content="Ness Gelman" />
