@@ -1,9 +1,14 @@
+import type { UseAIReturn } from '../hooks/useAI';
+
+export type ContactStatus = 'Active' | 'Interested' | 'Dormant' | 'Passed' | 'Portfolio';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
 export interface InvestorRecord {
   id: string;
   name: string;
   focus: string;
   stage: string;
-  contact: 'Active' | 'Interested' | 'Dormant' | 'Passed' | 'Portfolio';
+  contact: ContactStatus;
   link: string;
   note: string;
   next: string;
@@ -12,18 +17,8 @@ export interface InvestorRecord {
   tags: string[];
 }
 
-import type { UseAIReturn } from '../hooks/useAI';
-
 export interface AppState {
-  capital: number;
-  burn: number;
-  revenue: number;
-  growth: number;
-  headcount: number;
-  cac: number;
-  arpu: number;
-  churn: number;
-  pipeline: number;
+  // Company basics
   companyName: string;
   idea: string;
   industry: string;
@@ -33,15 +28,34 @@ export interface AppState {
   northStar: string;
   repoUrl: string;
 
-  // New financial fields
+  // Core metrics
+  capital: number;
+  burn: number;
+  revenue: number;
+  growth: number;
+  headcount: number;
+  cac: number;
+  arpu: number;
+  churn: number;
+  pipeline: number;
+
+  // Fundraising
   valuation: number;
   targetRaise: number;
   dilution: number;
+
+  // Financial health
   grossMargin: number;
   ndr: number;
   magicNumber: number;
 
-  // New narrative fields
+  // Market sizing
+  tam: number;
+  sam: number;
+  som: number;
+  revenueModel: string;
+
+  // Narrative
   teamSize: number;
   productDescription: string;
   targetCustomer: string;
@@ -52,25 +66,21 @@ export interface AppState {
   uniqueInsight: string;
   founderBios: string;
 
-  // Market sizing
-  tam: number;
-  sam: number;
-  som: number;
-  revenueModel: string;
-
-  // New CRM fields
+  // CRM
   investors: InvestorRecord[];
 
-  // Note: aiReady is derived, not stored. So we don't put it here.
-  
+  // App state
   presets: Preset[];
   dailySnapshots: DailySnapshot[];
+  checklist: ChecklistItem[];
+  timeline: TimelineMilestone[];
+
+  // Undo/redo stack
   history: AppState[];
   future: AppState[];
+
   lastSaved: string | null;
   onboardingComplete: boolean;
-  checklist: ChecklistItem[]; // for Strategy page
-  timeline: TimelineMilestone[]; // for Dashboard timeline
 }
 
 export interface ChecklistItem {
@@ -89,6 +99,7 @@ export interface TimelineMilestone {
 
 export interface Preset {
   name: string;
+  // Core metrics
   capital: number;
   burn: number;
   revenue: number;
@@ -98,6 +109,7 @@ export interface Preset {
   arpu: number;
   churn: number;
   pipeline: number;
+  // Company basics
   companyName: string;
   idea: string;
   industry: string;
@@ -105,12 +117,20 @@ export interface Preset {
   stage: string;
   founder: string;
   northStar: string;
+  // Fundraising
   valuation: number;
   targetRaise: number;
   dilution: number;
+  // Financial health
   grossMargin: number;
   ndr: number;
   magicNumber: number;
+  // Market sizing
+  tam: number;
+  sam: number;
+  som: number;
+  revenueModel: string;
+  // Narrative
   teamSize: number;
   productDescription: string;
   targetCustomer: string;
@@ -120,11 +140,7 @@ export interface Preset {
   solutionStatement: string;
   uniqueInsight: string;
   founderBios: string;
-  tam: number;
-  sam: number;
-  som: number;
-  revenueModel: string;
-  // Extended fields (checklist + timeline for comprehensive presets)
+  // Optional extended fields
   checklist?: ChecklistItem[];
   timeline?: TimelineMilestone[];
   repoUrl?: string;
@@ -152,126 +168,6 @@ export type AppAction =
   | { type: 'DELETE_PRESET'; name: string }
   | { type: 'LOG_SNAPSHOT'; snapshot: DailySnapshot };
 
-export interface UseAppReturn {
-  state: AppState;
-  dispatch: React.Dispatch<AppAction>;
-  derived: DerivedMetrics;
-  isDark: boolean;
-  toggleTheme: () => void;
-  toasts: Toast[];
-  addToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
-  undo: () => void;
-  redo: () => void;
-  savePreset: (name: string) => void;
-  loadPreset: (name: string) => boolean;
-  deletePreset: (name: string) => void;
-  resetDefaults: () => void;
-  clearData: () => void;
-  upsertInvestor: (inv: InvestorRecord) => void;
-  deleteInvestor: (id: string) => void;
-  
-  capital: number;
-  burn: number;
-  revenue: number;
-  growth: number;
-  headcount: number;
-  cac: number;
-  arpu: number;
-  churn: number;
-  pipeline: number;
-  companyName: string;
-  idea: string;
-  industry: string;
-  problem: string;
-  stage: string;
-  founder: string;
-  northStar: string;
-  repoUrl: string;
-  valuation: number;
-  targetRaise: number;
-  dilution: number;
-  grossMargin: number;
-  ndr: number;
-  magicNumber: number;
-  teamSize: number;
-  productDescription: string;
-  targetCustomer: string;
-  competitors: string;
-  traction: string;
-  useOfFunds: string;
-  onboardingComplete: boolean;
-  checklist: ChecklistItem[];
-  timeline: TimelineMilestone[];
-
-  setCapital: (v: number) => void;
-  setBurn: (v: number) => void;
-  setRevenue: (v: number) => void;
-  setGrowth: (v: number) => void;
-  setHeadcount: (v: number) => void;
-  setCac: (v: number) => void;
-  setArpu: (v: number) => void;
-  setChurn: (v: number) => void;
-  setPipeline: (v: number) => void;
-  setCompanyName: (v: string) => void;
-  setIdea: (v: string) => void;
-  setIndustry: (v: string) => void;
-  setProblem: (v: string) => void;
-  setStage: (v: string) => void;
-  setFounder: (v: string) => void;
-  setNorthStar: (v: string) => void;
-  setRepoUrl: (v: string) => void;
-  setValuation: (v: number) => void;
-  setTargetRaise: (v: number) => void;
-  setDilution: (v: number) => void;
-  setGrossMargin: (v: number) => void;
-  setNdr: (v: number) => void;
-  setMagicNumber: (v: number) => void;
-  setTeamSize: (v: number) => void;
-  setProductDescription: (v: string) => void;
-  setTargetCustomer: (v: string) => void;
-  setCompetitors: (v: string) => void;
-  setTraction: (v: string) => void;
-  setUseOfFunds: (v: string) => void;
-  solutionStatement: string;
-  setSolutionStatement: (v: string) => void;
-  uniqueInsight: string;
-  setUniqueInsight: (v: string) => void;
-  founderBios: string;
-  setFounderBios: (v: string) => void;
-  tam: number;
-  setTam: (v: number) => void;
-  sam: number;
-  setSam: (v: number) => void;
-  som: number;
-  setSom: (v: number) => void;
-  revenueModel: string;
-  setRevenueModel: (v: string) => void;
-
-  netBurn: number;
-  runwayMonths: number;
-  readinessScore: number;
-  mrr: number;
-  arr: number;
-  ltv: number;
-  payback: number;
-  revenuePerEmployee: number;
-  pipelineCoverage: number;
-  burnMultiple: number;
-  ruleOf40: number;
-  impliedValuation: number;
-  dilutedOwnership: number;
-  daysOfRunway: number;
-
-  lastSaved: string | null;
-  presets: Preset[];
-  dailySnapshots: DailySnapshot[];
-  investors: InvestorRecord[];
-
-  logSnapshot: (snapshot: DailySnapshot) => void;
-
-  ai: UseAIReturn;
-}
-
 export interface DerivedMetrics {
   netBurn: number;
   runwayMonths: number;
@@ -293,5 +189,152 @@ export interface DerivedMetrics {
 export interface Toast {
   id: number;
   message: string;
-  type?: 'success' | 'error' | 'info' | 'warning';
+  type?: ToastType;
+}
+
+export interface UseAppReturn {
+  // Raw state
+  state: AppState;
+  dispatch: React.Dispatch<AppAction>;
+  derived: DerivedMetrics;
+
+  // Theme
+  isDark: boolean;
+  toggleTheme: () => void;
+
+  // Toasts
+  toasts: Toast[];
+  addToast: (message: string, type?: ToastType) => void;
+
+  // Undo/redo
+  undo: () => void;
+  redo: () => void;
+
+  // Presets
+  presets: Preset[];
+  savePreset: (name: string) => void;
+  loadPreset: (name: string) => boolean;
+  deletePreset: (name: string) => void;
+
+  // Data management
+  resetDefaults: () => void;
+  clearData: () => void;
+  lastSaved: string | null;
+
+  // Investors (CRM)
+  investors: InvestorRecord[];
+  upsertInvestor: (inv: InvestorRecord) => void;
+  deleteInvestor: (id: string) => void;
+
+  // Snapshots
+  dailySnapshots: DailySnapshot[];
+  logSnapshot: (snapshot: DailySnapshot) => void;
+
+  // Company basics
+  companyName: string;
+  setCompanyName: (v: string) => void;
+  idea: string;
+  setIdea: (v: string) => void;
+  industry: string;
+  setIndustry: (v: string) => void;
+  problem: string;
+  setProblem: (v: string) => void;
+  stage: string;
+  setStage: (v: string) => void;
+  founder: string;
+  setFounder: (v: string) => void;
+  northStar: string;
+  setNorthStar: (v: string) => void;
+  repoUrl: string;
+  setRepoUrl: (v: string) => void;
+
+  // Core metrics
+  capital: number;
+  setCapital: (v: number) => void;
+  burn: number;
+  setBurn: (v: number) => void;
+  revenue: number;
+  setRevenue: (v: number) => void;
+  growth: number;
+  setGrowth: (v: number) => void;
+  headcount: number;
+  setHeadcount: (v: number) => void;
+  cac: number;
+  setCac: (v: number) => void;
+  arpu: number;
+  setArpu: (v: number) => void;
+  churn: number;
+  setChurn: (v: number) => void;
+  pipeline: number;
+  setPipeline: (v: number) => void;
+
+  // Fundraising
+  valuation: number;
+  setValuation: (v: number) => void;
+  targetRaise: number;
+  setTargetRaise: (v: number) => void;
+  dilution: number;
+  setDilution: (v: number) => void;
+
+  // Financial health
+  grossMargin: number;
+  setGrossMargin: (v: number) => void;
+  ndr: number;
+  setNdr: (v: number) => void;
+  magicNumber: number;
+  setMagicNumber: (v: number) => void;
+
+  // Market sizing
+  tam: number;
+  setTam: (v: number) => void;
+  sam: number;
+  setSam: (v: number) => void;
+  som: number;
+  setSom: (v: number) => void;
+  revenueModel: string;
+  setRevenueModel: (v: string) => void;
+
+  // Narrative
+  teamSize: number;
+  setTeamSize: (v: number) => void;
+  productDescription: string;
+  setProductDescription: (v: string) => void;
+  targetCustomer: string;
+  setTargetCustomer: (v: string) => void;
+  competitors: string;
+  setCompetitors: (v: string) => void;
+  traction: string;
+  setTraction: (v: string) => void;
+  useOfFunds: string;
+  setUseOfFunds: (v: string) => void;
+  solutionStatement: string;
+  setSolutionStatement: (v: string) => void;
+  uniqueInsight: string;
+  setUniqueInsight: (v: string) => void;
+  founderBios: string;
+  setFounderBios: (v: string) => void;
+
+  // Checklist & timeline
+  checklist: ChecklistItem[];
+  timeline: TimelineMilestone[];
+  onboardingComplete: boolean;
+
+  // Derived metrics (aliased from `derived` for convenience)
+  netBurn: number;
+  runwayMonths: number;
+  readinessScore: number;
+  mrr: number;
+  arr: number;
+  ltv: number;
+  payback: number;
+  revenuePerEmployee: number;
+  pipelineCoverage: number;
+  burnMultiple: number;
+  ruleOf40: number;
+  impliedValuation: number;
+  dilutedOwnership: number;
+  daysOfRunway: number;
+
+  // AI
+  ai: UseAIReturn;
 }
