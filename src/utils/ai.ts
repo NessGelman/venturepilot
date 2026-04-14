@@ -112,13 +112,13 @@ ${isCritical
 }
 
 // ── Pollinations backend ────────────────────────────────────────────────────
-// Primary: GPT-4o via Pollinations.ai — free, no key, CORS-enabled, GitHub Pages compatible
-// Fallback model: mistral-large (if openai-large times out or errors)
+// Free, no API key, CORS-enabled, works on GitHub Pages. All calls are browser-to-API.
 
-const POLLINATIONS_URL = 'https://text.pollinations.ai/';
-const PRIMARY_MODEL = 'openai-large';   // GPT-4o
-const FALLBACK_MODEL = 'mistral-large'; // Mistral Large (free fallback)
-const MAX_HISTORY_TURNS = 12; // keep last 12 user+assistant pairs to avoid huge contexts
+// OpenAI-compatible endpoint (fixes 404 from the bare root URL)
+const POLLINATIONS_URL = 'https://text.pollinations.ai/openai/chat/completions';
+const PRIMARY_MODEL = 'openai';         // GPT-4o-mini — 3-4× faster than openai-large
+const FALLBACK_MODEL = 'mistral';       // Mistral 7B — fast free fallback
+const MAX_HISTORY_TURNS = 6;            // keep last 6 turns; fewer = faster responses
 
 async function pollinationsFetch(
   messages: ChatMessage[],
@@ -140,18 +140,19 @@ function createPollinationsSession(): AISession {
 
   return {
     backend: 'pollinations',
-    modelName: 'GPT-4o',
+    modelName: 'GPT-4o mini',
 
     chat: async (messages: ChatMessage[], signal?: AbortSignal) => {
       const trimmed = trimHistory(messages);
+      const parseReply = async (res: Response) => {
+        const json = await res.json();
+        return json.choices?.[0]?.message?.content ?? '';
+      };
       try {
-        const res = await pollinationsFetch(trimmed, PRIMARY_MODEL, false, signal);
-        return res.text();
+        return parseReply(await pollinationsFetch(trimmed, PRIMARY_MODEL, false, signal));
       } catch (err: any) {
         if (err?.name === 'AbortError') throw err;
-        // Retry with fallback model
-        const res = await pollinationsFetch(trimmed, FALLBACK_MODEL, false, signal);
-        return res.text();
+        return parseReply(await pollinationsFetch(trimmed, FALLBACK_MODEL, false, signal));
       }
     },
 
@@ -168,7 +169,8 @@ function createPollinationsSession(): AISession {
         if (err?.name === 'AbortError') throw err;
         // Fall back to non-streaming with fallback model
         const fallback = await pollinationsFetch(trimmed, FALLBACK_MODEL, false, signal);
-        onUpdate(await fallback.text());
+        const json = await fallback.json();
+        onUpdate(json.choices?.[0]?.message?.content ?? '');
         return;
       }
 
