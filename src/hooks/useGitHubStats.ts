@@ -9,24 +9,36 @@ export interface GitHubStats {
   contributorCount: number;
 }
 
+export interface UseGitHubStatsResult {
+  stats: GitHubStats | null;
+  status: 'idle' | 'loading' | 'ready' | 'limited' | 'error';
+  error: string | null;
+}
+
 function extractRepoPath(url: string): { owner: string; repo: string } | null {
   const match = url.match(/github\.com\/([^/\s]+)\/([^/\s#?]+)/i);
   if (!match) return null;
   return { owner: match[1], repo: match[2].replace(/\.git$/, '') };
 }
 
-export function useGitHubStats(repoUrl: string): GitHubStats | null {
+export function useGitHubStats(repoUrl: string): UseGitHubStatsResult {
   const [stats, setStats] = useState<GitHubStats | null>(null);
+  const [status, setStatus] = useState<UseGitHubStatsResult['status']>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!repoUrl?.trim()) {
       setStats(null);
+      setStatus('idle');
+      setError(null);
       return;
     }
 
     const parsed = extractRepoPath(repoUrl);
     if (!parsed) {
       setStats(null);
+      setStatus('error');
+      setError('Enter a valid GitHub repository URL.');
       return;
     }
 
@@ -38,18 +50,41 @@ export function useGitHubStats(repoUrl: string): GitHubStats | null {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         setStats(JSON.parse(cached));
+        setStatus('ready');
+        setError(null);
         return;
       }
     } catch {}
 
     let cancelled = false;
+    setStatus('loading');
+    setError(null);
 
     async function fetchStats() {
       try {
         const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
           headers: { Accept: 'application/vnd.github+json' },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (cancelled) return;
+          const remaining = res.headers.get('x-ratelimit-remaining');
+          if (res.status === 403 && remaining === '0') {
+            setStats(null);
+            setStatus('limited');
+            setError('GitHub API rate limit reached. Try again in about an hour.');
+            return;
+          }
+          if (res.status === 404) {
+            setStats(null);
+            setStatus('error');
+            setError('Repository not found or not publicly accessible.');
+            return;
+          }
+          setStats(null);
+          setStatus('error');
+          setError(`GitHub stats unavailable (${res.status}).`);
+          return;
+        }
         const data = await res.json();
         if (cancelled) return;
 
@@ -63,11 +98,16 @@ export function useGitHubStats(repoUrl: string): GitHubStats | null {
         };
 
         setStats(result);
+        setStatus('ready');
+        setError(null);
         try {
           sessionStorage.setItem(cacheKey, JSON.stringify(result));
         } catch {}
       } catch {
-        // Silently ignore — no auth, 60 req/hr limit
+        if (cancelled) return;
+        setStats(null);
+        setStatus('error');
+        setError('Could not reach GitHub API from this network.');
       }
     }
 
@@ -75,5 +115,5 @@ export function useGitHubStats(repoUrl: string): GitHubStats | null {
     return () => { cancelled = true; };
   }, [repoUrl]);
 
-  return stats;
+  return { stats, status, error };
 }

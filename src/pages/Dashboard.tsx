@@ -55,7 +55,7 @@ export default function Dashboard() {
   const app = useApp();
   const [showRaise, setShowRaise] = useState(false);
   const [raiseAmt, setRaiseAmt] = useState(app.targetRaise || 750000);
-  const githubStats = useGitHubStats(app.repoUrl);
+  const { stats: githubStats, status: githubStatsStatus, error: githubStatsError } = useGitHubStats(app.repoUrl);
 
   const hasRevenue = app.revenue > 0;
 
@@ -396,39 +396,47 @@ export default function Dashboard() {
       </div>
 
       {/* GitHub Stats card */}
-      {githubStats && (
+      {(githubStats || githubStatsStatus === 'loading' || githubStatsError) && (
         <Card className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Github size={14} style={{ color: 'var(--accent)' }} />
             <span className="font-bold text-sm">GitHub Stats</span>
-            <Badge color="var(--text-muted)" size="sm">{githubStats.language}</Badge>
+            {githubStats && <Badge color="var(--text-muted)" size="sm">{githubStats.language}</Badge>}
+            {githubStatsStatus === 'loading' && <Badge color="var(--accent-light)" size="sm">Loading</Badge>}
+            {githubStatsStatus === 'limited' && <Badge color="var(--amber)" size="sm">Rate limited</Badge>}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--amber)]">
-                <Star size={14} /> {githubStats.stars.toLocaleString()}
+          {githubStats ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--amber)]">
+                  <Star size={14} /> {githubStats.stars.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Stars</div>
               </div>
-              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Stars</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--teal)]">
-                <GitFork size={14} /> {githubStats.forks.toLocaleString()}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--teal)]">
+                  <GitFork size={14} /> {githubStats.forks.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Forks</div>
               </div>
-              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Forks</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--accent-light)]">
-                <Activity size={14} /> {githubStats.openIssues}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-lg font-black text-[var(--accent-light)]">
+                  <Activity size={14} /> {githubStats.openIssues}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Open Issues</div>
               </div>
-              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Open Issues</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-muted)]">
-                <Clock size={12} /> {githubStats.lastPushedAt ? new Date(githubStats.lastPushedAt).toLocaleDateString() : '—'}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-muted)]">
+                  <Clock size={12} /> {githubStats.lastPushedAt ? new Date(githubStats.lastPushedAt).toLocaleDateString() : '—'}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Last Push</div>
               </div>
-              <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Last Push</div>
             </div>
-          </div>
+          ) : (
+            <div className="text-xs text-[var(--text-muted)] bg-[rgba(255,255,255,0.02)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-3 py-2">
+              {githubStatsError || 'GitHub stats are currently unavailable for this repo URL.'}
+            </div>
+          )}
         </Card>
       )}
 

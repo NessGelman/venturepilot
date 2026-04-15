@@ -38,14 +38,6 @@ The repo includes a GitHub Actions workflow at `.github/workflows/deploy.yml` th
 3. In your repo go to **Settings → Pages → Source** and select **GitHub Actions**.
 4. The Actions tab will show the build running. Site is live at `https://nessgelman.github.io/venturepilot` in ~2 min.
 
-### Option B — Manual deploy
-
-```bash
-npm run deploy
-```
-
-This runs `npm run build` then pushes `dist/` to the `gh-pages` branch via the `gh-pages` package. Make sure **Settings → Pages → Source** is set to **Deploy from branch → gh-pages / root**.
-
 ## Controls & tips
 
 - Sidebar autosaves to localStorage; use Undo `⌘/Ctrl+Z`, Redo `⌘/Ctrl+Shift+Z` or `⌘/Ctrl+Y`.
