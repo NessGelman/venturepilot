@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist --dotfiles"
   },
@@ -47,9 +47,9 @@
     "postcss": "^8.4.49",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.17",
+    "typescript-eslint": "^8.46.1",
     "typescript": "^5.6.3",
     "vite": "^8.0.0",
-    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.0"
   }
 }

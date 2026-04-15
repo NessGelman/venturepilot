@@ -438,7 +438,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       aiReady: true, // we check status from hook separately, default true makes types happier
     };
   // Only recalculate when the specific financial/unit-econ inputs change, not on every state mutation
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.burn, state.revenue, state.capital, state.growth,
     state.arpu, state.churn, state.cac, state.headcount,

@@ -212,6 +212,43 @@ function createPollinationsSession(): AISession {
   };
 }
 
+function withFallbackSession(primary: AISession, fallback: AISession | null): AISession {
+  if (!fallback) return primary;
+
+  return {
+    backend: primary.backend,
+    modelName: `${primary.modelName} (fallback: ${fallback.modelName})`,
+    chat: async (messages: ChatMessage[], signal?: AbortSignal) => {
+      try {
+        return await primary.chat(messages, signal);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') throw err;
+        return fallback.chat(messages, signal);
+      }
+    },
+    chatStreaming: async (
+      messages: ChatMessage[],
+      onUpdate: (partial: string) => void,
+      signal?: AbortSignal,
+    ) => {
+      if (primary.chatStreaming) {
+        try {
+          return await primary.chatStreaming(messages, onUpdate, signal);
+        } catch (err: any) {
+          if (err?.name === 'AbortError') throw err;
+        }
+      }
+      if (fallback.chatStreaming) return fallback.chatStreaming(messages, onUpdate, signal);
+      const text = await fallback.chat(messages, signal);
+      onUpdate(text);
+    },
+    destroy: () => {
+      primary.destroy();
+      fallback.destroy();
+    },
+  };
+}
+
 /**
  * Trim history to the last MAX_HISTORY_TURNS user+assistant pairs
  * while always keeping the system prompt at index 0.
@@ -282,19 +319,12 @@ async function createChromeSession(): Promise<AISession | null> {
  * Errors surface at call time with clear messages.
  */
 export async function createAISession(_onProgress?: (status: AIStatus) => void): Promise<AISession> {
-  // Chrome AI: local, instant if available — use it as an upgrade when online isn't possible
+  // Chrome AI: local, instant if available.
   const chromeSession = await createChromeSession();
 
-  // Pollinations: always the primary (better quality, real GPT-4o)
-  // We don't pre-check connectivity here — that would block startup.
-  // If it fails on first use, the error bubbles up with a clear message.
+  // Pollinations: primary model for quality.
   const pollinationsSession = createPollinationsSession();
 
-  // Prefer Pollinations; Chrome AI is available as a fallback if the first call fails
-  return pollinationsSession ?? chromeSession ?? {
-    backend: 'none' as AIBackend,
-    modelName: 'Offline',
-    chat: async () => '',
-    destroy: () => {},
-  };
+  // Ensure local Chrome AI can actually take over when network calls fail.
+  return withFallbackSession(pollinationsSession, chromeSession);
 }

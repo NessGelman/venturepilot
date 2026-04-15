@@ -80,7 +80,6 @@ export default function InvestorUpdate() {
         }
       }
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const wins = items.filter(i => i.category === 'wins');
