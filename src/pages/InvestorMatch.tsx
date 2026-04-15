@@ -1,12 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Plus, Search, Star, Edit2, Trash2, Download,
   LayoutGrid, List, ExternalLink,
-  ChevronDown, ArrowUpDown, CheckSquare, Square, CheckCheck, X
+  ChevronDown, ArrowUpDown, CheckSquare, Square, CheckCheck, X,
+  Compass, Sparkles, RefreshCw, Globe, AlertCircle, Linkedin
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button } from '../components/Shared';
+import { useInvestorDB } from '../hooks/useInvestorDB';
+import {
+  rankInvestors, scoreColor,
+  type StartupProfile, type MatchResult, type InvestorDBRecord
+} from '../utils/investorMatch';
 
 interface Investor {
   id: string;
@@ -151,8 +157,332 @@ function InvestorCard({ investor, onEdit, onDelete, onStatusChange, compact, sel
 
 const EMPTY_FORM = { name: '', firm: '', tier: 'Tier 2' as Investor['tier'], focus: '', checkSize: '', contact: 'Not Contacted' as Investor['contact'], matchScore: 70, notes: '', email: '', linkedin: '' };
 
+// ─── Discover Tab ─────────────────────────────────────────────────────────────
+
+function DiscoverMatchTag({ label, matched }: { label: string; matched: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold border transition-colors"
+      style={{
+        background: matched ? 'var(--accent-dim)' : 'rgba(255,255,255,0.03)',
+        color: matched ? 'var(--accent)' : 'var(--text-muted)',
+        borderColor: matched ? 'rgba(var(--accent-rgb,99,102,241),0.3)' : 'var(--border)',
+      }}>
+      {matched ? '✓' : '·'} {label}
+    </span>
+  );
+}
+
+function DiscoverCard({
+  result,
+  alreadyAdded,
+  onAdd,
+}: {
+  result: MatchResult;
+  alreadyAdded: boolean;
+  onAdd: (inv: InvestorDBRecord) => void;
+}) {
+  const { investor, score, tags } = result;
+  const initials = investor.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const tierColor: Record<string, string> = {
+    'Tier 1': '#f59e0b', 'Tier 2': '#3b82f6', 'Tier 3': '#6b7280', 'Angel': '#10b981',
+  };
+  const color = tierColor[investor.tier] ?? '#6b7280';
+
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 hover:border-[var(--accent)] transition-all flex flex-col gap-3">
+
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+            style={{ background: `${color}20`, color }}>
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <div className="font-bold text-sm leading-tight truncate">{investor.name}</div>
+            <div className="text-xs text-[var(--text-muted)] truncate">{investor.firm}</div>
+          </div>
+        </div>
+
+        {/* Match score + tier */}
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="text-lg font-black leading-none" style={{ color: scoreColor(score) }}>{score}</div>
+          <div className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${color}20`, color }}>
+            {investor.tier}
+          </div>
+        </div>
+      </div>
+
+      {/* Match tags */}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag, i) => <DiscoverMatchTag key={i} label={tag.label} matched={tag.matched} />)}
+        </div>
+      )}
+
+      {/* Bio */}
+      {investor.bio && (
+        <p className="text-[11px] text-[var(--text-muted)] leading-relaxed line-clamp-2">{investor.bio}</p>
+      )}
+
+      {/* Notable portfolio */}
+      {investor.notablePortfolio.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {investor.notablePortfolio.slice(0, 4).map(p => (
+            <span key={p} className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-muted)] border border-[var(--border)]">
+              {p}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Action row */}
+      <div className="flex items-center gap-2 pt-0.5 border-t border-[var(--border-subtle)] mt-auto">
+        {investor.linkedin && (
+          <a href={investor.linkedin} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--blue)] transition-colors px-2 py-1 rounded-md hover:bg-[rgba(59,130,246,0.08)]">
+            <Linkedin size={11} /> LinkedIn
+          </a>
+        )}
+        {investor.website && (
+          <a href={investor.website} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-md hover:bg-[rgba(255,255,255,0.05)]">
+            <Globe size={11} /> Website
+          </a>
+        )}
+        <button
+          onClick={() => !alreadyAdded && onAdd(investor)}
+          disabled={alreadyAdded}
+          className="ml-auto flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-full transition-all"
+          style={{
+            background: alreadyAdded ? 'rgba(255,255,255,0.04)' : 'var(--accent)',
+            color: alreadyAdded ? 'var(--text-muted)' : 'white',
+            cursor: alreadyAdded ? 'default' : 'pointer',
+          }}>
+          {alreadyAdded ? '✓ In Pipeline' : '+ Add to Pipeline'}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function DiscoverTab({ pipeline, onAdd }: {
+  pipeline: Investor[];
+  onAdd: (inv: InvestorDBRecord) => void;
+}) {
+  const app = useApp();
+  const { investors: db, loading, error, reload } = useInvestorDB();
+
+  // Build startup profile from AppContext
+  const profile = useMemo<StartupProfile>(() => ({
+    industry: app.industry || '',
+    stage: app.stage || '',
+    targetRaise: app.targetRaise || 0,
+    idea: app.idea || '',
+    productDescription: app.productDescription || '',
+    competitors: app.competitors || '',
+    traction: app.traction || '',
+    revenue: app.revenue || 0,
+    growth: app.growth || 0,
+    runwayMonths: app.runwayMonths || 0,
+    burnMultiple: app.burnMultiple || 0,
+    ltvCac: app.cac > 0 && app.ltv > 0 ? app.ltv / app.cac : 0,
+    teamSize: app.teamSize || 1,
+  }), [
+    app.industry, app.stage, app.targetRaise, app.idea, app.productDescription,
+    app.competitors, app.traction, app.revenue, app.growth, app.runwayMonths,
+    app.burnMultiple, app.ltv, app.cac, app.teamSize,
+  ]);
+
+  // Profile completeness
+  const hasIndustry = Boolean(app.industry);
+  const hasStage = Boolean(app.stage);
+  const profileComplete = hasIndustry && hasStage;
+
+  // Filters
+  const [filterTier, setFilterTier] = useState('all');
+  const [filterStage, setFilterStage] = useState('all');
+  const [search, setSearch] = useState('');
+  const [minScore, setMinScore] = useState(30);
+
+  // Ranked results
+  const results = useMemo<MatchResult[]>(() => {
+    if (db.length === 0) return [];
+    const ranked = rankInvestors(db, profile, 200);
+    return ranked.filter(r => {
+      if (r.score < minScore) return false;
+      if (filterTier !== 'all' && r.investor.tier !== filterTier) return false;
+      if (filterStage !== 'all') {
+        const stageMatch = r.investor.stages.some(s =>
+          s.toLowerCase().includes(filterStage.toLowerCase()) ||
+          filterStage.toLowerCase().includes(s.toLowerCase())
+        );
+        if (!stageMatch) return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        if (!r.investor.name.toLowerCase().includes(q) &&
+            !r.investor.firm.toLowerCase().includes(q) &&
+            !r.investor.sectors.join(' ').toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [db, profile, filterTier, filterStage, search, minScore]);
+
+  // Track which investors are already in pipeline
+  const pipelineNames = useMemo(() =>
+    new Set(pipeline.map(p => p.name.toLowerCase())),
+    [pipeline]
+  );
+
+  // "Profile changed" nudge — track when profile changes after initial load
+  const prevProfileRef = useRef(profile);
+  const [profileChanged, setProfileChanged] = useState(false);
+  useEffect(() => {
+    const prev = prevProfileRef.current;
+    if (db.length > 0 && (prev.industry !== profile.industry || prev.stage !== profile.stage || prev.targetRaise !== profile.targetRaise)) {
+      setProfileChanged(true);
+    }
+    prevProfileRef.current = profile;
+  }, [profile, db.length]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-card)] border border-[var(--border)] animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(9)].map((_, i) => (
+            <div key={i} className="h-52 rounded-[var(--radius-lg)] bg-[var(--bg-card)] border border-[var(--border)] animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+        <AlertCircle size={32} className="text-[var(--red)]" />
+        <div>
+          <p className="font-bold text-sm text-[var(--text-primary)]">Failed to load investor database</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">{error}</p>
+        </div>
+        <Button variant="secondary" size="sm" icon={RefreshCw} onClick={reload}>Retry</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Profile summary */}
+      <div className="flex flex-wrap items-center gap-2 p-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--bg-card)]">
+        <Sparkles size={14} style={{ color: 'var(--accent)' }} className="shrink-0" />
+        <span className="text-xs text-[var(--text-muted)]">Matching against:</span>
+        {hasIndustry
+          ? <span className="text-xs font-bold text-[var(--text-primary)] px-2 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">{app.industry}</span>
+          : <span className="text-xs text-[var(--red)]">No industry set</span>
+        }
+        {hasStage
+          ? <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] border border-[var(--border)]">{app.stage}</span>
+          : <span className="text-xs text-[var(--red)]">No stage set</span>
+        }
+        {app.targetRaise > 0 && (
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] border border-[var(--border)]">
+            ${(app.targetRaise / 1_000_000).toFixed(1)}M raise
+          </span>
+        )}
+        {app.revenue > 0 && (
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] border border-[var(--border)]">
+            ${app.revenue.toLocaleString()} MRR
+          </span>
+        )}
+        {!profileComplete && (
+          <span className="text-xs text-[var(--amber)] ml-auto">
+            → Set industry + stage in the sidebar for better matches
+          </span>
+        )}
+
+        {/* Profile changed nudge */}
+        {profileChanged && profileComplete && (
+          <button
+            onClick={() => setProfileChanged(false)}
+            className="ml-auto flex items-center gap-1.5 text-xs font-bold text-[var(--amber)] hover:text-[var(--text-primary)] transition-colors">
+            <RefreshCw size={11} /> Profile changed — matches updated
+          </button>
+        )}
+
+        <span className="ml-auto text-[10px] text-[var(--text-muted)]">
+          {results.length} of {db.length} investors match
+        </span>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[180px] relative">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search investors…"
+            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] pl-8 pr-4 py-1.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]" />
+        </div>
+        <select value={filterTier} onChange={e => setFilterTier(e.target.value)}
+          className="bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <option value="all">All Tiers</option>
+          {['Tier 1', 'Tier 2', 'Tier 3', 'Angel'].map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={filterStage} onChange={e => setFilterStage(e.target.value)}
+          className="bg-[var(--bg-input)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <option value="all">All Stages</option>
+          {['Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C', 'Growth'].map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] whitespace-nowrap">
+          Min score:
+          <input type="range" min="0" max="80" step="5" value={minScore}
+            onChange={e => setMinScore(+e.target.value)}
+            className="w-20 accent-[var(--accent)]" />
+          <span className="font-bold text-[var(--text-primary)] w-6">{minScore}</span>
+        </label>
+      </div>
+
+      {/* Score legend */}
+      <div className="flex items-center gap-4 text-[10px] text-[var(--text-muted)]">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--green)] inline-block" /> 70+ Strong match</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block" /> 45–69 Good fit</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: 'var(--text-muted)' }} /> &lt;45 Weak signal</span>
+      </div>
+
+      {/* Results grid */}
+      {results.length === 0 ? (
+        <div className="py-20 text-center">
+          <Compass size={28} className="mx-auto mb-3 text-[var(--text-muted)]" />
+          <p className="font-bold text-sm text-[var(--text-primary)]">No investors match your filters</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Try lowering the minimum score or broadening your stage/tier filters</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AnimatePresence>
+            {results.map(r => (
+              <DiscoverCard
+                key={r.investor.id}
+                result={r}
+                alreadyAdded={pipelineNames.has(r.investor.name.toLowerCase())}
+                onAdd={onAdd}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InvestorMatch() {
   useApp(); // context used for state persistence
+
+  const [activeTab, setActiveTab] = useState<'pipeline' | 'discover'>('pipeline');
 
   const [investors, setInvestors] = useState<Investor[]>(() => {
     try { return JSON.parse(localStorage.getItem('vp_investors') || 'null') || DEFAULT_INVESTORS; } catch { return DEFAULT_INVESTORS; }
@@ -222,6 +552,27 @@ export default function InvestorMatch() {
     avgScore: investors.length > 0 ? Math.round(investors.reduce((s, i) => s + i.matchScore, 0) / investors.length) : 0,
   }), [investors]);
 
+  const addFromDiscover = (inv: InvestorDBRecord) => {
+    const checkSize = (inv.checkSizeMin > 0 && inv.checkSizeMax > 0)
+      ? `$${inv.checkSizeMin >= 1_000_000 ? `${inv.checkSizeMin / 1_000_000}M` : `${inv.checkSizeMin / 1_000}K`}–$${inv.checkSizeMax >= 1_000_000 ? `${inv.checkSizeMax / 1_000_000}M` : `${inv.checkSizeMax / 1_000}K`}`
+      : '';
+    const record: Investor = {
+      id: `disc-${inv.id}-${Date.now()}`,
+      name: inv.name,
+      firm: inv.firm,
+      tier: (inv.tier as Investor['tier']) || 'Tier 2',
+      focus: inv.sectors.slice(0, 4),
+      checkSize,
+      contact: 'Not Contacted',
+      matchScore: 75,
+      notes: inv.bio || '',
+      linkedin: inv.linkedin || '',
+      email: '',
+    };
+    save([...investors, record]);
+    setActiveTab('pipeline');
+  };
+
   const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setShowModal(true); };
   const openEdit = (inv: Investor) => {
     setForm({ name: inv.name, firm: inv.firm, tier: inv.tier, focus: inv.focus.join(', '), checkSize: inv.checkSize, contact: inv.contact, matchScore: inv.matchScore, notes: inv.notes, email: inv.email || '', linkedin: inv.linkedin || '' });
@@ -260,16 +611,48 @@ export default function InvestorMatch() {
     <div className="max-w-[1400px] mx-auto space-y-6">
       <PageHeader
         icon={Users}
-        title="Investor CRM"
-        subtitle="Your fundraise pipeline. Move deals forward."
-        badge={<Badge color={stats.active > 0 ? 'var(--amber)' : 'var(--text-muted)'} size="sm">{stats.active} active</Badge>}
+        title="Investors"
+        subtitle={activeTab === 'pipeline' ? 'Your fundraise pipeline. Move deals forward.' : 'Find investors who match your sector, stage, and traction.'}
+        badge={activeTab === 'pipeline'
+          ? <Badge color={stats.active > 0 ? 'var(--amber)' : 'var(--text-muted)'} size="sm">{stats.active} active</Badge>
+          : <Badge color="var(--accent)" size="sm">AI Matching</Badge>
+        }
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" icon={Download} onClick={exportCSV}>Export</Button>
-            <Button variant="primary" size="sm" icon={Plus} onClick={openAdd}>Add Investor</Button>
+            {activeTab === 'pipeline' && (
+              <>
+                <Button variant="ghost" size="sm" icon={Download} onClick={exportCSV}>Export</Button>
+                <Button variant="primary" size="sm" icon={Plus} onClick={openAdd}>Add Investor</Button>
+              </>
+            )}
           </div>
         }
       />
+
+      {/* Tab toggle */}
+      <div className="flex gap-1 p-1 rounded-[var(--radius-lg)] bg-[var(--bg-card)] border border-[var(--border)] w-fit">
+        {([
+          ['pipeline', Users, 'Pipeline'],
+          ['discover', Compass, 'Discover'],
+        ] as const).map(([tab, Icon, label]) => (
+          <button key={tab} onClick={() => setActiveTab(tab as any)}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-[var(--radius-md)] text-sm font-bold transition-all"
+            style={{
+              background: activeTab === tab ? 'var(--accent)' : 'transparent',
+              color: activeTab === tab ? 'white' : 'var(--text-muted)',
+            }}>
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Discover Tab */}
+      {activeTab === 'discover' && (
+        <DiscoverTab pipeline={investors} onAdd={addFromDiscover} />
+      )}
+
+      {/* Pipeline Tab */}
+      {activeTab === 'pipeline' && (<>
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -418,6 +801,9 @@ export default function InvestorMatch() {
           ))}
         </div>
       )}
+
+      {/* end pipeline tab */}
+      </>)}
 
       {/* Add/Edit Modal */}
       <AnimatePresence>
